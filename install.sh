@@ -3,7 +3,7 @@
 cd poaV2;
 make poa;
 cd ..;
-cd minimap;
+cd minimap2;
 make;
 cd ..;
 make;
