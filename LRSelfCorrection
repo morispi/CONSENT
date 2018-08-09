@@ -1,0 +1,174 @@
+#!/bin/bash
+set -e
+
+#Prints a help message
+function print_help {
+	echo "Usage: $0 [options] --in LR.fasta --out result.fasta"
+	echo ""
+	echo "	Input:"
+	echo "	LR.fasta:                      Fasta file of long reads, one sequence per line."
+	echo "	result.fasta:                  Fasta file where to output the good regions of the long reads."
+	echo ""
+	echo "	Options:"
+	echo "	--minSupport INT, -s INT:      Minimum windowOverlap of a long read region for it to be considered as good, and output. (default: 3)"
+	echo "	--windowSize INT, -m INT:      Minimum length of a good region for it to be output. (default; 100)"
+	echo "  --merSize INT, -k INT:         k-mer size for consensus sequences discrimination. (default: 7)"
+	echo "  --solid INT, -f INT:           Minimum number of occurrences to consider a k-mer as solid. (default: 3)"
+	echo "  --commonKMers INT, -c INT:     Number of solid k-mers in common with the window to correct required to keep a sequence in the consensus building. (default: 3)"
+	echo "  --windowOverlap INT, -m INT:   Overlap size between consecutive windows. (default: 50)"
+	echo "	--nproc INT, -j INT:           Number of processes to run in parallel (default: number of cores)."
+	echo "	--tmpdir STRING, -t STRING:    Path where to store the directory containing temporary files (default: working directory)."
+	echo "	--help, -h:                    Print this help message."
+	exit 1
+}
+
+#Set options to default values
+reads=""
+nproc=$(nproc)
+tmpdir="."
+out=""
+minSupport=3
+windowSize=100
+merSize=7
+commonKMers=3
+solid=3
+windowOverlap=50
+
+#Print help if no argument specified
+if [[ "$1" == "" ]] ; then
+	print_help
+fi
+
+#Otions handling
+while [[ "$1" != "" ]] ; do
+	case "$1" in
+		"--help"|"-h")
+			print_help ;;
+		"--in")
+			case "$2" in
+				"") echo "Error: $1 expects an argument" ; exit 1 ;;
+				*) reads="$2" ; shift 2 ;;
+			esac;;
+		"--out")
+			case "$2" in
+				"") echo "Error: $1 expects an argument" ; exit 1 ;;
+				*) out="$2" ; shift 2 ;;
+			esac ;;
+		"--minSupport"|"-s")
+			case "$2" in
+				"") echo "Error: $1 expects an argument" ; exit 1 ;;
+				*) minSupport="$2" ; shift 2 ;;
+			esac ;;
+		"--windowSize"|"-l")
+			case "$2" in
+				"") echo "Error: $1 expects an argument" ; exit 1 ;;
+				*) windowSize="$2" ; shift 2 ;;
+			esac ;;
+		"--merSize"|"-k")
+			case "$2" in
+				"") echo "Error: $1 expects an argument" ; exit 1 ;;
+				*) merSize="$2" ; shift 2 ;;
+			esac ;;
+		"--commonKMers"|"-c")
+			case "$2" in
+				"") echo "Error: $1 expects an argument" ; exit 1 ;;
+				*) commonKMers="$2" ; shift 2 ;;
+			esac ;;
+		"--solid"|"-f")
+			case "$2" in
+				"") echo "Error: $1 expects an argument" ; exit 1 ;;
+				*) solid="$2" ; shift 2 ;;
+			esac ;;
+		"--windowOverlap"|"-m")
+			case "$2" in
+				"") echo "Error: $1 expects an argument" ; exit 1 ;;
+				*) windowOverlap="$2" ; shift 2 ;;
+			esac ;;
+		"--nproc"|"-j")
+			case "$2" in
+				"") echo "Error: $1 expects an argument" ; exit 1 ;;
+				*) nproc="$2" ; shift 2 ;;
+			esac ;;
+		"--tmpdir"|"-t")
+			case "$2" in
+				"") echo "Error: $1 expects an argument" ; exit 1 ;;
+				*) tmpdir="$2" ; shift 2 ;;
+			esac ;;
+    	--)
+			shift ; break ;;
+    		*) echo "Error: invalid option \"$1\"" ; exit 1 ;;
+  	esac
+done
+
+#Exit if no short reads, no long reads, no temporary directory, or no output files have been specified
+if [[ $reads == "" ]] ; then
+	echo "Error: --in must be specified";
+	exit 1;
+fi
+if [[ $out == "" ]] ; then
+	echo "Error: --out must be specified";
+	exit 1;
+fi
+
+#Remove the output file if it already exists
+if [[ -f $out ]] ; then
+	rm $out
+fi
+
+#Create the directory for temporary files
+if [[ ! -d $tmpdir ]] ; then
+	#tmpdir="$tmpdir/LRSC_"$$
+        mkdir -p $tmpdir
+fi
+
+#Create the subdirectory for raw long reads, if it does not exist
+if [[ ! -d $tmpdir/RawLongReads ]] ; then
+	mkdir $tmpdir/RawLongReads
+fi
+
+#Create the subdirectory for exploded alignments, if it does not exist
+if [[ ! -d $tmpdir/ExplodedAlignments ]] ; then
+	mkdir $tmpdir/ExplodedAlignments
+fi
+
+#Create the subdirectory for tmp regions files, if it does not exist
+if [[ ! -d $tmpdir/TMPRegions/tmp ]] ; then
+	mkdir -p $tmpdir/TMPRegions/tmp
+fi
+
+#Create the subdirectory for tmp consensus files, if it does not exist
+if [[ ! -d $tmpdir/TMPConsensus/tmp ]] ; then
+	mkdir -p $tmpdir/TMPConsensus/tmp
+fi
+
+#Create the subdirectory for tmp out files, if it does not exist
+if [[ ! -d $tmpdir/TMPOut/tmp ]] ; then
+	mkdir -p $tmpdir/TMPOut/tmp
+fi
+
+#Temporary files names
+alignments="Alignments.paf"
+
+#Get the path to LRSC's folder
+LRSCs=$(readlink -f "$0")
+LRSCf=$(dirname $LRSCs)
+
+echo "["$(date)"] Self-aligning the long reads (minimap2)"
+$LRSCf/minimap2/minimap2 -Xw5 "$reads" "$reads" > $tmpdir/"$alignments"
+$LRSCf/bin/addDualMappings.py $tmpdir/"$alignments" > $tmpdir/"dual_$alignments"
+
+echo "["$(date)"] Sorting the alignments file"
+sort -T $tmpdir/ -k1,1 -k3,3n -k4,4n -k8,8n -k9,9n $tmpdir/"dual_$alignments" > $tmpdir/"tmp_$alignments"
+mv $tmpdir/"tmp_$alignments" $tmpdir/"$alignments"
+
+echo "["$(date)"] Preparing the temporary files"
+$LRSCf/bin/prepareRawLongReads.py "$reads" $tmpdir/RawLongReads/
+$LRSCf/bin/explodeAlignmentFile.py $tmpdir/"$alignments" $tmpdir/ExplodedAlignments/
+ls $tmpdir/ExplodedAlignments > $tmpdir/ListAlignments
+
+
+echo "["$(date)"] Correcting the long reads"
+$LRSCf/bin/parallelCorrection.sh $tmpdir "$minSupport" "$windowSize" "$merSize" "$commonKMers" "$solid" "$windowOverlap" "$nproc" "$out"
+echo "["$(date)"] Removing the temporary files"
+# rm -Rf $tmpdir
+echo "["$(date)"] Exiting"
