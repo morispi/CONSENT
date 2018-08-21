@@ -165,7 +165,16 @@ void generate_lpo_bundles(LPOSequence_T *seq,float minimum_fraction)
 
     if (count<1) {
     premature_warning:
-      fprintf(stderr,"*** WARNING: bundling ended prematurely after %d bundles.\nNo sequences fit inside this last bundle.\nA total of %d sequences incuding consensus were bundled.\n\n",ibundle,nbundled);
+      sprintf(name, "CONSENS_empty");
+      count=assign_sequence_bundle_id(path_length,path,seq,ibundle,
+            minimum_fraction);
+      sprintf(title,"consensus produced by heaviest_bundle, containing %d seqs",
+      count); /* DON'T INCLUDE CONSENSUS ITSELF IN THE COUNT! */
+      // To add an empty consensus sequence if bundle wasn't built
+      iseq=add_path_sequence(0,path,seq,name,title);
+      seq->source_seq[iseq].bundle_id=ibundle++;
+      nbundled+=count;
+      // fprintf(stderr,"*** WARNING: bundling ended prematurely after %d bundles.\nNo sequences fit inside this last bundle.\nA total of %d sequences incuding consensus were bundled.\n\n",ibundle,nbundled);
       break;
     }
   }

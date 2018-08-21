@@ -70,7 +70,7 @@ char *reverse_complement(char seq[]);
 
 /******************************************************* fasta_format.c */
 int read_fasta(FILE *seq_file,Sequence_T **seq,
-	       int do_switch_case,char **comment);
+	       int do_switch_case,char **comment, int nbSeq);
 
 void write_fasta(FILE *ifile,char name[],char title[],char seq[]);
 

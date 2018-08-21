@@ -8,16 +8,21 @@
   the array seq[]; any comment line preceded by a hash-mark will be saved
   to comment */
 int read_fasta(FILE *seq_file,Sequence_T **seq,
-	       int do_switch_case,char **comment)
+	       int do_switch_case,char **comment, int nbSeqs)
 {
-  int c,nseq=0,length=0;
+  int c,nseq=0,length=0, processedSeqs = 0;
   char seq_name[FASTA_NAME_MAX]="",
   line[SEQ_LENGTH_MAX],seq_title[FASTA_NAME_MAX]="";
   char *p;
   stringptr tmp_seq=STRINGPTR_EMPTY_INIT;
 	
  /* read in sequences */
-  while (fgets(line,sizeof(line)-1,seq_file)) {
+
+// fprintf(stderr, "processedSeqs : %d\n", processedSeqs); 
+// fprintf(stderr, "nbSeqs : %d\n", nbSeqs); 
+  while (fgets(line,sizeof(line)-1,seq_file) && processedSeqs < 2 * nbSeqs) {
+    // fprintf(stderr, "Line is : %s\n", line);
+    processedSeqs++;
     if ((p=strrchr(line,'\n'))) /* REMOVE NEWLINE FROM END OF LINE */
       *p= '\0'; /* TRUNCATE THE STRING */
     switch (line[0]) {
@@ -49,12 +54,13 @@ int read_fasta(FILE *seq_file,Sequence_T **seq,
     }
 
     c=getc(seq_file); /* ?FIRST CHARACTER IS UNIGENE CLUSTER TERMINATOR? */
+    // fprintf(stderr, "c is : %c\n", c);
     if (c==EOF)
       break;
     else {
       ungetc(c,seq_file); /* PUT THE CHARACTER BACK */
-      if (c=='#' && nseq>0) /* UNIGENE CLUSTER TERMINATOR, SO DONE!*/
-	break;
+      if (processedSeqs >= 2 * nbSeqs) //(c=='#' && nseq>0) /* UNIGENE CLUSTER TERMINATOR, SO DONE!*/
+	     break;
     }
   }
   if (seq_name[0] && tmp_seq.p && tmp_seq.p[0]) { /* WE HAVE A SEQUENCE, SO SAVE IT! */

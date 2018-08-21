@@ -11,6 +11,7 @@ long timediff(clock_t t1, clock_t t2) {
     return elapsed;
 }
 
+void buildAndAnalysePOMSA (int n_input_seqs, LPOSequence_T* lpo_out, LPOSequence_T **input_seqs, ResidueScoreMatrix_T score_matrix, int use_aggressive_fusion, int do_progressive, char* pair_score_file, int do_global, int do_preserve_sequence_order, char* comment, FILE* seq_ifile, char* fasta_out, FILE* errfile, int ibundle, int bundling_threshold);
 
 static LPOSequence_T *read_partial_order_file (char *po_filename, char *subset_filename, int remove_listed_seqs, int keep_all_links, int do_switch_case, ResidueScoreMatrix_T *mat);
 
@@ -252,90 +253,68 @@ clock_t t1, t2;
       exit_code=1; /* SIGNAL ERROR CONDITION */
       goto free_memory_and_exit;
     }
-    nseq = read_fasta (seq_ifile, &seq, do_switch_case, &comment);
-    fclose (seq_ifile);
-    if (nseq == 0) {
-      WARN_MSG(USERR,(ERRTXT,"Error reading sequence file %s.\nExiting",
-		      seq_filename),"$Revision: 1.2.2.9 $");
-      exit_code=1; /* SIGNAL ERROR CONDITION */
-      goto free_memory_and_exit;
-    }
-    fprintf(errfile,"...Read %d sequences from sequence file %s...\n",nseq,seq_filename);
-    for (i=0; i<nseq; i++) {
-      input_seqs[n_input_seqs++] = &(seq[i]);
-      initialize_seqs_as_lpo(1,&(seq[i]),&score_matrix);
-      if (n_input_seqs == max_input_seqs) {
-	max_input_seqs *= 2;
-	REALLOC (input_seqs, max_input_seqs, LPOSequence_T *);
+
+    char* line;
+    size_t len = 0;
+    int nbSeqs = 0;
+    FILE* curFile;
+    FILE* outFile = fopen(fasta_out, "w");
+    while (getline(&line, &len, seq_ifile) != -1) {
+      line[strlen(line)-1] = '\0';
+      // fprintf(stderr, "line is : %s\n", line);
+      nbSeqs = atoi(line);
+      // fprintf(stderr, "calling with nbSeqs = %d\n", nbSeqs);
+      nseq = read_fasta (seq_ifile, &seq, do_switch_case, &comment, nbSeqs);
+      // fseek(seq_ifile, -2 * sizeof(char), SEEK_CUR);
+      if (nseq == 0) {
+        WARN_MSG(USERR,(ERRTXT,"Error reading sequence file %s.\nExiting",
+            seq_filename),"$Revision: 1.2.2.9 $");
+        exit_code=1; /* SIGNAL ERROR CONDITION */
+        goto free_memory_and_exit;
       }
+      fprintf(errfile,"...Read %d sequences from sequence file %s...\n",nseq,seq_filename);
+      for (i=0; i<nseq; i++) {
+        input_seqs[n_input_seqs++] = &(seq[i]);
+        initialize_seqs_as_lpo(1,&(seq[i]),&score_matrix);
+        if (n_input_seqs == max_input_seqs) {
+          max_input_seqs *= 2;
+          REALLOC (input_seqs, max_input_seqs, LPOSequence_T *);
+        }
+      }
+
+      buildAndAnalysePOMSA (n_input_seqs, lpo_out, input_seqs, score_matrix,  use_aggressive_fusion, do_progressive, pair_score_file, do_global,  do_preserve_sequence_order,  comment, outFile, fasta_out, errfile,ibundle, bundling_threshold);
+
+      for (i=0;i<n_input_seqs;i++) {
+        for (j=0;j<nseq;j++) {
+          if (input_seqs[i]==&(seq[j])) {
+            break;
+          }
+        }
+        free_lpo_sequence(input_seqs[i],(j==nseq));
+      }
+      n_input_seqs = 0;
+
     }
+    fclose(seq_ifile);
+
+    // nseq = read_fasta (seq_ifile, &seq, do_switch_case, &comment);
+    // fclose (seq_ifile);
+    // if (nseq == 0) {
+    //   WARN_MSG(USERR,(ERRTXT,"Error reading sequence file %s.\nExiting",
+		  //     seq_filename),"$Revision: 1.2.2.9 $");
+    //   exit_code=1; /* SIGNAL ERROR CONDITION */
+    //   goto free_memory_and_exit;
+    // }
+    // fprintf(errfile,"...Read %d sequences from sequence file %s...\n",nseq,seq_filename);
+    // for (i=0; i<nseq; i++) {
+    //   input_seqs[n_input_seqs++] = &(seq[i]);
+    //   initialize_seqs_as_lpo(1,&(seq[i]),&score_matrix);
+    //   if (n_input_seqs == max_input_seqs) {
+    //     max_input_seqs *= 2;
+    //     REALLOC (input_seqs, max_input_seqs, LPOSequence_T *);
+    //   }
+    // }
   }
-
-
-  /** BUILD AND ANALYZE OUTPUT PO-MSA **/
-
-  if (n_input_seqs == 0) { /* HMM.. NO DATA. */
-    WARN_MSG(USERR,(ERRTXT,"No input sequences were provided; use one of the -read_ flags.\nExiting."), "$Revision: 1.2.2.9 $");
-    exit_code=1; /* SIGNAL ERROR CONDITION */
-    goto free_memory_and_exit;
-  }
-  else {
-    lpo_out = buildup_progressive_lpo (n_input_seqs, input_seqs, &score_matrix,
-				       use_aggressive_fusion, do_progressive, pair_score_file,
-				       matrix_scoring_function, do_global, do_preserve_sequence_order);
-  }
-  
-  if (comment) { /* SAVE THE COMMENT LINE AS TITLE OF OUR LPO */
-    FREE(lpo_out->title);
-    lpo_out->title=strdup(comment);
-  }
-  
-  /* DIVIDE INTO BUNDLES W/ CONSENSUS USING PERCENT ID */
-  if (do_analyze_bundles)
-    generate_lpo_bundles(lpo_out,bundling_threshold);
-
-  if (po_out) { /* WRITE FINAL PARTIAL ORDER ALIGNMENT TO OUTPUT */
-    if (lpo_file_out=fopen(po_out, "w")) {
-       write_lpo(lpo_file_out,lpo_out,&score_matrix);
-       fclose(lpo_file_out);
-       fprintf(errfile,"...Wrote %d sequences to PO file %s...\n",lpo_out->nsource_seq,po_out);
-    }
-    else {
-      WARN_MSG(USERR,(ERRTXT,"*** Could not save PO file %s.  Exiting.",
-		      po_out),"$Revision: 1.2.2.9 $");
-      exit_code=1; /* SIGNAL ERROR CONDITION */ 
-    }
-  }
-
-  if (fasta_out) { /* WRITE FINAL ALIGNMENT IN FASTA-PIR FORMAT */
-    if (seq_ifile=fopen(fasta_out,"w")) { /* FASTA-PIR ALIGNMENT*/
-      write_lpo_bundle_as_fasta(seq_ifile,lpo_out,score_matrix.nsymbol,
-				score_matrix.symbol,ibundle);
-      fclose(seq_ifile);
-      fprintf(errfile,"...Wrote %d sequences to FASTA-PIR file %s...\n",lpo_out->nsource_seq,fasta_out);
-    }
-    else {
-      WARN_MSG(USERR,(ERRTXT,"*** Could not save FASTA-PIR file %s.  Exiting.",
-		      fasta_out),"$Revision: 1.2.2.9 $");
-      exit_code=1; /* SIGNAL ERROR CONDITION */ 
-   }
-  }
-
-  if (clustal_out) { /* WRITE FINAL ALIGNMENT IN CLUSTAL FORMAT */
-    if (seq_ifile=fopen(clustal_out,"w")) { /* CLUSTAL ALIGNMENT*/
-      export_clustal_seqal(seq_ifile,lpo_out,score_matrix.nsymbol,
-			   score_matrix.symbol);
-      fclose(seq_ifile);
-      fprintf(errfile,"...Wrote %d sequences to CLUSTAL file %s...\n",lpo_out->nsource_seq,clustal_out);
-    }
-    else {
-      WARN_MSG(USERR,(ERRTXT,"*** Could not save CLUSTAL file %s.  Exiting.",
-		      clustal_out),"$Revision: 1.2.2.9 $");
-      exit_code=1; /* SIGNAL ERROR CONDITION */ 
-   }
-  }
-
-
 
  free_memory_and_exit: /* FREE ALL DYNAMICALLY ALLOCATED DATA!!!! */
   
@@ -355,12 +334,76 @@ clock_t t1, t2;
 t2 = clock();
 
     elapsed = timediff(t1, t2);
-    fprintf(stderr, "elapsed: %ld ms\n", elapsed);
+    // fprintf(stderr, "elapsed: %ld ms\n", elapsed);
 
   exit (exit_code);
 }
 
 
+void buildAndAnalysePOMSA (int n_input_seqs, LPOSequence_T* lpo_out, LPOSequence_T **input_seqs, ResidueScoreMatrix_T score_matrix, int use_aggressive_fusion, int do_progressive, char* pair_score_file, int do_global, int do_preserve_sequence_order, char* comment, FILE* outFile, char* fasta_out, FILE* errfile, int ibundle, int bundling_threshold) {
+  /** BUILD AND ANALYZE OUTPUT PO-MSA **/
+  // if (n_input_seqs == 0) { /* HMM.. NO DATA. */
+  //   WARN_MSG(USERR,(ERRTXT,"No input sequences were provided; use one of the -read_ flags.\nExiting."), "$Revision: 1.2.2.9 $");
+  //   // exit_code=1; /* SIGNAL ERROR CONDITION */
+  //   goto free_memory_and_exit;
+  // }
+  // else {
+    lpo_out = buildup_progressive_lpo (n_input_seqs, input_seqs, &score_matrix,
+               use_aggressive_fusion, do_progressive, pair_score_file,
+               matrix_scoring_function, do_global, do_preserve_sequence_order);
+  // }
+  
+  // if (comment) { /* SAVE THE COMMENT LINE AS TITLE OF OUR LPO */
+  //   FREE(lpo_out->title);
+  //   lpo_out->title=strdup(comment);
+  // }
+  
+  /* DIVIDE INTO BUNDLES W/ CONSENSUS USING PERCENT ID */
+  // if (do_analyze_bundles)
+    generate_lpo_bundles(lpo_out,bundling_threshold);
+
+  // if (po_out) { /* WRITE FINAL PARTIAL ORDER ALIGNMENT TO OUTPUT */
+  //   if (lpo_file_out=fopen(po_out, "w")) {
+  //      write_lpo(lpo_file_out,lpo_out,&score_matrix);
+  //      fclose(lpo_file_out);
+  //      fprintf(errfile,"...Wrote %d sequences to PO file %s...\n",lpo_out->nsource_seq,po_out);
+  //   }
+  //   else {
+  //     WARN_MSG(USERR,(ERRTXT,"*** Could not save PO file %s.  Exiting.",
+  //         po_out),"$Revision: 1.2.2.9 $");
+  //     // exit_code=1; /* SIGNAL ERROR CONDITION */ 
+  //   }
+  // }
+
+  // if (fasta_out) { /* WRITE FINAL ALIGNMENT IN FASTA-PIR FORMAT */
+  //   if (seq_ifile=fopen(fasta_out,"w")) { /* FASTA-PIR ALIGNMENT*/
+      // fprintf(stderr, "calling write lpo\n");
+      write_lpo_bundle_as_fasta(outFile,lpo_out,score_matrix.nsymbol,
+        score_matrix.symbol,ibundle);
+  //     fclose(seq_ifile);
+  //     fprintf(errfile,"...Wrote %d sequences to FASTA-PIR file %s...\n",lpo_out->nsource_seq,fasta_out);
+  //   }
+  //   else {
+  //     WARN_MSG(USERR,(ERRTXT,"*** Could not save FASTA-PIR file %s.  Exiting.",
+  //         fasta_out),"$Revision: 1.2.2.9 $");
+  //     // exit_code=1; /* SIGNAL ERROR CONDITION */ 
+  //  }
+  // }
+
+  // if (clustal_out) { /* WRITE FINAL ALIGNMENT IN CLUSTAL FORMAT */
+  //   if (seq_ifile=fopen(clustal_out,"w")) { /* CLUSTAL ALIGNMENT*/
+  //     export_clustal_seqal(seq_ifile,lpo_out,score_matrix.nsymbol,
+  //        score_matrix.symbol);
+  //     fclose(seq_ifile);
+  //     fprintf(errfile,"...Wrote %d sequences to CLUSTAL file %s...\n",lpo_out->nsource_seq,clustal_out);
+  //   }
+  //   else {
+  //     WARN_MSG(USERR,(ERRTXT,"*** Could not save CLUSTAL file %s.  Exiting.",
+  //         clustal_out),"$Revision: 1.2.2.9 $");
+  //     // exit_code=1; /* SIGNAL ERROR CONDITION */ 
+  //  }
+  // }
+}
 
 static LPOSequence_T *read_partial_order_file (char *po_filename, char *subset_filename, int remove_listed_seqs, int keep_all_links, int do_switch_case, ResidueScoreMatrix_T *mat)
 {

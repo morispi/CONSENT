@@ -7,7 +7,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	std::string alignmentFile, readsDir;
-	int minSupport, windowSize, nbThreads, opt, merSize, commonKMers, solidThresh, windowOverlap;
+	unsigned minSupport, windowSize, nbThreads, opt, merSize, commonKMers, solidThresh, windowOverlap;
 
 	readsDir =  "RawLongReads/";
 	minSupport = 10;

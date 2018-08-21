@@ -400,7 +400,9 @@ void write_lpo_bundle_as_fasta(FILE *ifile,LPOSequence_T *seq,
 			FASTA_GAP_CHARACTER,        /* RC-MSA FMT */
 			&seq_pos,&p,&include_in_save);
   LOOPF (i,seq->nsource_seq) { /* NOW WRITE OUT FASTA FORMAT */
+    // fprintf(stderr, "is currently is : %d\n", i);
     if ((ibundle<0 /* PRINT ALL BUNDLES */ || seq->source_seq[i].bundle_id == ibundle) && strcmp(seq->source_seq[i].title, "untitled") != 0) { /* OR JUST THIS BUNDLE*/
+      //TODO: write all in a temp string along with a counter, then print in main file
       fprintf(ifile,">%s %s%s",seq->source_seq[i].name,seq->source_seq[i].title,"\n");
       iprint=0;
       //LOOPF (j,nring) { /* WRITE OUT 60 CHARACTER SEQUENCE LINES */

@@ -7,22 +7,23 @@ bool fileExists(std::string fileName) {
 
 std::pair<int**, std::pair<int, int>> NeedlemanWunschLocalMatrix(std::string s1, std::string s2) {
 	int **matrix = new int*[s1.length() + 1];
-	for(int i = 0 ; i < s1.length() + 1; i++) {
+	unsigned i, j;
+	for(i = 0 ; i < s1.length() + 1; i++) {
     	matrix[i] = new int[s2.length() + 1];
     }
 
-    for (int i = 0 ; i < s1.length() + 1 ; i++) {
+    for (i = 0 ; i < s1.length() + 1 ; i++) {
     	matrix[i][0] = 0;
     }
-	for (int j = 0 ; j < s2.length() + 1; j++) {
+	for (j = 0 ; j < s2.length() + 1; j++) {
 		matrix[0][j] = 0;
 	}
 
 	int maxI = 0;
 	int maxJ = 0;
 	int maximum = matrix[maxI][maxJ];
-	for (int i = 1 ; i < s1.length() + 1; i++) {
-		for (int j = 1 ; j < s2.length() + 1; j++) {
+	for (i = 1 ; i < s1.length() + 1; i++) {
+		for (j = 1 ; j < s2.length() + 1; j++) {
 			int s = s1[i-1] == s2[j-1] ? 1 : -6;
 			matrix[i][j] = std::max(std::max(0, matrix[i-1][j-1] + s), std::max(matrix[i-1][j] - 1, matrix[i][j-1] - 1));
 			if (matrix[i][j] > maximum) {
@@ -47,13 +48,12 @@ std::pair<int, int> NeedlemanWunschLocalAlignments(std::string s1, std::string s
 	int i = maxs.first;
 	int j = maxs.second;
 
-	int score, scoreDiag, scoreUp, scoreLeft, s;
+	int score, scoreDiag, scoreLeft, s;
 	int editDistance = 0;
 
 	while (i > 0 and j > 0 and matrix[i][j] != 0) {
 		score = matrix[i][j];
 		scoreDiag = matrix[i-1][j-1];
-		scoreUp = matrix[i][j-1];
 		scoreLeft = matrix[i-1][j];
 		s = s1[i-1] == s2[j-1] ? 1 : -1;
 
@@ -93,7 +93,7 @@ std::pair<int, int> NeedlemanWunschLocalAlignments(std::string s1, std::string s
 		editDistance++;
 	}
 
-	for(int k = 0 ; k < s1.size() ; k++) {
+	for(unsigned k = 0 ; k < s1.size() ; k++) {
 		// std::cerr << i << std::endl;
     	delete [] matrix[k];
 	}
