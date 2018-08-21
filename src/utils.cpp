@@ -107,36 +107,67 @@ std::pair<int, int> NeedlemanWunschLocalAlignments(std::string s1, std::string s
 	return std::make_pair(j, maxs.second);
 }
 
-std::string reverseComplement(std::string seq) {
-	std::string res = std::string(seq);
-	for (int i = 0 ; i < seq.length() ; i++) {
-		switch(seq[i]) {
-			case 'A':
-				res[seq.length() - i - 1] = 'T';
-				break;
-			case 'C':
-				res[seq.length() - i - 1] = 'G';
-				break;
-			case 'G':
-				res[seq.length() - i - 1] = 'C';
-				break;
-			case 'T':
-				res[seq.length() - i - 1] = 'A';
-				break;
-			case 'a':
-				res[seq.length() - i - 1] = 't';
-				break;
-			case 'c':
-				res[seq.length() - i - 1] = 'g';
-				break;
-			case 'g':
-				res[seq.length() - i - 1] = 'c';
-				break;
-			case 't':
-				res[seq.length() - i - 1] = 'a';
-				break;
+// std::string reverseComplement(std::string seq) {
+// 	std::string res = std::string(seq);
+// 	for (int i = 0 ; i < seq.length() ; i++) {
+// 		switch(seq[i]) {
+// 			case 'A':
+// 				res[seq.length() - i - 1] = 'T';
+// 				break;
+// 			case 'C':
+// 				res[seq.length() - i - 1] = 'G';
+// 				break;
+// 			case 'G':
+// 				res[seq.length() - i - 1] = 'C';
+// 				break;
+// 			case 'T':
+// 				res[seq.length() - i - 1] = 'A';
+// 				break;
+// 			case 'a':
+// 				res[seq.length() - i - 1] = 't';
+// 				break;
+// 			case 'c':
+// 				res[seq.length() - i - 1] = 'g';
+// 				break;
+// 			case 'g':
+// 				res[seq.length() - i - 1] = 'c';
+// 				break;
+// 			case 't':
+// 				res[seq.length() - i - 1] = 'a';
+// 				break;
+// 		}
+// 	}
+
+// 	return res;
+// }
+
+reverseComplement_t::reverseComplement_t() {
+	rev_comp_tab['A'] = 'T';
+    rev_comp_tab['T'] = 'A';
+    rev_comp_tab['C'] = 'G';
+    rev_comp_tab['G'] = 'C';
+    rev_comp_tab['a'] = 't';
+    rev_comp_tab['t'] = 'a';
+    rev_comp_tab['c'] = 'g';
+    rev_comp_tab['g'] = 'c';
+}
+
+
+std::string reverseComplement_t::operator()(std::string seq) const {
+    auto first = seq.begin(), last = seq.end();
+
+    while(true) {
+		if(first == last || first == --last) {
+		    if(seq.length() % 2)
+			*first = this->rev_comp_tab[*first];
+	    	return seq;
+		} else {
+		    *first = this->rev_comp_tab[*first];
+	    	*last = this->rev_comp_tab[*last];
+	    	std::iter_swap(first, last);
+	    	++first;
 		}
 	}
 
-	return res;
+    return seq;
 }

@@ -7,6 +7,9 @@
 #include "utils.h"
 
 std::mutex outMtx;
+int totalTime = 0;
+int totalIterations = 0;
+int totalComputeConsensus = 0;
 
 // Get positions of non-repeated k-mers in sequence (1-based positions)
 // Positions of repeated k-mers are set to -1
@@ -111,6 +114,7 @@ void removeBadSequences(std::vector<std::string>& sequences, std::string tplSeq,
 }
 
 std::pair<std::string, std::vector<std::string>> computeConsensus(std::vector<std::string>& sequences, std::string readsDir, int minSupport, int merSize, int commonKMers, int solidThresh, int windowOverlap) {
+	// auto c_start = std::chrono::high_resolution_clock::now();
 	std::string tplSeq = sequences[0];
 	std::vector<std::string> res;
 
@@ -119,7 +123,6 @@ std::pair<std::string, std::vector<std::string>> computeConsensus(std::vector<st
 	if (sequences.size() < minSupport) {
 		return std::make_pair(tplSeq, res);
 	}
-
 
 	std::string POAinFile = readsDir + "../TMPRegions/" + std::tmpnam(nullptr) + ".fasta";
 	// Repeat while filename exist, to avoid writing over an already used file
@@ -151,6 +154,10 @@ std::pair<std::string, std::vector<std::string>> computeConsensus(std::vector<st
 	system(ccmd);
 	auto c_end = std::chrono::high_resolution_clock::now();
 
+	// std::cerr << "POA took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count()  << " ms" << std::endl;
+	// std::cerr << std::chrono::duration_cast<std::chrono::milliseconds>(c_start.time_since_epoch()).count() << std::endl;
+	// std::cerr << std::chrono::duration_cast<std::chrono::milliseconds>(c_end.time_since_epoch()).count() << std::endl;
+
 	remove(cPOAinFile);
 
 	res.clear();
@@ -162,6 +169,10 @@ std::pair<std::string, std::vector<std::string>> computeConsensus(std::vector<st
 	}
 	cons.close();
 	remove(cPOAOutFile);
+
+
+	c_end = std::chrono::high_resolution_clock::now();
+	totalTime += std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count();
 
 	return std::make_pair(tplSeq, res);
 }
@@ -240,6 +251,8 @@ std::map<std::string, std::string> getSequencesMaps(std::vector<Alignment>& alig
 }
 
 std::vector<std::pair<std::string, std::vector<std::string>>> processRead(std::vector<Alignment>& alignments, std::string readsDir, int minSupport, int windowSize, int merSize, int commonKMers, int solidThresh, int windowOverlap) {
+	auto c_start = std::chrono::high_resolution_clock::now();
+	// std::cerr << "alignments.size() : " << alignments.size() << std::endl;
 	std::vector<std::pair<std::string, std::vector<std::string>>> consensuses;
 	int min, max, sup, myStartPos, tplLen;
 	min = -1;
@@ -251,22 +264,40 @@ std::vector<std::pair<std::string, std::vector<std::string>>> processRead(std::v
 	std::map<std::string, std::string> sequences = getSequencesMaps(alignments, readsDir);
 
 	int beg, end, length, start, shift;
-	std::vector<std::string> pilesSeqs;
+	std::vector<std::string> curPiles;
 	std::vector<std::string> curPile;
 
+	auto c_end = std::chrono::high_resolution_clock::now();
+
+	// std::cerr << "Init time : " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << std::endl;
+
+	int curPos = 0;
+	int prevPos = 0;
+	int passed = 0;
+
 	for (std::pair<int, int> p : pilesPos) {
-		pilesSeqs.clear();
+		auto it_start = std::chrono::high_resolution_clock::now();
+		curPile.clear();
 		beg = p.first;
 		end = p.second;
 		length = end - beg + 1;
 		
 		// Insert template sequence
-		pilesSeqs.push_back(sequences[alignments.begin()->qName].substr(beg, length));
+		curPile.push_back(sequences[alignments.begin()->qName].substr(beg, length));
 		
+
 		// Insert aligned sequences
-		for (Alignment al : alignments) {
+		int doBreak = 0;
+		int entered = 0;
+		curPos = prevPos;
+		while (curPos < alignments.size() and not doBreak) {
+			Alignment al = alignments[curPos];
 			// Check if the alignment spans the query window, and if the target has enough bases
 			if (al.qStart <= beg and end <= al.qEnd and al.tStart + beg - al.qStart + length - 1 <= al.tEnd) {
+				if (!entered) {
+					prevPos = curPos; 
+				}
+				entered = 1;
 				shift = beg - al.qStart;
 				std::string tmpSeq = sequences[al.tName].substr(al.tStart, al.tEnd - al.tStart + 1);
 				int rcd = 0;
@@ -275,25 +306,31 @@ std::vector<std::pair<std::string, std::vector<std::string>>> processRead(std::v
 					rcd = 1;
 				}
 				tmpSeq = tmpSeq.substr(shift, length);
-				pilesSeqs.push_back(tmpSeq);
+				curPile.push_back(tmpSeq);
+				passed++;
+			} else {
+				doBreak = beg < al.qStart;
 			}
+			curPos++;
 		}
+		auto it_end = std::chrono::high_resolution_clock::now();
+		totalIterations += std::chrono::duration_cast<std::chrono::milliseconds>(it_end - it_start).count();
 
 		// Compute consensus for current pile
-		// TODO: useless to use pilesSeqs ?
-		curPile.clear();
-		for (std::string s : pilesSeqs) {
-			curPile.push_back(s);
-		}
+		auto cons_start = std::chrono::high_resolution_clock::now();
 		if (curPile.size() >= minSupport) {
 			std::pair<std::string, std::vector<std::string>> cons = computeConsensus(curPile, readsDir, minSupport, merSize, commonKMers, solidThresh, windowOverlap);
 			if (cons.second.size() > 0) {
 				consensuses.push_back(cons);
 			}
 		}
+		auto cons_end = std::chrono::high_resolution_clock::now();
+		totalComputeConsensus += std::chrono::duration_cast<std::chrono::milliseconds>(cons_end - cons_start).count();
 	}
 
-	// Treat all alignments as one (ie exact read, aligned regions of other read, and fee this to POA)
+		// std::cerr << "passed : " << passed << std::endl;
+
+	// Treat all alignments at once (ie exact read, aligned regions of other reads, and feed this to POA)
 	// curPile.clear();
 	// curPile.push_back(sequences[alignments.begin()->qName]);
 	// for (Alignment al : alignments) {
@@ -320,7 +357,11 @@ void processReads(std::vector<std::vector<Alignment>>& reads, std::string readsD
 	for (std::vector<Alignment> alignments : reads) {
 		auto c_start = std::chrono::high_resolution_clock::now();
 		consensuses = processRead(alignments, readsDir, minSupport, windowSize, merSize, commonKMers, solidThresh, windowOverlap);
+		auto c_end = std::chrono::high_resolution_clock::now();
 
+		// std::cerr << "getting consensuses took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
+
+		auto al_start = std::chrono::high_resolution_clock::now();
 		std::ifstream curRead(readsDir + alignments[0].qName);
 		std::string header, sequence;
 		getline(curRead, header);
@@ -330,9 +371,19 @@ void processReads(std::vector<std::vector<Alignment>>& reads, std::string readsD
 
 		// Align consensus to window, correct window, align corrected window to read, replace mapped zone in the read by corrected window
 		std::string corWindow;
-		i = 1;
-		for (std::pair<std::string, std::vector<std::string>> c : consensuses) {
-			// TODO: see what we do if multiple consensus were created
+		i = 0;
+		std::string* corrections = new std::string[consensuses.size()];
+		for (i = 0; i < consensuses.size(); i++) {
+			std::string xd(sequence.length(), 'N');
+			corrections[i] = xd;
+		}
+
+		for (i = 0; i < consensuses.size(); i++) {
+			std::pair<std::string, std::vector<std::string>> c = consensuses[i];
+			// TODO: see what we do if multiple consensus were created (tested on 50k LRs, never happened)
+			if (c.second.size() > 1) {
+				// std::cerr << "Multiple consensuses were built" << std::endl;
+			}
 			std::string r = c.second[0];
 			// Align consensus to window to get start and end position of the substring to extract from the consensus, as the corrected window
 			std::pair<int, int> positions = NeedlemanWunschLocalAlignments(c.first, r);
@@ -357,14 +408,20 @@ void processReads(std::vector<std::vector<Alignment>>& reads, std::string readsD
 		std::cout << header << std::endl << sequence << std::endl;
 		outMtx.unlock();
 
-		auto c_end = std::chrono::high_resolution_clock::now();
-		std::cerr << "processing " << alignments[0].qName << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
+		auto al_end = std::chrono::high_resolution_clock::now();
+		// std::cerr << "Aligning consensus took " << std::chrono::duration_cast<std::chrono::milliseconds>(al_end - al_start).count() << " ms\n";
 
+		c_end = std::chrono::high_resolution_clock::now();
+		// std::cerr << "computeConsensus time : " << totalComputeConsensus << std::endl;
+		// std::cerr << "totalIterations : " << totalIterations << std::endl;
+		std::cerr << "processing " << alignments[0].qName << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
+		// std::cerr << std::endl;
 	}
 
 }
 
 void runCorrection(std::string alignmentFile, std::string readsDir, int minSupport, int windowSize, int merSize, int commonKMers, int solidThresh, int windowOverlap, int nbThreads) {	
+	auto c_start = std::chrono::high_resolution_clock::now();
 	std::ifstream f(alignmentFile);
 	std::vector<Alignment> curReadAlignments;
 	Alignment al;
@@ -394,6 +451,9 @@ void runCorrection(std::string alignmentFile, std::string readsDir, int minSuppo
 			curRead = "";
 		}
 	}
+	auto c_end = std::chrono::high_resolution_clock::now();
+
+	// std::cerr << "Preparing threads took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
 
 	// Launch threads
 	std::vector<std::future<void>> threads;
