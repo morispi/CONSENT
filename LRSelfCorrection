@@ -11,7 +11,7 @@ function print_help {
 	echo ""
 	echo "	Options:"
 	echo "	--minSupport INT, -s INT:      Minimum windowOverlap of a long read region for it to be considered as good, and output. (default: 3)"
-	echo "	--windowSize INT, -m INT:      Minimum length of a good region for it to be output. (default; 100)"
+	echo "	--windowSize INT, -l INT:      Minimum length of a good region for it to be output. (default; 100)"
 	echo "  --merSize INT, -k INT:         k-mer size for consensus sequences discrimination. (default: 7)"
 	echo "  --solid INT, -f INT:           Minimum number of occurrences to consider a k-mer as solid. (default: 3)"
 	echo "  --commonKMers INT, -c INT:     Number of solid k-mers in common with the window to correct required to keep a sequence in the consensus building. (default: 3)"
