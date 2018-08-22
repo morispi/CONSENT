@@ -151,7 +151,7 @@ void generate_lpo_bundles(LPOSequence_T *seq,float minimum_fraction)
   while (nbundled < seq->nsource_seq) {/* PULL OUT BUNDLES ONE BY ONE */
     path=heaviest_bundle(seq->length,seq->letter,/*GET NEXT HEAVIEST BUNDLE*/
 			 seq->nsource_seq,seq->source_seq,&path_length);
-    if (!path || path_length<10) /* ??!? FAILED TO FIND A BUNDLE ??? */
+    if (!path) // || path_length<10) /* ??!? FAILED TO FIND A BUNDLE ??? */
       goto premature_warning;
     sprintf(name,"CONSENS%d",ibundle);
     /* NEXT, MARK SEQUENCES THAT FIT THIS BUNDLE ADEQUATELY */
