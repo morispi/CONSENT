@@ -29,10 +29,10 @@ tmpdir="."
 out=""
 minSupport=3
 windowSize=100
-merSize=7
-commonKMers=3
+merSize=11
+commonKMers=2
 solid=3
-windowOverlap=50
+windowOverlap=0
 
 #Print help if no argument specified
 if [[ "$1" == "" ]] ; then
@@ -163,12 +163,9 @@ mv $tmpdir/"tmp_$alignments" $tmpdir/"$alignments"
 
 echo "["$(date)"] Preparing the temporary files"
 $LRSCf/bin/prepareRawLongReads.py "$reads" $tmpdir/RawLongReads/
-$LRSCf/bin/explodeAlignmentFile.py $tmpdir/"$alignments" $tmpdir/ExplodedAlignments/
-ls $tmpdir/ExplodedAlignments > $tmpdir/ListAlignments
-
 
 echo "["$(date)"] Correcting the long reads"
-$LRSCf/bin/parallelCorrection.sh $tmpdir "$minSupport" "$windowSize" "$merSize" "$commonKMers" "$solid" "$windowOverlap" "$nproc" "$out"
+$LRSCf/bin/LRSelfCorrection -a $tmpdir/"$alignments" -d $tmpdir"/RawLongReads/" -s "$minSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -f "$solid" -m "$windowOverlap" -j "$nproc" > "$out"
 echo "["$(date)"] Removing the temporary files"
 # rm -Rf $tmpdir
 echo "["$(date)"] Exiting"
