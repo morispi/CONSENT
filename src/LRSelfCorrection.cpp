@@ -15,7 +15,7 @@ int totalIterations = 0;
 int totalComputeConsensus = 0;
 
 void removeBadSequences(std::vector<std::string>& sequences, std::string tplSeq, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap) {
-	std::map<std::string, int> kMers = getKMersPos(tplSeq, merSize);
+	std::map<std::string, std::vector<int>> kMers = getKMersPos(tplSeq, merSize);
 	std::map<std::string, int> merCounts = getKMersCounts(sequences, merSize);
 	std::string curSeq;
 	unsigned i, j, c;
@@ -31,7 +31,7 @@ void removeBadSequences(std::vector<std::string>& sequences, std::string tplSeq,
 		j = 0;
 		c = 0;
 		anchored.clear();
-		pos = 0;
+		pos = -1;
 		tplBegPos = -1;
 		tplEndPos = -1;
 		curSeqBegPos = -1;
@@ -40,17 +40,28 @@ void removeBadSequences(std::vector<std::string>& sequences, std::string tplSeq,
 
 		while (j < curSeq.length() - merSize + 1) {
 			mer = (curSeq.substr(j, merSize));
-			if (merCounts[mer] >= solidThresh && anchored.find(mer) == anchored.end() and kMers[mer] > 0 and (pos == 0 or kMers[mer] >= pos + merSize)) {
-				pos = kMers[mer];
+			bool found = false;
+			unsigned p = 0;
+			while (!found and p < kMers[mer].size()) {
+				// found = pos == -1 or kMers[mer][p] >= pos + merSize;
+				found = pos == -1 or kMers[mer][p] > pos;
+				p++;
+			}
+			// if (merCounts[mer] >= solidThresh and found) {
+			// for non repeated k-mers
+			if (merCounts[mer] >= solidThresh and found and anchored.find(mer) == anchored.end() and kMers[mer].size() == 1) {
+				pos = kMers[mer][p-1];
 				if (tplBegPos == -1) {
-					tplBegPos = pos - 1;
+					tplBegPos = pos;
 					curSeqBegPos = j;
 				}
 				c++;
-				j += merSize;
+				// j += merSize;
+				j += 1;
 				anchored.insert(mer);
-				tplEndPos = pos - 1 + merSize - 1;
-				curSeqEndPos = j - 1;
+				tplEndPos = pos + merSize - 1;
+				// curSeqEndPos = j - 1;
+				curSeqEndPos = j + merSize - 2;
 			} else {
 				j += 1;
 			}
@@ -63,6 +74,7 @@ void removeBadSequences(std::vector<std::string>& sequences, std::string tplSeq,
 			std::string tmpSeq = sequences[i].substr(beg, end + 1); 
 
 			mapCommonMers[c].push_back(tmpSeq);
+			// mapCommonMers[c].push_back(sequences[i]);
 		}
 
 		i++;
@@ -104,12 +116,16 @@ std::vector<std::pair<std::string, std::string>> computeConsensuses(std::string 
 	int nbReg = 0;
 	for (std::vector<std::string> p : piles) {
 		inPOA << p.size() << std::endl;
+		// std::cerr << p.size() << std::endl;
 		for (std::string s : p) {
 			inPOA << ">" << nbReg << std::endl << s << std::endl;
+			// std::cerr << ">" << nbReg << std::endl << s << std::endl;
 			nbReg++;
 		}
 	}
 	inPOA.close();
+
+	// std::cerr << "nb sequences in POA file : " << nbReg << std::endl;
 
 	// Run POA
 	std::string POAoutFile = readsDir + "../TMPConsensus/" + tplId;
@@ -130,7 +146,9 @@ std::vector<std::pair<std::string, std::string>> computeConsensuses(std::string 
 	i = 0;
 	while (getline(cons, consHeader)) {
 		getline(cons, consSeq);
-		res.push_back(std::make_pair(piles[i][0], consSeq));
+		if (!consSeq.empty()) {
+			res.push_back(std::make_pair(piles[i][0], consSeq));
+		}
 		i++;
 	}
 	cons.close();
@@ -139,6 +157,7 @@ std::vector<std::pair<std::string, std::string>> computeConsensuses(std::string 
 	c_end = std::chrono::high_resolution_clock::now();
 	totalTime += std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count();
 
+	std::cerr << "number of consensuses : " << res.size() << std::endl;
 	return res;
 }
 
@@ -153,6 +172,7 @@ std::pair<std::string, std::string> alignConsensuses(std::vector<Alignment>& ali
 	// Align consensus to window, correct window, align corrected window to read, replace mapped zone in the read by corrected window
 	std::string corWindow;
 	unsigned i = 0;
+	std::cerr << "computed " << consensuses.size() << " consensuses" << std::endl;
 	for (i = 0; i < consensuses.size(); i++) {
 		std::pair<std::string, std::string> c = consensuses[i];
 		// Align consensus to window to get start and end position of the substring to extract from the consensus, as the corrected window
@@ -161,6 +181,9 @@ std::pair<std::string, std::string> alignConsensuses(std::vector<Alignment>& ali
 		beg = positions.first;
 		end = positions.second;
 		corWindow = c.second.substr(beg, end - beg + 1);
+		outMtx.lock();
+		std::cerr << ">id" << std::endl << corWindow << std::endl;
+		outMtx.unlock();
 
 		// Align corrected window to read, to get start and end position of the substring to replace in the read
 		std::string tmpCorWindow, tmpSequence;
@@ -179,14 +202,19 @@ std::pair<std::string, std::string> alignConsensuses(std::vector<Alignment>& ali
 
 void processRead(std::vector<Alignment>& alignments, std::string readsDir, unsigned minSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap) {
 	std::vector<std::vector<std::string>> piles = getAlignmentPiles(alignments, minSupport, windowSize, windowOverlap, readsDir);
+	std::cerr << "got " << piles.size() << " piles" << std::endl;
 
 	std::vector<std::pair<std::string, std::string>> consensuses = computeConsensuses(alignments.begin()->qName, piles, readsDir, minSupport, merSize, commonKMers, solidThresh, windowOverlap);
 
 	std::pair<std::string, std::string> correctedRead = alignConsensuses(alignments, readsDir, consensuses);
 
+
+	auto c_start = std::chrono::high_resolution_clock::now();
 	outMtx.lock();
 	std::cout << correctedRead.first << std::endl << correctedRead.second << std::endl;
 	outMtx.unlock();
+	auto c_end = std::chrono::high_resolution_clock::now();
+	// std::cerr << "waiting took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
 
 	// Treat all alignments at once (ie exact read, aligned regions of other reads, and feed this to POA)
 	// curPile.clear();
@@ -242,6 +270,7 @@ void runCorrection(std::string alignmentFile, std::string readsDir, unsigned min
 			curReadAlignments.push_back(al);
 			getline(f, line);
 		} else {
+			// std::cerr << "Found " << curReadAlignments.size() << " alignments for read " << curRead << std::endl;
 			reads[readNumber % nbThreads].push_back(curReadAlignments);	
 			readNumber++;
 			curReadAlignments.clear();

@@ -1,15 +1,10 @@
 #include "kMersProcessing.h"
 
-std::map<std::string, int> getKMersPos(std::string sequence, unsigned merSize) {
-	std::map<std::string, int> mers;
+std::map<std::string, std::vector<int>> getKMersPos(std::string sequence, unsigned merSize) {
+	std::map<std::string, std::vector<int>> mers;
 
 	for (unsigned i = 0; i < sequence.length() - merSize + 1; i++) {
-		// mers.insert((sequence.substr(i, merSize)));
-		if (mers[sequence.substr(i, merSize)] == 0) {
-			mers[sequence.substr(i, merSize)] = i + 1;
-		} else {
-			mers[sequence.substr(i, merSize)] = -1;
-		}
+			mers[sequence.substr(i, merSize)].push_back(i);
 	}
 
 	return mers;

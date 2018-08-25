@@ -27,11 +27,11 @@ reads=""
 nproc=$(nproc)
 tmpdir="."
 out=""
-minSupport=3
+minSupport=2
 windowSize=100
-merSize=11
-commonKMers=2
-solid=3
+merSize=7
+commonKMers=5
+solid=2
 windowOverlap=0
 
 #Print help if no argument specified
