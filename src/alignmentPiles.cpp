@@ -1,4 +1,6 @@
 #include "alignmentPiles.h"
+#include <unistd.h>
+#include <iostream>
 
 std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned tplLen, std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, int overlappingWindows) {
 	unsigned* coverages = new unsigned[tplLen];
@@ -93,31 +95,31 @@ std::vector<std::vector<std::string>> getAlignmentPiles(std::vector<Alignment>& 
 		length = end - beg + 1;
 		
 		// Insert template sequence
-		curPile.push_back(sequences[alignments.begin()->qName].substr(beg, length));
-		
+		curPile.push_back(sequences[alignments.begin()->qName].substr(beg, length));		
 
 		// Insert aligned sequences
-		int doBreak = 0;
-		int entered = 0;
 		curPos = prevPos;
-		while (curPos < alignments.size() and not doBreak) {
+		while (curPos < alignments.size()) {
 			Alignment al = alignments[curPos];
-			// Check if the alignment spans the query window, and if the target has enough bases
-			if (al.qStart <= beg and end <= al.qEnd and al.tStart + beg - al.qStart + length - 1 <= al.tEnd) {
-				if (!entered) {
-					prevPos = curPos; 
+			// For alignments spanning the query window
+			// if (al.qStart <= beg and end <= al.qEnd and al.tStart + beg - al.qStart + length - 1 <= al.tEnd) {
+			// For all alignments than span, or begin/end in the query window
+			if ( ((al.qStart <= beg and al.qEnd > beg) or (end <= al.qEnd and al.qStart < end)) and al.tStart + beg - al.qStart + length - 1 <= al.tEnd) {
+				if (beg > al.qStart) {
+					shift = beg - al.qStart;
+				} else {
+					shift = 0;
 				}
-				entered = 1;
-				shift = beg - al.qStart;
 				std::string tmpSeq = sequences[al.tName].substr(al.tStart, al.tEnd - al.tStart + 1);
 				if (al.strand) {
 					tmpSeq = rev_comp::run(tmpSeq);
 				}
 				tmpSeq = tmpSeq.substr(shift, length);
-				curPile.push_back(tmpSeq);
+				// Insert aligned sequence only if it is not already present (duplicates can cause POA to crash)
+				if (std::find(curPile.begin(), curPile.end(), tmpSeq) == curPile.end()) {
+					curPile.push_back(tmpSeq);
+				}
 				passed++;
-			} else {
-				doBreak = beg < al.qStart;
 			}
 			curPos++;
 		}

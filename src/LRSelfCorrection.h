@@ -16,6 +16,32 @@
 #include <unistd.h>
 #include "alignmentPiles.h"
 
+struct POASeq {
+	std::string seq;
+	int beg;
+	int end;
+
+	bool operator<(const POASeq& s2) const {
+		if (beg < s2.beg) {
+			return true;
+		} else if (beg == s2.beg and end < s2.end) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	POASeq() {
+		
+	}
+
+	POASeq(std::string s, int b, int e) {
+		seq = s;
+		beg = b;
+		end = e;
+	}
+};
+
 void removeBadSequences(std::vector<std::string>& sequences, std::string tplSeq, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap);
 
 std::vector<std::pair<std::string, std::string>> computeConsensuses(std::string tplId, std::vector<std::vector<std::string>>& piles, std::string readsDir, unsigned minSupport, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap);
