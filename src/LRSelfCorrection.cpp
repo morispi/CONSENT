@@ -26,7 +26,7 @@ void removeBadSequences(std::vector<std::string>& sequences, std::string tplSeq,
 	std::map<int, std::vector<std::string>> mapCommonMers;
 	std::vector<POASeq> POASeqs;
 
-	// Discriminate by number of share solid k-mers with template sequence
+	// Iterate through the sequences of the alignment window, and only keep those sharing enough solid k-mers with the template
 	i = 1;
 	while (i < sequences.size()) {
 		curSeq = sequences[i];
@@ -39,20 +39,20 @@ void removeBadSequences(std::vector<std::string>& sequences, std::string tplSeq,
 		curSeqBegPos = -1;
 		curSeqEndPos = -1;
 
-		// Overlapping k-mers
+		// Allow overlapping k-mers
 		while (j < curSeq.length() - merSize + 1) {
 			mer = (curSeq.substr(j, merSize));
 			bool found = false;
 			unsigned p = 0;
+			// Check if the current k-mer (of the current sequence) appears in the template sequence after the current position
 			while (!found and p < kMers[mer].size()) {
-				// found = pos == -1 or kMers[mer][p] >= pos + merSize;
 				found = pos == -1 or kMers[mer][p] > pos;
 				p++;
 			}
-			// for repeated k-mers
-			if (merCounts[mer] >= solidThresh and found) {
-			// for non repeated k-mers
-			// if (merCounts[mer] >= solidThresh and found and anchored.find(mer) == anchored.end() and kMers[mer].size() == 1) {
+			// Allow repeated k-mers
+			// if (merCounts[mer] >= solidThresh and found) {
+			// Non-repeated k-mers only
+			if (merCounts[mer] >= solidThresh and found and anchored.find(mer) == anchored.end() and kMers[mer].size() == 1) {
 				pos = kMers[mer][p-1];
 				if (tplBegPos == -1) {
 					tplBegPos = pos;
@@ -60,18 +60,16 @@ void removeBadSequences(std::vector<std::string>& sequences, std::string tplSeq,
 				}
 
 				c++;
-				// j += merSize;
 				j += 1;
 				anchored.insert(mer);
 				tplEndPos = pos + merSize - 1;
-				// curSeqEndPos = j - 1;
 				curSeqEndPos = j + merSize - 2;
 			} else {
 				j += 1;
 			}
 		}
 
-		// Non-overlapping k-mers
+		// Non-overlapping k-mers only
 		// while (j < curSeq.length() - merSize + 1) {
 		// 	mer = (curSeq.substr(j, merSize));
 		// 	bool found = false;
@@ -80,9 +78,9 @@ void removeBadSequences(std::vector<std::string>& sequences, std::string tplSeq,
 		// 		found = pos == -1 or kMers[mer][p] >= pos + merSize;
 		// 		p++;
 		// 	}
-		// 	// for repeated k-mers
+		// 	// Allow repeated k-mers
 		// 	// if (merCounts[mer] >= solidThresh and found) {
-		// 	// for non repeated k-mers
+		// 	// Non-repeated k-mers only
 		// 	if (merCounts[mer] >= solidThresh and found and anchored.find(mer) == anchored.end() and kMers[mer].size() == 1) {
 		// 		pos = kMers[mer][p-1];
 		// 		if (tplBegPos == -1) {
@@ -153,7 +151,7 @@ void removeBadSequences(std::vector<std::string>& sequences, std::string tplSeq,
 
 	sequences.clear();
 	sequences = newSequences;
-	std::cerr << "new sequences size : " << newSequences.size() << std::endl;
+	// std::cerr << "new sequences size : " << newSequences.size() << std::endl;
 }
 
 std::vector<std::pair<std::string, std::string>> computeConsensuses(std::string tplId, std::vector<std::vector<std::string>>& piles, std::string readsDir, unsigned minSupport, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap) {
