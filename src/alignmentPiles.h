@@ -10,4 +10,4 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 
 std::map<std::string, std::string> getSequencesMaps(std::vector<Alignment>& alignments, std::string readsDir);
 
-std::vector<std::vector<std::string>> getAlignmentPiles(std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, std::string readsDir);
+std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<std::string>>> getAlignmentPiles(std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, std::string readsDir);

@@ -32,7 +32,7 @@ std::pair<int**, std::pair<int, int>> NeedlemanWunschLocalMatrix(std::string s1,
 	return std::make_pair(matrix, std::make_pair(maxI, maxJ));
 }
 
-std::pair<int, int> NeedlemanWunschLocalAlignments(std::string s1, std::string s2) {
+std::pair<std::pair<int, int>, std::pair<int, int>> NeedlemanWunschLocalAlignments(std::string s1, std::string s2) {
 	std::pair<int**, std::pair<int, int>> res = NeedlemanWunschLocalMatrix(s1, s2);
 	int** matrix = res.first;
 	std::pair<int, int> maxs = res.second;
@@ -91,5 +91,6 @@ std::pair<int, int> NeedlemanWunschLocalAlignments(std::string s1, std::string s
 	}
 	delete [] matrix;
 
-	return std::make_pair(j, maxs.second);
+	return std::make_pair(std::make_pair(i, maxs.first - 1), std::make_pair(j, maxs.second - 1));
+	// return std::make_pair(std::make_pair(0, s1.size() - 1), std::make_pair(std::max(0, j - i), std::min(maxs.second - 1 + s1.size() - maxs.first, s2.size() - 1)));
 }

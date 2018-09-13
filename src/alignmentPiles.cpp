@@ -14,10 +14,19 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 		beg = al.qStart;
 		end = al.qEnd;
 
+		// std::cerr << beg << " ; " << end << std::endl;
+
 		for (i = beg; i <= end; i++) {
 			coverages[i]++;
 		}
 	}
+
+	// std::cerr << "alignments.size() = " << alignments.size() << std::endl;
+	// std::cerr << "coverages : " << std::endl;
+	// for (i = 0; i < tplLen; i++) {
+	// 	std::cerr << coverages[i] << " ";
+	// }
+	// std::cerr << std::endl;
 
 	std::vector<std::pair<unsigned, unsigned>> pilesPos;
 
@@ -74,7 +83,7 @@ std::map<std::string, std::string> getSequencesMaps(std::vector<Alignment>& alig
 	return sequences;
 }
 
-std::vector<std::vector<std::string>> getAlignmentPiles(std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, std::string readsDir) {
+std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<std::string>>> getAlignmentPiles(std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, std::string readsDir) {
 	int tplLen = alignments.begin()->qLength;
 
 	std::vector<std::pair<unsigned, unsigned>> pilesPos = getAlignmentPilesPositions(tplLen, alignments, minSupport, windowSize, windowOverlap);
@@ -88,6 +97,8 @@ std::vector<std::vector<std::string>> getAlignmentPiles(std::vector<Alignment>& 
 	int passed = 0;
 	std::vector<std::vector<std::string>> piles;
 
+	std::vector<std::pair<unsigned, unsigned>> resPilesPos;
+
 	for (std::pair<int, int> p : pilesPos) {
 		curPile.clear();
 		beg = p.first;
@@ -95,7 +106,7 @@ std::vector<std::vector<std::string>> getAlignmentPiles(std::vector<Alignment>& 
 		length = end - beg + 1;
 		
 		// Insert template sequence
-		curPile.push_back(sequences[alignments.begin()->qName].substr(beg, length));		
+		curPile.push_back(sequences[alignments.begin()->qName].substr(beg, length));
 
 		// Insert aligned sequences
 		curPos = prevPos;
@@ -124,8 +135,9 @@ std::vector<std::vector<std::string>> getAlignmentPiles(std::vector<Alignment>& 
 			curPos++;
 		}
 
+		resPilesPos.push_back(std::make_pair(beg, end));
 		piles.push_back(curPile);
 	}
 
-	return piles;
+	return std::make_pair(resPilesPos, piles);
 }

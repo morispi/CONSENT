@@ -53,6 +53,6 @@ int main(int argc, char* argv[]) {
 				exit(EXIT_FAILURE);
         }
     }
-    // std::cout << alignmentFile << std::endl;
+    
 	runCorrection(alignmentFile, readsDir, minSupport, windowSize, merSize, commonKMers, solidThresh, windowOverlap, nbThreads);
 }
