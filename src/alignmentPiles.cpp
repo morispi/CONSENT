@@ -113,9 +113,9 @@ std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<st
 		while (curPos < alignments.size()) {
 			Alignment al = alignments[curPos];
 			// For alignments spanning the query window
-			// if (al.qStart <= beg and end <= al.qEnd and al.tStart + beg - al.qStart + length - 1 <= al.tEnd) {
+			if (al.qStart <= beg and end <= al.qEnd and al.tStart + beg - al.qStart + length - 1 <= al.tEnd) {
 			// For all alignments than span, or begin/end in the query window
-			if ( ((al.qStart <= beg and al.qEnd > beg) or (end <= al.qEnd and al.qStart < end)) and al.tStart + beg - al.qStart + length - 1 <= al.tEnd) {
+			// if ( ((al.qStart <= beg and al.qEnd > beg) or (end <= al.qEnd and al.qStart < end)) and al.tStart + beg - al.qStart + length - 1 <= al.tEnd) {
 				if (beg > al.qStart) {
 					shift = beg - al.qStart;
 				} else {

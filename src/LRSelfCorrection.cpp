@@ -43,42 +43,13 @@ void removeBadSequences(std::vector<std::string>& sequences, std::string tplSeq,
 		std::vector<std::string> smallerMSAs;
 
 		// Allow overlapping k-mers
-		while (j < curSeq.length() - merSize + 1) {
-			mer = (curSeq.substr(j, merSize));
-			bool found = false;
-			unsigned p = 0;
-			// Check if the current k-mer (of the current sequence) appears in the template sequence after the current position
-			while (!found and p < kMers[mer].size()) {
-				found = pos == -1 or kMers[mer][p] > pos;
-				p++;
-			}
-			// Allow repeated k-mers
-			// if (merCounts[mer] >= solidThresh and found) {
-			// Non-repeated k-mers only
-			if (merCounts[mer] >= solidThresh and found and anchored.find(mer) == anchored.end() and kMers[mer].size() == 1) {
-				pos = kMers[mer][p-1];
-				if (tplBegPos == -1) {
-					tplBegPos = pos;
-					curSeqBegPos = j;
-				}
-
-				c++;
-				j += 1;
-				anchored.insert(mer);
-				tplEndPos = pos + merSize - 1;
-				curSeqEndPos = j + merSize - 2;
-			} else {
-				j += 1;
-			}
-		}
-
-		// Non-overlapping k-mers only
 		// while (j < curSeq.length() - merSize + 1) {
 		// 	mer = (curSeq.substr(j, merSize));
 		// 	bool found = false;
 		// 	unsigned p = 0;
+		// 	// Check if the current k-mer (of the current sequence) appears in the template sequence after the current position
 		// 	while (!found and p < kMers[mer].size()) {
-		// 		found = pos == -1 or kMers[mer][p] >= pos + merSize;
+		// 		found = pos == -1 or kMers[mer][p] > pos;
 		// 		p++;
 		// 	}
 		// 	// Allow repeated k-mers
@@ -92,14 +63,43 @@ void removeBadSequences(std::vector<std::string>& sequences, std::string tplSeq,
 		// 		}
 
 		// 		c++;
-		// 		j += merSize;
+		// 		j += 1;
 		// 		anchored.insert(mer);
 		// 		tplEndPos = pos + merSize - 1;
-		// 		curSeqEndPos = j - 1;
+		// 		curSeqEndPos = j + merSize - 2;
 		// 	} else {
 		// 		j += 1;
 		// 	}
 		// }
+
+		// Non-overlapping k-mers only
+		while (j < curSeq.length() - merSize + 1) {
+			mer = (curSeq.substr(j, merSize));
+			bool found = false;
+			unsigned p = 0;
+			while (!found and p < kMers[mer].size()) {
+				found = pos == -1 or kMers[mer][p] >= pos + merSize;
+				p++;
+			}
+			// Allow repeated k-mers
+			if (merCounts[mer] >= solidThresh and found) {
+			// Non-repeated k-mers only
+			// if (merCounts[mer] >= solidThresh and found and anchored.find(mer) == anchored.end() and kMers[mer].size() == 1) {
+				pos = kMers[mer][p-1];
+				if (tplBegPos == -1) {
+					tplBegPos = pos;
+					curSeqBegPos = j;
+				}
+
+				c++;
+				j += merSize;
+				anchored.insert(mer);
+				tplEndPos = pos + merSize - 1;
+				curSeqEndPos = j - 1;
+			} else {
+				j += 1;
+			}
+		}
 
 		if (c >= commonKMers) {
 			int beg, end;
@@ -108,9 +108,7 @@ void removeBadSequences(std::vector<std::string>& sequences, std::string tplSeq,
             std::string tmpSeq = sequences[i].substr(beg, end + 1); 
 
 			// Only add the substring from the leftmost anchor to the rightmost anchor to the MSA (anchor = shared k-mer wth the template)
-			// if (tmpSeq.length() > windowSize / 2) {
-				mapCommonMers[c].push_back(tmpSeq);
-			// }
+			mapCommonMers[c].push_back(tmpSeq);
 			// Add the whole sequence to the MSA
 			// mapCommonMers[c].push_back(sequences[i]);
 		}
@@ -137,6 +135,15 @@ void removeBadSequences(std::vector<std::string>& sequences, std::string tplSeq,
 
 	sequences.clear();
 	sequences = newSequences;
+
+	// std::cerr << "pile coverage is : " << sequences.size() << std::endl;
+	merCounts = getKMersCounts(sequences, merSize);
+	i = 0;
+	// while (i < tplSeq.size() - merSize + 1) {
+	// 	std::cerr << i << ", " << tplSeq.substr(i, merSize) << " : " << merCounts[tplSeq.substr(i, merSize)] << std::endl;
+	// 	i++;
+	// }
+	// std::cerr << std::endl;
 }
 
 std::vector<std::string> splitConsensus(std::string consensus, std::vector<std::string> pile, int merSize) {
@@ -176,11 +183,11 @@ std::vector<std::string> splitConsensus(std::string consensus, std::vector<std::
 	}
 
 	// std::cerr << ">" << header << std::endl << sequence << std::endl;
-	std::cerr << "splits size : " << splits.size() << std::endl;
+	// std::cerr << "splits size : " << splits.size() << std::endl;
 
-	for (std::string s : splits) {
-		std::cerr << s << std::endl;
-	}
+	// for (std::string s : splits) {
+	// 	std::cerr << s << std::endl;
+	// }
 
 	return splits;
 }
@@ -209,7 +216,7 @@ std::vector<std::pair<std::string, std::string>> computeConsensuses(std::string 
 		// int mySize = std::min(3, (int) p.size());
 		int mySize = (int) p.size();
 		inPOA << mySize << std::endl;
-		std::cerr << mySize << " poaFileSize " << std::endl;
+		// std::cerr << mySize << " poaFileSize " << std::endl;
 		for (unsigned i = 0; i < mySize; i++) {
 			std::string s = p[i];
 			inPOA << ">" << nbReg << std::endl << s << std::endl;
@@ -238,7 +245,7 @@ std::vector<std::pair<std::string, std::string>> computeConsensuses(std::string 
 	while (getline(cons, consHeader)) {
 		getline(cons, consSeq);
 		// Align the computed consensus to the template, to retrieve the (raw, corrected) pair of subsequences
-		std::cerr << "consSeq size : " << consSeq.length() << std::endl;
+		// std::cerr << "consSeq size : " << consSeq.length() << std::endl;
 		std::pair<std::pair<int, int>, std::pair<int, int>> posPair = NeedlemanWunschLocalAlignments(piles[i][0], consSeq);
 		std::pair<int, int> rawPos = posPair.first;
 		std::pair<int, int> corPos = posPair.second;
@@ -248,11 +255,11 @@ std::vector<std::pair<std::string, std::string>> computeConsensuses(std::string 
 
 		// std::cerr << "on raw : " << rawPos.first << " ; " << rawPos.second << std::endl;
 		// std::cerr << "on cor : " << corPos.first << " ; " << corPos.second << std::endl;
-		std::cerr << ">";
-		std::map<std::string, int> merCounts = getKMersCounts(piles[i], merSize);
-		for (int j = 0; j < corTpl.size() - merSize + 1; j++) {
-			std::cerr << merCounts[corTpl.substr(j, merSize)] << "_";
-		}
+		std::cerr << ">id";
+		// std::map<std::string, int> merCounts = getKMersCounts(piles[i], merSize);
+		// for (int j = 0; j < corTpl.size() - merSize + 1; j++) {
+		// 	std::cerr << merCounts[corTpl.substr(j, merSize)] << "_";
+		// }
 		std::cerr << std::endl << corTpl << std::endl;
 		// Only store the corrected template (storing the whole consensus would cause overcorrection of some regions)
 		res.push_back(std::make_pair(rawTpl, corTpl));
@@ -316,25 +323,25 @@ std::vector<std::pair<std::string, std::string>> alignConsensuses(std::vector<Al
 			// Don't proceed if no consensus was produced by POA
 			if (!c.second.empty()) {
 				// Replace the template by its correction on the read
-				int beg, end;
-				std::transform(c.first.begin(), c.first.end(), c.first.begin(), ::tolower);
-				std::string tmpSequence = sequence;
-				std::transform(tmpSequence.begin(), tmpSequence.end(), tmpSequence.begin(), ::tolower);
-				beg = (int) tmpSequence.find(c.first);
-				end = beg + c.first.length() - 1;
-				sequence.replace(beg, end - beg + 1, c.second);
-
-				// Anchor the correction on the read by aligning
-				// std::transform(c.second.begin(), c.second.end(), c.second.begin(), ::tolower);
+				// int beg, end;
+				// std::transform(c.first.begin(), c.first.end(), c.first.begin(), ::tolower);
 				// std::string tmpSequence = sequence;
 				// std::transform(tmpSequence.begin(), tmpSequence.end(), tmpSequence.begin(), ::tolower);
-				// std::pair<std::pair<int, int>, std::pair<int, int>> posPair = NeedlemanWunschLocalAlignments(c.second, tmpSequence);
-				// std::pair<int, int> rawPos = posPair.second;
-				// std::pair<int, int> corPos = posPair.first;
-				// std::cerr << "raw : " << rawPos.first << " ; " << rawPos.second << std::endl;
-				// std::cerr << "cor : " << corPos.first << " ; " << corPos.second << std::endl;
-				// sequence.replace(rawPos.first, rawPos.second - rawPos.first + 1, c.second);
-				// std::cerr << std::endl;
+				// beg = (int) tmpSequence.find(c.first);
+				// end = beg + c.first.length() - 1;
+				// sequence.replace(beg, end - beg + 1, c.second);
+
+				// Anchor the correction on the read by aligning
+				std::transform(c.second.begin(), c.second.end(), c.second.begin(), ::tolower);
+				std::string tmpSequence = sequence;
+				std::transform(tmpSequence.begin(), tmpSequence.end(), tmpSequence.begin(), ::tolower);
+				std::transform(c.first.begin(), c.first.end(), c.first.begin(), ::tolower);
+				int beg = (int) tmpSequence.find(c.first);
+				std::pair<std::pair<int, int>, std::pair<int, int>> posPair = NeedlemanWunschLocalAlignments(c.second, tmpSequence.substr(beg, c.first.length()));
+				std::pair<int, int> rawPos = posPair.second;
+				std::pair<int, int> corPos = posPair.first;
+				std::transform(c.second.begin(), c.second.end(), c.second.begin(), ::toupper);
+				sequence.replace(beg + rawPos.first, rawPos.second - rawPos.first + 1, c.second);
 			}
 		}
 
@@ -380,12 +387,12 @@ void patchConsensuses(std::vector<std::pair<std::string, std::string>>& consensu
 
 			if (allSolid) {
 				outMtx.lock();
-				std::cerr << ">";
-				for (int j = 0; j < curCons.size() - merSize + 1; j++) {
-					std::cerr << merCounts[curCons.substr(j, merSize)] << "_";
-				}
-				std::cerr << std::endl;
-				std::cerr << curCons << std::endl;
+				// std::cerr << ">id";
+				// for (int j = 0; j < curCons.size() - merSize + 1; j++) {
+				// 	std::cerr << merCounts[curCons.substr(j, merSize)] << "_";
+				// }
+				// std::cerr << std::endl;
+				// std::cerr << curCons << std::endl;
 				outMtx.unlock();
 				i++;
 			} else {
