@@ -63,7 +63,6 @@ std::pair<std::pair<int, int>, std::pair<int, int>> NeedlemanWunschLocalAlignmen
 			al2 = "-" + al2;
 			i--;
 			editDistance++;
-		// score == scoreUp - 1
 		} else {
 			al1 = "-" + al1;
 			al2 = s2[j-1] + al2;
@@ -92,5 +91,4 @@ std::pair<std::pair<int, int>, std::pair<int, int>> NeedlemanWunschLocalAlignmen
 	delete [] matrix;
 
 	return std::make_pair(std::make_pair(i, maxs.first - 1), std::make_pair(j, maxs.second - 1));
-	// return std::make_pair(std::make_pair(0, s1.size() - 1), std::make_pair(std::max(0, j - i), std::min(maxs.second - 1 + s1.size() - maxs.first, s2.size() - 1)));
 }

@@ -2,14 +2,14 @@
 
 struct Alignment {
 	std::string qName;
-	int qLength;
-	int qStart;
-	int qEnd;
+	unsigned qLength;
+	unsigned qStart;
+	unsigned qEnd;
 	bool strand;
 	std::string tName;
-	int tLength;
-	int tStart;
-	int tEnd;
+	unsigned tLength;
+	unsigned tStart;
+	unsigned tEnd;
 	std::string resMatches;
 	std::string alBlockLen;
 	std::string mapQual;

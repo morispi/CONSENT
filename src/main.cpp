@@ -55,4 +55,6 @@ int main(int argc, char* argv[]) {
     }
     
 	runCorrection(alignmentFile, readsDir, minSupport, windowSize, merSize, commonKMers, solidThresh, windowOverlap, nbThreads);
+
+	return EXIT_SUCCESS;
 }
