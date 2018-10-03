@@ -27,11 +27,11 @@ reads=""
 nproc=$(nproc)
 tmpdir="."
 out=""
-minSupport=2
-windowSize=100
-merSize=8
+minSupport=3
+windowSize=400
+merSize=10
 commonKMers=4
-solid=2
+solid=3
 windowOverlap=0
 
 #Print help if no argument specified
@@ -126,29 +126,19 @@ if [[ ! -d $tmpdir/RawLongReads ]] ; then
 	mkdir $tmpdir/RawLongReads
 fi
 
-#Create the subdirectory for reads clusters, if it does not exist
-if [[ ! -d $tmpdir/Clusters ]] ; then
-	mkdir $tmpdir/Clusters
+#Create the subdirectory for exploded alignments, if it does not exist
+if [[ ! -d $tmpdir/ExplodedAlignments ]] ; then
+	mkdir $tmpdir/ExplodedAlignments
 fi
 
 #Create the subdirectory for POA input files, if it does not exist
 if [[ ! -d $tmpdir/POAInput/ ]] ; then
-	mkdir -p $tmpdir/POAInput
+        mkdir -p $tmpdir/POAInput
 fi
 
 #Create the subdirectory for POA output files, if it does not exist
 if [[ ! -d $tmpdir/POAOutput/ ]] ; then
-	mkdir -p $tmpdir/POAOutput
-fi
-
-#Create the subdirectory for clusters' sequences files, if it does not exist
-if [[ ! -d $tmpdir/ClustersSequences ]] ; then
-	mkdir -p $tmpdir/ClustersSequences
-fi
-
-#Create the subdirectory for clusters' alignments files, if it does not exist
-if [[ ! -d $tmpdir/ClustersAlignments ]] ; then
-	mkdir -p $tmpdir/ClustersAlignments
+        mkdir -p $tmpdir/POAOutput
 fi
 
 #Temporary files names
@@ -159,23 +149,19 @@ LRSCs=$(readlink -f "$0")
 LRSCf=$(dirname $LRSCs)
 
 echo "["$(date)"] Self-aligning the long reads (minimap2)"
-$LRSCf/minimap2/minimap2 -w5 --dual=yes -PD --no-long-join "$reads" "$reads" > $tmpdir/"dual_$alignments"
-#$LRSCf/bin/addDualMappings.py $tmpdir/"$alignments" > $tmpdir/"dual_$alignments"
+$LRSCf/minimap2/minimap2 -w5 --dual=yes -PD --no-long-join -g1000 "$reads" "$reads" > $tmpdir/"dual_$alignments"
 
 echo "["$(date)"] Sorting the alignments file"
 sort -T $tmpdir/ -k1,1 -k3,3n -k4,4n -k8,8n -k9,9n $tmpdir/"dual_$alignments" > $tmpdir/"$alignments"
-#rm $tmpdir/"dual_$alignments"
-
-echo "["$(date)"] Generating the clusters"
-$LRSCf/bin/generateClusters.py $tmpdir/"$alignments" $tmpdir/Clusters/
 
 echo "["$(date)"] Preparing the temporary files"
 $LRSCf/bin/prepareRawLongReads.py "$reads" $tmpdir/RawLongReads/
-ls $tmpdir/Clusters/ > $tmpdir/ClustersList
+$LRSCf/bin/explodeAlignmentFile.py $tmpdir/"$alignments" $tmpdir/ExplodedAlignments/
+ls $tmpdir/ExplodedAlignments > $tmpdir/ListAlignments
+
 
 echo "["$(date)"] Correcting the long reads"
-parallel -j "$nproc" $LRSCf/bin/correctOneRead.sh "$minSupport" "$windowSize" "$merSize" "$commonKMers" "$solid" "$windowOverlap" "$tmpdir" "$LRSCf" :::: $tmpdir/ClustersList >> "$out"
-#$LRSCf/bin/parallelCorrection.sh $tmpdir "$minSupport" "$windowSize" "$merSize" "$commonKMers" "$solid" "$windowOverlap" "$nproc" "$out"
+$LRSCf/bin/parallelCorrection.sh $tmpdir "$minSupport" "$windowSize" "$merSize" "$commonKMers" "$solid" "$windowOverlap" "$nproc" "$out"
 echo "["$(date)"] Removing the temporary files"
 # rm -Rf $tmpdir
 echo "["$(date)"] Exiting"
