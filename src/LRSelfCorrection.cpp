@@ -482,11 +482,15 @@ std::vector<std::pair<std::string, std::string>> polishCorrection(std::string co
 				std::vector<std::string> oldRegPiles = regPiles;
 				// regPiles = removeUnanchoredPiles(regPiles, src, dst, merSize);
 
+				// std::cerr << "regpiles size : " << regPiles.size() << std::endl;
+
 				// Get the k-mers of the windows sequences
 				int minOrder = merSize;
 				for (int j = merSize; j >= minOrder; j--) {
 					mapMerCounts[j] = getKMersCounts(regPiles, j);
 				}
+
+				std::cerr << "got sequences" << std::endl;
 
 				// Attempt to link the anchors that are closest to the region to polish
 				correctedRegion = "";
@@ -569,6 +573,7 @@ std::vector<std::pair<std::string, std::string>> polishCorrection(std::string co
 		}
 	}
 
+	std::cerr << "return" << std::endl;
 	return corList;
 }
 
@@ -588,8 +593,8 @@ bool dropRead(std::string correctedRead) {
 }
 
 std::string trimRead(std::string correctedRead, unsigned merSize) {
-	unsigned beg, end, i, n;
-
+	unsigned beg, end, n;
+	int i;
 	i = 0;
 	n = 0;
 	while (i < correctedRead.length() and n < merSize) {
@@ -614,7 +619,11 @@ std::string trimRead(std::string correctedRead, unsigned merSize) {
 	}
 	end = i + merSize - 1;
 
-	return correctedRead.substr(beg, end - beg + 1);
+	if (end > beg) {
+		return correctedRead.substr(beg, end - beg + 1);
+	} else {
+		return "";
+	}
 }
 
 void processRead(std::vector<Alignment>& alignments, std::string readsDir, unsigned minSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap) {
@@ -650,7 +659,8 @@ void processRead(std::vector<Alignment>& alignments, std::string readsDir, unsig
 	std::vector<std::pair<std::pair<int, int>, int>> corPosPiles = p .second;
 
 	// Drop read if it contains too many poorly supported bases
-	if (!dropRead(correctedRead)) {
+	// if (!dropRead(correctedRead)) {
+	if (1) {
 		// Polish poorly supported regions with local DBGs
 		std::vector<std::pair<std::string, std::string>> corList, newList;
 
@@ -681,16 +691,17 @@ void processRead(std::vector<Alignment>& alignments, std::string readsDir, unsig
 			b = correctedRead.find(r);
 			l = r.length();
 			if ((int) b != -1) {
-				std::cerr << "replace " << r << " with " << c << std::endl;
 				correctedRead.replace(b, l, c);
 			}
 		}
 
 		// Trim the read (trims until a long sketch of corrected bases if found. Ex: aaaaCCggagtAttagGGACTTACGATCGATCGATCa => GGACTTACGATCGATCGATC)
 		correctedRead = trimRead(correctedRead, windowSize);
-		outMtx.lock();
-		std::cout << ">" << readId << std::endl << correctedRead << std::endl;
-		outMtx.unlock();
+		if (!correctedRead.empty()) {
+			outMtx.lock();
+			std::cout << ">" << readId << std::endl << correctedRead << std::endl;
+			outMtx.unlock();
+		}
 	}
 }
 
