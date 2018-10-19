@@ -1,3 +1,6 @@
 [submodule "minimap2"]
 	path = minimap2
 	url = https://github.com/lh3/minimap2
+[submodule "BMEAN"]
+	path = BMEAN
+	url = https://github.com/Malfoy/BMEAN
