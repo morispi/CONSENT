@@ -7,8 +7,6 @@
 #include "localAlignment.h"
 #include "kMersProcessing.h"
 #include "DBG.h"
-#include "../BMEAN/bmean.h"
-#include "../BMEAN/utils.h"
 
 std::mutex outMtx;
 
@@ -182,176 +180,74 @@ std::vector<std::pair<std::string, std::string>> computeConsensuses(std::string 
 	}
 
 	// Split strings to compute consensuses quicker
-	std::vector<std::vector<std::string>> result = MSABMAAC(piles[0], 9, 0.5);
+	std::vector<std::vector<std::string>> result = MSABMAAC(piles, 8);
 	std::vector<std::vector<std::string>> splits;
 	std::vector<std::string> curSplit;
 
-	// Prepare MSA input file
-	std::string MSAinFile = readsDir + "../POAInput/" + readId + "_seqs";
-	const char* cMSAinFile = MSAinFile.c_str();
-	std::ofstream inMSA(MSAinFile);
+	for(uint32_t is(0);is<result[0].size();++is){
+		curSplit.clear();
+		for(uint32_t iR(0);iR<result.size();++iR){
+			if (!result[iR][is].empty())
+			curSplit.push_back(result[iR][is]);
+		}
+		splits.push_back(curSplit);
+	}
+
+	// Prepare POA input file
+	std::string POAinFile = readsDir + "../POAInput/" + readId;
+	const char* cPOAinFile = POAinFile.c_str();
+	std::ofstream inPOA(POAinFile);
 	int nbReg = 0;
-	for (std::vector<std::string> p : result) {
+	for (std::vector<std::string> p : piles) {
 		unsigned mySize = (int) p.size();
-		// std::cerr << "support : " << p.size() << std::endl;
 		// mySize = std::min(15, (int) p.size());
-		inMSA << mySize << std::endl; 
-		nbReg = 0;
+		inPOA << mySize << std::endl;
 		for (unsigned i = 0; i < mySize; i++) {
 			std::string s = p[i];
-			inMSA << ">" << nbReg << std::endl << s << std::endl;
-			// std::cerr << ">" << nbReg << std::endl << s << std::endl;
+			std::cerr << ">" << nbReg << std::endl << s << std::endl;
+			inPOA << ">" << nbReg << std::endl << s << std::endl;
 			nbReg++;
-		};
-		// std::cerr << "nbReg : " << nbReg << std::endl;
+		}
+		std::cerr << std::endl;
 	}
-	inMSA.close();
+	inPOA.close();
 
-	// Compute MSA for every split
-	std::string MSAoutFile = readsDir + "../POAOutput/" + readId + "_msa";
-	const char* cMSAOutFile = MSAoutFile.c_str();
-	std::string cmd = "poaV2/poa -read_fasta " + MSAinFile + " -lower -pir " + MSAoutFile + " poaV2/blosum80.mat > /dev/null 2> /dev/null";
+	// Run POA
+	std::string POAoutFile = readsDir + "../POAOutput/" + readId;
+	const char* cPOAOutFile = POAoutFile.c_str();
+	std::string cmd = "poaV2/poa -read_fasta " + POAinFile + " -lower -hb -best -pir " + POAoutFile + " poaV2/blosum80.mat > /dev/null 2> /dev/null";
 	const char *ccmd = cmd.c_str();
 	auto c_start = std::chrono::high_resolution_clock::now();
 	if (system(ccmd) == -1) {
 		exit(EXIT_FAILURE);
 	}
 	auto c_end = std::chrono::high_resolution_clock::now();
-	// remove(cMSAinFile);
+	remove(cPOAinFile);
 	std::cerr << "POA took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
-
-	// Concatenate MSA of the splits into the global MSA
-	int nbSeqPerSplit = result[0].size();
-	// for (int m = 0; m < result.size(); m++) {
-	// 	std::cerr << "nbSeqPerSplit : " << result[m].size() << std::endl;
-	// }
-	std::vector<std::string> globalMSA(nbSeqPerSplit, "");
-	std::ifstream msa(MSAoutFile);
-	std::string MSAHeader, MSASeq, tplMSA;
-	getline(msa, MSAHeader);
-	int i = 0;
-
-	//TODO: seriously cleanup this mess
-	while (!MSAHeader.empty()) {
-		i = 0;
-		getline(msa, MSASeq);
-		tplMSA = MSASeq;
-		// std::cerr << "tplMSA : " << tplMSA << std::endl;
-		// std::cerr << "Call stoi1 with : " << MSAHeader.substr(1) << std::endl;
-		int MSAId = stoi(MSAHeader.substr(1));
-		// std::cerr << "ad to " << i << std::endl;
-		globalMSA[i] += MSASeq;
-		getline(msa, MSAHeader);
-		i++;
-		if (!MSAHeader.empty())	 {
-			// std::cerr << "Call stoi2 with : " << MSAHeader.substr(1) << std::endl;
-			MSAId = stoi(MSAHeader.substr(1));
-		}
-		// std::cerr << "MSAId : " << MSAId << std::endl;
-		while (!MSAHeader.empty() and MSAHeader[1] != 'C') {
-			getline(msa, MSASeq);
-			if (MSAHeader[1] != 'C') {
-				// std::cerr << "Call stoi3 with : " << MSAHeader.substr(1) << std::endl;
-				MSAId = stoi(MSAHeader.substr(1));
-				// std::cerr << "MSAH : " << MSAId << " ; i : " << i << std::endl;
-				if (MSAId == i) {
-					// std::cerr << "i : " << i << std::endl;
-					// std::cerr << "ad to " << i << std::endl;
-					globalMSA[i] += MSASeq;
-				} else {
-					while (i < MSAId) {
-						// std::cerr << "ad to " << i << std::endl;
-						// globalMSA[i] += tplMSA;
-						for (int j = 0; j < tplMSA.size(); j++) {
-							globalMSA[i] += ".";
-						}
-						i++;
-					}
-					// std::cerr << "ad to " << i << std::endl;
-					globalMSA[i] += MSASeq;
-				}
-				// std::cerr << MSASeq.size() << std::endl;
-				// std::cerr << MSASeq << std::endl;
-			}
-			getline(msa, MSAHeader);
-			i++;
-		}
-		while (i < result[0].size()) {
-			// std::cerr << "ad to " << i << std::endl;
-			// globalMSA[i] += tplMSA;
-			for (int j = 0; j < tplMSA.size(); j++) {
-				globalMSA[i] += ".";
-			}
-			i++;
-		}
-		getline(msa, MSASeq);
-		getline(msa, MSAHeader);
-		getline(msa, MSASeq);
-		getline(msa, MSAHeader);
-		// std::cerr << std::endl;
-	}
-	// remove(cMSAOutFile);
-
-	// for (std::string s : globalMSA) {
-	// 	std::cerr << s << std::endl;
-	// }
-	// Write global MSA in a file
-	std::string consInFile = readsDir + "../POAInput/" + readId + "_msa";
-	const char* cConsInFile = consInFile.c_str();
-	std::ofstream inCons(consInFile);
-	for (int i = 0; i < globalMSA.size(); i++) {
-		inCons << ">" << i << std::endl << globalMSA[i] << std::endl;
-		std::cerr << globalMSA[i].size() << std::endl;
-		std::cerr << globalMSA[i] << std::endl;
-	}
-	std::cerr << std::endl;
-	inCons.close();
-
-	// Compute consensus for the global MSA
-	std::string consOutFile = readsDir + "../POAOutput/" + readId + "_cons";
-	const char* cConsOutFile = consOutFile.c_str();
-	cmd = "poaV2/poa -read_msa " + consInFile + " -lower -hb -best -pir " + consOutFile + " poaV2/blosum80.mat > /dev/null 2> /dev/null";
-	ccmd = cmd.c_str();
-	if (system(ccmd) == -1) {
-		exit(EXIT_FAILURE);
-	}
-	// remove(cConsInFile);
 
 	// Store templates corrections in the result vector
 	res.clear();
-	std::ifstream cons(consOutFile);
+	std::ifstream cons(POAoutFile);
 	std::string consHeader = "";
 	std::string consSeq = "";
-	if (getline(cons, consHeader)) {
+	int i = 0;
+	while (getline(cons, consHeader)) {
 		getline(cons, consSeq);
-	}
-	// remove(cConsOutFile);
-
-	std::cerr << ">consSeq" << std::endl << consSeq << std::endl;
-
-	// Align the computed consensus to the template, to retrieve the (raw, corrected) pairs of subsequences
-	if (!consSeq.empty()) {
-		int i = 0;
-		c_start = std::chrono::high_resolution_clock::now();
+		// Align the computed consensus to the template, to retrieve the (raw, corrected) pairs of subsequences
 		std::pair<std::pair<int, int>, std::pair<int, int>> posPair = NeedlemanWunschLocalAlignments(piles[i][0], consSeq);
-		c_end = std::chrono::high_resolution_clock::now();
-		std::cerr << "Needleman took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
 		std::pair<int, int> rawPos = posPair.first;
 		std::pair<int, int> corPos = posPair.second;
 		std::string corTpl = consSeq.substr(corPos.first, corPos.second - corPos.first + 1);
 		std::string rawTpl = piles[i][0].substr(rawPos.first, rawPos.second - rawPos.first + 1);
-		std::cerr << "corTpl size : " << corTpl.size() << std::endl;
 		// std::string rawTpl = piles[i][0];
 		corTpl = weightConsensus(corTpl, piles[i], merSize, windowSize, solidThresh);
-		std::cerr << ">corTpl" << std::endl << corTpl << std::endl;
 		res.push_back(std::make_pair(rawTpl, corTpl));
 		i++;
 	}
 	cons.close();
+	remove(cPOAOutFile);
 
 	c_end = std::chrono::high_resolution_clock::now();
-
-	std::cerr << "returns" << std::endl;
 
 	return res;
 }
@@ -580,7 +476,7 @@ std::vector<std::pair<std::string, std::string>> polishCorrection(std::string co
 	// search for poorly supported regions bordered by solid corrected regions
 	while (i < correctedRead.length()) {
 		std::pair<int, int> pos = getNextBadRegion(correctedRead, i);
-		// std::cerr << "bad region is : " << correctedRead.substr(pos.first, pos.second - pos.first + 1) << std::endl;
+		std::cerr << "bad region is : " << correctedRead.substr(pos.first, pos.second - pos.first + 1) << std::endl;
 		srcEnd = getNextSrc(correctedRead, i, merSize + zone);
 		dstEnd = getNextDst(correctedRead, srcEnd + 1, merSize + zone);
 		srcBeg = srcEnd - merSize - zone + 1;
@@ -610,7 +506,7 @@ std::vector<std::pair<std::string, std::string>> polishCorrection(std::string co
 					mapMerCounts[j] = getKMersCounts(regPiles, j);
 				}
 
-				// std::cerr << "got sequences" << std::endl;
+				std::cerr << "got sequences" << std::endl;
 
 				// Attempt to link the anchors that are closest to the region to polish
 				correctedRegion = "";
@@ -623,12 +519,9 @@ std::vector<std::pair<std::string, std::string>> polishCorrection(std::string co
 					curExt = src;
 					correctedRegion = "";
 					maxSize = 15.0 / 100.0 * 2.0 * (tmpDstBeg - tmpSrcEnd - 1) + (tmpDstBeg - tmpSrcEnd - 1) + merSize;
-					// std::cerr << "Linking : " << src << " to " << dst << std::endl;
-					auto c_start = std::chrono::high_resolution_clock::now();
+					std::cerr << "Linking : " << src << " to " << dst << std::endl;
 					link(mapMerCounts, src, dst, merSize, visited, &curBranches, dist, curExt, correctedRegion, merSize, maxSize, maxBranches, solidThresh, minOrder);
-					auto c_end = std::chrono::high_resolution_clock::now();
-					std::cerr << "linking1 took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
-					// std::cerr << "Result is : " << correctedRegion << std::endl;
+					std::cerr << "Result is : " << correctedRegion << std::endl;
 
 					// Link from tgt to src, inefficient in practice
 					// if (correctedRegion.empty()) {
@@ -678,12 +571,9 @@ std::vector<std::pair<std::string, std::string>> polishCorrection(std::string co
 							curExt = src;
 							correctedRegion = "";
 							maxSize = 15.0 / 100.0 * 2.0 * (tmpDstBeg - tmpSrcEnd - 1) + (tmpDstBeg - tmpSrcEnd - 1) + merSize;
-							// std::cerr << "Linking : " << src << " to " << dst << std::endl;
-							auto c_start = std::chrono::high_resolution_clock::now();
+							std::cerr << "Linking : " << src << " to " << dst << std::endl;
 							link(mapMerCounts, src, dst, merSize, visited, &curBranches, dist, curExt, correctedRegion, merSize, maxSize, maxBranches, solidThresh, minOrder);
-							auto c_end = std::chrono::high_resolution_clock::now();
-							std::cerr << "linking2 took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
-							// std::cerr << "Result is : " << correctedRegion << std::endl;
+							std::cerr << "Result is : " << correctedRegion << std::endl;
 						}
 						anchorNb++;
 					}
@@ -699,7 +589,7 @@ std::vector<std::pair<std::string, std::string>> polishCorrection(std::string co
 		}
 	}
 
-	// std::cerr << "return" << std::endl;
+	std::cerr << "return" << std::endl;
 	return corList;
 }
 
@@ -785,15 +675,9 @@ void processRead(std::vector<Alignment>& alignments, std::string readsDir, unsig
 
 		std::vector<std::vector<std::string>> curPiles;
 		curPiles.push_back(piles[i]);
-		// std::cerr << "call consensuses" << std::endl;
-		std::vector<std::pair<std::string, std::string>> curCons = computeConsensuses(readId, curPiles, curPos, readsDir, minSupport, merSize, commonKMers, solidThresh, windowSize);
-		if (!curCons.empty()) {
-			consensuses.push_back(curCons[0]);
-		}
-		// std::cerr << "gets consensues" << std::endl;
-	}
 
-	// std::cerr << "computed all consensuses" << std::endl;
+		consensuses.push_back(computeConsensuses(readId, curPiles, curPos, readsDir, minSupport, merSize, commonKMers, solidThresh, windowSize)[0]);
+	}
 	
 	// Align computed consensuses to the read and retrieve poorly supported regions windows positions
 	std::pair<std::string, std::vector<std::pair<std::pair<int, int>, int>>> p = alignConsensuses(readId, sequences, consensuses, pilesPos, piles, 0);
@@ -838,7 +722,7 @@ void processRead(std::vector<Alignment>& alignments, std::string readsDir, unsig
 		}
 
 		// Trim the read (trims until a long sketch of corrected bases if found. Ex: aaaaCCggagtAttagGGACTTACGATCGATCGATCa => GGACTTACGATCGATCGATC)
-		// correctedRead = trimRead(correctedRead, 100);
+		correctedRead = trimRead(correctedRead, 100);
 		if (!correctedRead.empty()) {
 			outMtx.lock();
 			std::cout << ">" << readId << std::endl << correctedRead << std::endl;
