@@ -204,17 +204,19 @@ std::vector<std::pair<std::string, std::string>> computeConsensuses(std::string 
 	int nbReg = 0;
 	unsigned mySize = 500000;
 	for (std::vector<std::string> p : result) {
-		// inMSA << p.size() << std::endl; 
-		inMSA << std::min(mySize, (unsigned) p.size()) << std::endl;
-		nbReg = 0;
-		// for (unsigned i = 0; i < p.size(); i++) {
-		for (unsigned i = 0; i < std::min(mySize, (unsigned) p.size()); i++) {
-			std::string s = p[i];
-			inMSA << ">" << nbReg << std::endl << s << std::endl;
-			// std::cerr << ">" << nbReg << std::endl << s << std::endl;
-			nbReg++;
-		};
-		// std::cerr << "nbReg : " << nbReg << std::endl;
+		if (!p.empty()) {
+			inMSA << std::min(mySize, (unsigned) p.size()) << std::endl;
+			std::cerr << std::min(mySize, (unsigned) p.size()) << std::endl;
+			nbReg = 0;
+			// for (unsigned i = 0; i < p.size(); i++) {
+			for (unsigned i = 0; i < std::min(mySize, (unsigned) p.size()); i++) {
+				std::string s = p[i];
+				inMSA << ">" << nbReg << std::endl << s << std::endl;
+				std::cerr << ">" << nbReg << std::endl << s << std::endl;
+				nbReg++;
+			}
+			// std::cerr << "nbReg : " << nbReg << std::endl;
+		}
 	}
 	std::cerr << std::endl;
 	inMSA.close();
@@ -233,7 +235,9 @@ std::vector<std::pair<std::string, std::string>> computeConsensuses(std::string 
 	std::cerr << "POA took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
 
 	// Concatenate MSA of the splits into the global MSA
-	int nbSeqPerSplit = result[0].size();
+	int nbSeqPerSplit = piles[0].size();
+	// int nbSeqPerSplit = result[0].size();
+	std::cerr << "result0 size : " << result[0].size() << " ; " << piles[0].size() << std::endl;
 	// for (int m = 0; m < result.size(); m++) {
 	// 	std::cerr << "nbSeqPerSplit : " << result[m].size() << std::endl;
 	// }
@@ -241,6 +245,7 @@ std::vector<std::pair<std::string, std::string>> computeConsensuses(std::string 
 	std::ifstream msa(MSAoutFile);
 	std::string MSAHeader, MSASeq, tplMSA;
 	getline(msa, MSAHeader);
+	std::cerr << "first line is : " << MSAHeader << std::endl;
 	int i = 0;
 
 	//TODO: seriously cleanup this mess
@@ -249,22 +254,36 @@ std::vector<std::pair<std::string, std::string>> computeConsensuses(std::string 
 		getline(msa, MSASeq);
 		tplMSA = MSASeq;
 		// std::cerr << "tplMSA : " << tplMSA << std::endl;
-		// std::cerr << "Call stoi1 with : " << MSAHeader.substr(1) << std::endl;
+		std::cerr << "Call stoi1 with : " << MSAHeader.substr(1) << std::endl;
 		int MSAId = stoi(MSAHeader.substr(1));
-		// std::cerr << "ad to " << i << std::endl;
+		std::cerr << "MSAId = " << MSAId << std::endl;
+		while (i < MSAId and i < std::min((unsigned) result[0].size(), mySize)) {
+			// std::cerr << "ad to " << i << std::endl;
+			// globalMSA[i] += tplMSA;
+			for (int j = 0; j < tplMSA.size(); j++) {
+				globalMSA[i] += ".";
+			}
+			i++;
+		}
+		std::cerr << "end patch" << std::endl;
+		std::cerr << "MSASeq : " << MSASeq 	<< std::endl;
+		std::cerr << "globalMSA.size() = " << globalMSA.size() << std::endl;
+		std::cerr << "nbSeqPerSplit : < " << nbSeqPerSplit << std::endl;
 		globalMSA[i] += MSASeq;
+		std::cerr << "added to vector" << std::endl;
 		getline(msa, MSAHeader);
 		i++;
-		if (!MSAHeader.empty())	 {
-			// std::cerr << "Call stoi2 with : " << MSAHeader.substr(1) << std::endl;
-			MSAId = stoi(MSAHeader.substr(1));
-		}
+		// if (!MSAHeader.empty())	 {
+		// 	std::cerr << "Call stoi2 with : " << MSAHeader.substr(1) << std::endl;
+		// 	MSAId = stoi(MSAHeader.substr(1));
+		// }
 		// std::cerr << "MSAId : " << MSAId << std::endl;
+		std::cerr << "before while" << std::endl;
 		while (!MSAHeader.empty() and MSAHeader[1] != 'C') {
 			getline(msa, MSASeq);
 			if (MSAHeader[1] != 'C' and i < std::min((unsigned) result[0].size(), mySize)) {
 			// if (MSAHeader[1] != 'C') {
-				// std::cerr << "Call stoi3 with : " << MSAHeader.substr(1) << std::endl;
+				std::cerr << "Call stoi3 with : " << MSAHeader.substr(1) << std::endl;
 				MSAId = stoi(MSAHeader.substr(1));
 				// std::cerr << "MSAH : " << MSAId << " ; i : " << i << std::endl;
 				if (MSAId == i) {
