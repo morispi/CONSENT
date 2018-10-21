@@ -191,7 +191,7 @@ std::vector<std::pair<std::string, std::string>> computeConsensuses(std::string 
 
 	// Split strings to compute consensuses quicker
 	auto start_antoine = std::chrono::high_resolution_clock::now();
-	std::vector<std::vector<std::string>> result = MSABMAAC(piles[0], 9, 0.5);
+	std::vector<std::vector<std::string>> result = MSABMAAC(piles[0], 7, 0.5);
 	auto end_antoine = std::chrono::high_resolution_clock::now();
 	std::cerr << "antoine took " << std::chrono::duration_cast<std::chrono::milliseconds>(end_antoine - start_antoine).count() << " ms\n";
 	std::vector<std::vector<std::string>> splits;
