@@ -102,13 +102,43 @@ std::vector<std::string> removeBadSequencesPrev(std::vector<std::string>& sequen
 
 		// Allow overlapping k-mers
 		// while (j < curSeq.length() - merSize + 1) {
+		while (j < curSeq.length() - merSize + 1 and c < commonKMers) {
+			mer = (curSeq.substr(j, merSize));
+			found = false;
+			p = 0;
+			// Check if the current k-mer (of the current sequence) appears in the template sequence after the current position
+			while (!found and p < kMers[mer].size()) {
+				found = pos == -1 or kMers[mer][p] > pos;
+				p++;
+			}
+			// Allow repeated k-mers
+			if (merCounts[mer] >= solidThresh and found) {
+			// Non-repeated k-mers only
+			// if (merCounts[mer] >= solidThresh and found and anchored.find(mer) == anchored.end() and kMers[mer].size() == 1) {
+				pos = kMers[mer][p-1];
+				if (tplBegPos == -1) {
+					tplBegPos = pos;
+					curSeqBegPos = j;
+				}
+
+				c++;
+				j += 1;
+				anchored.insert(mer);
+				tplEndPos = pos + merSize - 1;
+				curSeqEndPos = j + merSize - 2;
+			} else {
+				j += 1;
+			}
+		}
+
+		// Non-overlapping k-mers only
+		// while (j < curSeq.length() - merSize + 1) {
 		// while (j < curSeq.length() - merSize + 1 and c < commonKMers) {
 		// 	mer = (curSeq.substr(j, merSize));
-		// 	found = false;
-		// 	p = 0;
-		// 	// Check if the current k-mer (of the current sequence) appears in the template sequence after the current position
+		// 	bool found = false;
+		// 	unsigned p = 0;
 		// 	while (!found and p < kMers[mer].size()) {
-		// 		found = pos == -1 or kMers[mer][p] > pos;
+		// 		found = pos == -1 or kMers[mer][p] >= pos + merSize;
 		// 		p++;
 		// 	}
 		// 	// Allow repeated k-mers
@@ -122,44 +152,14 @@ std::vector<std::string> removeBadSequencesPrev(std::vector<std::string>& sequen
 		// 		}
 
 		// 		c++;
-		// 		j += 1;
+		// 		j += merSize;
 		// 		anchored.insert(mer);
 		// 		tplEndPos = pos + merSize - 1;
-		// 		curSeqEndPos = j + merSize - 2;
+		// 		curSeqEndPos = j - 1;
 		// 	} else {
 		// 		j += 1;
 		// 	}
 		// }
-
-		// Non-overlapping k-mers only
-		// while (j < curSeq.length() - merSize + 1) {
-		while (j < curSeq.length() - merSize + 1 and c < commonKMers) {
-			mer = (curSeq.substr(j, merSize));
-			bool found = false;
-			unsigned p = 0;
-			while (!found and p < kMers[mer].size()) {
-				found = pos == -1 or kMers[mer][p] >= pos + merSize;
-				p++;
-			}
-			// Allow repeated k-mers
-			// if (merCounts[mer] >= solidThresh and found) {
-			// Non-repeated k-mers only
-			if (merCounts[mer] >= solidThresh and found and anchored.find(mer) == anchored.end() and kMers[mer].size() == 1) {
-				pos = kMers[mer][p-1];
-				if (tplBegPos == -1) {
-					tplBegPos = pos;
-					curSeqBegPos = j;
-				}
-
-				c++;
-				j += merSize;
-				anchored.insert(mer);
-				tplEndPos = pos + merSize - 1;
-				curSeqEndPos = j - 1;
-			} else {
-				j += 1;
-			}
-		}
 
 		if (c >= commonKMers) {
 			// Also get previous / following nts, as they can still correct the template
@@ -617,7 +617,6 @@ std::vector<std::pair<std::string, std::string>> polishCorrection(std::string co
 							dist = 0;
 							curExt = src;
 							correctedRegion = "";
-							// maxSize = 15.0 / 100.0 * 2.0 * (tmpDstBeg - tmpSrcEnd - 1) + (tmpDstBeg - tmpSrcEnd - 1) + merSize;
 							maxSize = 15.0 / 100.0 * 2.0 * (tmpDstBeg - tmpSrcEnd - 1) + (tmpDstBeg - tmpSrcEnd - 1) + merSize;
 							link(solidMerCounts, src, dst, merSize, visited, &curBranches, dist, curExt, correctedRegion, merSize, maxSize, maxBranches, solidThresh, minOrder);
 							// std::cerr << "linked" << std::endl;
@@ -748,7 +747,7 @@ void processRead(std::vector<Alignment>& alignments, std::string readsDir, unsig
 
 		// Polish small regions with a small k-mer size
 		c_start = std::chrono::high_resolution_clock::now();
-		corList = polishCorrection(correctedRead, corPosPiles, piles, pilesMers, merSize, solidThresh, 1, 100);
+		corList = polishCorrection(correctedRead, corPosPiles, oldPiles, oldPilesMers, merSize, solidThresh, 1, 100);
 		c_end = std::chrono::high_resolution_clock::now();
 		std::cerr << "polishing took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
 
@@ -769,7 +768,7 @@ void processRead(std::vector<Alignment>& alignments, std::string readsDir, unsig
 
 		// Trim the read (trims until a long sketch of corrected bases if found. Ex: aaaaCCggagtAttagGGACTTACGATCGATCGATCa => GGACTTACGATCGATCGATC)
 		c_start = std::chrono::high_resolution_clock::now();
-		// correctedRead = trimRead(correctedRead, 100);
+		correctedRead = trimRead(correctedRead, 100);
 		if (!correctedRead.empty()) {
 			outMtx.lock();
 			std::cout << ">" << readId << std::endl << correctedRead << std::endl;
