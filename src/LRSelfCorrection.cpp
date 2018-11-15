@@ -740,8 +740,8 @@ void processRead(std::vector<Alignment>& alignments, std::string readsDir, unsig
 	std::cerr << "anchoring1 took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
 
 	// Drop read if it contains too many poorly supported bases
-	// if (!dropRead(correctedRead)) {
-	if (1) {
+	if (!dropRead(correctedRead)) {
+	// if (1) {
 		// Polish poorly supported regions with local DBGs
 		std::vector<std::pair<std::string, std::string>> corList, newList;
 
