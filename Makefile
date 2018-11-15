@@ -4,8 +4,8 @@ LDFLAGS = -lpthread
 
 all: alignmentPiles.o reverseComplement.o localAlignment.o kMersProcessing.o LRSelfCorrection.o DBG.o main.o LRSelfCorrection
 
-LRSelfCorrection: main.o LRSelfCorrection.o
-	$(CC) -o bin/LRSelfCorrection src/main.o src/localAlignment.o src/kMersProcessing.o src/reverseComplement.o src/alignmentPiles.o src/LRSelfCorrection.o src/DBG.o $(LDFLAGS)
+LRSelfCorrection: main.o LRSelfCorrection.o BMEAN.o utils.o
+	$(CC) -o bin/LRSelfCorrection src/main.o src/localAlignment.o src/kMersProcessing.o src/reverseComplement.o src/alignmentPiles.o src/LRSelfCorrection.o src/DBG.o BMEAN/bmean.o BMEAN/utils.o $(LDFLAGS)
 
 LRSelfCorrection.o: src/LRSelfCorrection.cpp src/LRSelfCorrection.h src/alignmentPiles.h src/localAlignment.h src/kMersProcessing.h src/DBG.h
 	$(CC) -o src/LRSelfCorrection.o -c src/LRSelfCorrection.cpp $(CFLAGS)
@@ -24,6 +24,12 @@ kMersProcessing.o: src/kMersProcessing.cpp
 
 DBG.o: src/DBG.cpp
 	$(CC) -o src/DBG.o -c src/DBG.cpp $(CFLAGS)
+
+BMEAN.o: BMEAN/bmean.cpp
+	$(CC) -o BMEAN/bmean.o -c BMEAN/bmean.cpp $(CFLAGS)
+
+utils.o: BMEAN/utils.cpp
+	$(CC) -o BMEAN/utils.o -c BMEAN/utils.cpp $(CFLAGS)
 
 main.o: src/main.cpp src/LRSelfCorrection.h
 	$(CC) -o src/main.o -c src/main.cpp

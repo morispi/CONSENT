@@ -17,9 +17,10 @@ std::pair<int**, std::pair<int, int>> NeedlemanWunschLocalMatrix(std::string s1,
 	int maxI = 0;
 	int maxJ = 0;
 	int maximum = matrix[maxI][maxJ];
+	int s;
 	for (i = 1 ; i < s1.length() + 1; i++) {
 		for (j = 1 ; j < s2.length() + 1; j++) {
-			int s = s1[i-1] == s2[j-1] ? 1 : -6;
+			s = s1[i-1] == s2[j-1] ? 1 : -6;
 			matrix[i][j] = std::max(std::max(0, matrix[i-1][j-1] + s), std::max(matrix[i-1][j] - 1, matrix[i][j-1] - 1));
 			if (matrix[i][j] > maximum) {
 				maximum = matrix[i][j];
