@@ -70,8 +70,8 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 	return pilesPos;
 }
 
-std::map<std::string, std::string> getSequencesMaps(std::vector<Alignment>& alignments, std::string readsDir) {
-	std::map<std::string, std::string> sequences;
+std::unordered_map<std::string, std::string> getSequencesunordered_maps(std::vector<Alignment>& alignments, std::string readsDir) {
+	std::unordered_map<std::string, std::string> sequences;
 	std::string header, seq;
 
 	// Insert template sequence
@@ -95,38 +95,72 @@ std::map<std::string, std::string> getSequencesMaps(std::vector<Alignment>& alig
 	return sequences;
 }
 
-std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, std::map<std::string, std::string>& sequences, unsigned beg, unsigned end) {
+std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, std::unordered_map<std::string, std::string>& sequences, unsigned qBeg, unsigned end) {
 	std::vector<std::string> curPile;
 	unsigned length, shift;
-	length = end - beg + 1;
+	length = end - qBeg + 1;
 	unsigned curPos = 0;
+	unsigned tBeg, tEnd;
 
 	// Insert template sequence
-	if (beg + length - 1 >= sequences[alignments.begin()->qName].length()) {
+	if (qBeg + length - 1 >= sequences[alignments.begin()->qName].length()) {
 		return curPile;
 	}
 
-	curPile.push_back(sequences[alignments.begin()->qName].substr(beg, length));
+	curPile.push_back(sequences[alignments.begin()->qName].substr(qBeg, length));
 
+	Alignment al;
+	std::string tmpSeq;
 	// Insert aligned sequences
 	while (curPos < alignments.size()) {
-		Alignment al = alignments[curPos];
+		al = alignments[curPos];
+		tBeg = al.tStart;
+		tEnd = al.tEnd;
+		length = end - qBeg + 1;
+		if (qBeg > al.qStart) {
+			shift = qBeg - al.qStart;
+		} else {
+			shift = 0;
+		}
 		// For alignments spanning the query window
-		// if (al.qStart <= beg and end <= al.qEnd and al.tStart + beg - al.qStart + length - 1 <= al.tEnd) {
-		// if (al.qStart <= beg and end <= al.qEnd and al.tStart + beg - al.qStart + length - 1 < sequences[al.tName].length()) {
+		// if (al.qStart <= qBeg and end <= al.qEnd and al.tStart + qBeg - al.qStart + length - 1 <= al.tEnd) {
+		// if (al.qStart <= qBeg and end <= al.qEnd and al.tStart + shift <= al.tEnd) {
+		// if (al.qStart <= qBeg and end <= al.qEnd and al.tStart + qBeg - al.qStart + length - 1 < sequences[al.tName].length()) {
+		
 		// For all alignments than span, or begin/end in the query window
-		if ( ((al.qStart <= beg and al.qEnd > beg) or (end <= al.qEnd and al.qStart < end)) and al.tStart + beg - al.qStart + length - 1 <= al.tEnd) {
-			if (beg > al.qStart) {
-				shift = beg - al.qStart;
-			} else {
+		// if ( ((al.qStart <= qBeg and al.qEnd > qBeg) or (end <= al.qEnd and al.qStart < end)) and al.tStart + shift + length - 1 <= al.tEnd) {
+		if ( ((al.qStart <= qBeg and al.qEnd > qBeg) or (end <= al.qEnd and al.qStart < end)) and al.tStart + shift <= al.tEnd) {
+
+			if (qBeg < al.qStart and al.qEnd < end) {
 				shift = 0;
+				tBeg = std::max(0, (int) al.tStart - ((int) al.qStart - (int) qBeg));
+				tEnd = std::min((int) al.tLength - 1, (int) al.tEnd + ((int) end - (int) al.qEnd));
+				length = tEnd - tBeg + 1;
+			} else if (qBeg < al.qStart) {
+				shift = 0;
+				tBeg = std::max(0, (int) al.tStart - ((int) al.qStart - (int) qBeg));
+				// tEnd = std::min((int) al.tLength - 1, (int) tBeg + (int) length - 1);
+				length = std::min((int) length, std::min((int) al.tLength - 1, (int) tBeg + (int) length - 1) - (int) tBeg + 1);
+			} else if (al.qEnd < end) {
+				tEnd = std::min((int) al.tLength - 1, (int) al.tEnd + ((int) end - (int) al.qEnd));
+				// // tBeg = std::max(0, (int) tEnd - (int) length + 1);
+				length = std::min((int) length, (int) tEnd - std::max(0, (int) tEnd - (int) length + 1) + 1);
+				// length = tEnd - std::max(0, (int) tEnd - (int) length + 1) + 1;
 			}
-			std::string tmpSeq = sequences[al.tName].substr(al.tStart, al.tEnd - al.tStart + 1);
+
+			// tmpSeq = sequences[al.tName].substr(al.tStart, al.tEnd - al.tStart + 1);
+			tmpSeq = sequences[al.tName].substr(tBeg, tEnd - tBeg + 1);
 			if (al.strand) {
 				tmpSeq = rev_comp::run(tmpSeq);
 			}
+
+			// length = std::min(length + (int) windowSize, al.qEnd - qBeg + 1 + (int) 1 * (int) windowSize);
+			// length = std::min(length, al.qEnd - qBeg + 1);
 			tmpSeq = tmpSeq.substr(shift, length);
-			curPile.push_back(tmpSeq);
+			
+			if (tmpSeq.length() >= 0.25 * windowSize) {
+				curPile.push_back(tmpSeq);
+			}
 		}
 		curPos++;
 	}
@@ -134,7 +168,7 @@ std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments,
 	return curPile;
 }
 
-std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<std::string>>> getAlignmentPiles(std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, std::map<std::string, std::string> sequences) {
+std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<std::string>>> getAlignmentPiles(std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, std::unordered_map<std::string, std::string> sequences) {
 	unsigned tplLen = alignments.begin()->qLength;
 
 	std::vector<std::pair<unsigned, unsigned>> pilesPos = getAlignmentPilesPositions(tplLen, alignments, minSupport, windowSize, windowOverlap);

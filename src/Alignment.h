@@ -12,7 +12,7 @@ struct Alignment {
 	unsigned tEnd;
 	std::string resMatches;
 	std::string alBlockLen;
-	std::string mapQual;
+	std::string unordered_mapQual;
 
 	bool operator<(const Alignment& a2) const {
 		if (qName < a2.qName) {
@@ -37,7 +37,7 @@ struct Alignment {
  			return true;
  		} else if (qName == a2.qName && qLength == a2.qLength && qStart == a2.qStart && qEnd == a2.qEnd && strand == a2.strand && tName == a2.tName && tLength == a2.tLength && tStart == a2.tStart && tEnd == a2.tEnd && resMatches == a2.resMatches && alBlockLen < a2.alBlockLen) {
  			return true;
- 		} else if (qName == a2.qName && qLength == a2.qLength && qStart == a2.qStart && qEnd == a2.qEnd && strand == a2.strand && tName == a2.tName && tLength == a2.tLength && tStart == a2.tStart && tEnd == a2.tEnd && resMatches == a2.resMatches && alBlockLen == a2.alBlockLen && mapQual < a2.mapQual) {
+ 		} else if (qName == a2.qName && qLength == a2.qLength && qStart == a2.qStart && qEnd == a2.qEnd && strand == a2.strand && tName == a2.tName && tLength == a2.tLength && tStart == a2.tStart && tEnd == a2.tEnd && resMatches == a2.resMatches && alBlockLen == a2.alBlockLen && unordered_mapQual < a2.unordered_mapQual) {
  			return true;
  		} else {
  			return false;
@@ -58,7 +58,7 @@ struct Alignment {
 		getline(iss, token, '\t');
 		qStart = stoi(token);
 		getline(iss, token, '\t');
-		// Has to be -1, cause minimap flags as endPosition the nt following the last match
+		// Has to be -1, cause miniunordered_map flags as endPosition the nt following the last match
 		qEnd = stoi(token) - 1;
 		getline(iss, token, '\t');
 		strand = token == "+" ? false : true;
@@ -69,13 +69,13 @@ struct Alignment {
 		getline(iss, token, '\t');
 		tStart = stoi(token);
 		getline(iss, token, '\t');
-		// Has to be -1, cause minimap flags as endPosition the nt following the last match
+		// Has to be -1, cause miniunordered_map flags as endPosition the nt following the last match
 		tEnd = stoi(token) - 1;
 		getline(iss, token, '\t');
 		resMatches = token;
 		getline(iss, token, '\t');
 		alBlockLen = token;
 		getline(iss, token, '\t');
-		mapQual = token;
+		unordered_mapQual = token;
 	}
 };
