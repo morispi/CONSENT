@@ -50,6 +50,10 @@ bool isUpperCase(char c) {
 // 	}
 // }
 
+bool dropRead(std::string correctedRead) {
+	return (float) nbCorBases(correctedRead) / correctedRead.length() < 0.75;
+}
+
 std::vector<std::string> trimRead(std::string correctedRead, unsigned merSize) {
 	std::vector<std::string> res;
 	unsigned beg, end, n;
@@ -702,10 +706,6 @@ int nbCorBases(std::string correctedRead) {
 	}
 
 	return n;
-}
-
-bool dropRead(std::string correctedRead) {
-	return (float) nbCorBases(correctedRead) / correctedRead.length() < 0.75;
 }
 
 void processRead(std::vector<Alignment>& alignments, std::string readsDir, unsigned minSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap) {
