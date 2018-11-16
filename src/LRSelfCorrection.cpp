@@ -50,6 +50,17 @@ bool isUpperCase(char c) {
 // 	}
 // }
 
+int nbCorBases(std::string correctedRead) {
+	int n = 0;
+	for (unsigned i = 0; i < correctedRead.length(); i++) {
+		if ('A' <= correctedRead[i] && correctedRead[i] <= 'Z') {
+			n++;
+		}
+	}
+
+	return n;
+}
+
 bool dropRead(std::string correctedRead) {
 	return (float) nbCorBases(correctedRead) / correctedRead.length() < 0.75;
 }
@@ -695,17 +706,6 @@ std::vector<std::pair<std::string, std::string>> polishCorrection(std::string co
 	auto main_end = std::chrono::high_resolution_clock::now();
 	std::cerr << "function took " << std::chrono::duration_cast<std::chrono::milliseconds>(main_end - main_start).count() << " ms\n";
 	return corList;
-}
-
-int nbCorBases(std::string correctedRead) {
-	int n = 0;
-	for (unsigned i = 0; i < correctedRead.length(); i++) {
-		if ('A' <= correctedRead[i] && correctedRead[i] <= 'Z') {
-			n++;
-		}
-	}
-
-	return n;
 }
 
 void processRead(std::vector<Alignment>& alignments, std::string readsDir, unsigned minSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap) {
