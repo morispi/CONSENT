@@ -76,8 +76,11 @@ std::vector<std::string> trimRead(std::string correctedRead, unsigned merSize) {
 
 		end = i - n - 1;
 		if (end >= beg) {
-			std::cerr << "split : " << correctedRead.substr(beg, end - beg + 1) << std::endl;
-			res.push_back(correctedRead.substr(beg, end - beg + 1));
+			std::string split = correctedRead.substr(beg, end - beg + 1);
+			std::cerr << "split : " << split << std::endl;
+			if (!dropRead(split)) {
+				res.push_back(split);
+			}
 		}
 	}
 
@@ -776,8 +779,8 @@ void processRead(std::vector<Alignment>& alignments, std::string readsDir, unsig
 	std::cerr << "anchoring1 took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
 
 	// Drop read if it contains too many poorly supported bases
-	if (!dropRead(correctedRead)) {
-	// if (1) {
+	// if (!dropRead(correctedRead)) {
+	if (1) {
 		// Polish poorly supported regions with local DBGs
 		std::vector<std::pair<std::string, std::string>> corList, newList;
 
