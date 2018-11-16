@@ -16,38 +16,74 @@ bool isUpperCase(char c) {
 	return 'A' <= c and c <= 'Z';
 }
 
-std::string trimRead(std::string correctedRead, unsigned merSize) {
+// std::string trimRead(std::string correctedRead, unsigned merSize) {
+// 	unsigned beg, end, n;
+// 	int i;
+// 	i = 0;
+// 	n = 0;
+// 	while (i < correctedRead.length() and n < merSize) {
+// 		if (isUpperCase(correctedRead[i])) {
+// 			n++;
+// 		} else {
+// 			n = 0;
+// 		}
+// 		i++;
+// 	}
+// 	beg = i - merSize;// + 1;
+
+// 	i = correctedRead.length() - 1;
+// 	n = 0;
+// 	while (i >= 0 and n < merSize) {
+// 		if (isUpperCase(correctedRead[i])) {
+// 			n++;
+// 		} else {
+// 			n = 0;
+// 		}
+// 		i--;
+// 	}
+// 	end = i + merSize;// - 1;
+
+// 	if (end > beg) {
+// 		return correctedRead.substr(beg, end - beg + 1);
+// 	} else {
+// 		return "";
+// 	}
+// }
+
+std::vector<std::string> trimRead(std::string correctedRead, unsigned merSize) {
+	std::vector<std::string> res;
 	unsigned beg, end, n;
-	int i;
-	i = 0;
+	beg = 0;
+	end = 0;
+	int i = 0;
 	n = 0;
-	while (i < correctedRead.length() and n < merSize) {
-		if (isUpperCase(correctedRead[i])) {
-			n++;
-		} else {
-			n = 0;
-		}
-		i++;
-	}
-	beg = i - merSize;// + 1;
 
-	i = correctedRead.length() - 1;
-	n = 0;
-	while (i >= 0 and n < merSize) {
-		if (isUpperCase(correctedRead[i])) {
-			n++;
-		} else {
-			n = 0;
+	while (i < correctedRead.length()) {
+		while (i < correctedRead.length() and !isUpperCase(correctedRead[i])) {
+			i++;
 		}
-		i--;
-	}
-	end = i + merSize;// - 1;
+		beg = i;
+		n = 0;
 
-	if (end > beg) {
-		return correctedRead.substr(beg, end - beg + 1);
-	} else {
-		return "";
+		while (i < correctedRead.length() and n < merSize) {
+			if (!isUpperCase(correctedRead[i])) {
+				n++;
+			} else {
+				n = 0;
+			}
+			i++;
+		}
+
+		end = i - n - 1;
+		if (end >= beg) {
+			std::cerr << "split : " << correctedRead.substr(beg, end - beg + 1) << std::endl;
+			res.push_back(correctedRead.substr(beg, end - beg + 1));
+		}
 	}
+
+	// res.push_back(correctedRead);
+
+	return res;
 }
 
 bool compareLen(const std::string& a, const std::string& b) {
@@ -768,12 +804,19 @@ void processRead(std::vector<Alignment>& alignments, std::string readsDir, unsig
 
 		// Trim the read (trims until a long sketch of corrected bases if found. Ex: aaaaCCggagtAttagGGACTTACGATCGATCGATCa => GGACTTACGATCGATCGATC)
 		c_start = std::chrono::high_resolution_clock::now();
-		correctedRead = trimRead(correctedRead, 100);
-		if (!correctedRead.empty()) {
+		std::vector<std::string> correctedSplits = trimRead(correctedRead, 100);
+		int nbSplit = 0;
+		while (nbSplit < correctedSplits.size()) {
 			outMtx.lock();
-			std::cout << ">" << readId << std::endl << correctedRead << std::endl;
+			std::cout << ">" << readId << "_" << nbSplit + 1 << std::endl << correctedSplits[nbSplit] << std::endl;
 			outMtx.unlock();
+			nbSplit++;
 		}
+		// if (!correctedRead.empty()) {
+		// 	outMtx.lock();
+		// 	std::cout << ">" << readId << std::endl << correctedRead << std::endl;
+		// 	outMtx.unlock();
+		// }
 		c_end = std::chrono::high_resolution_clock::now();
 		std::cerr << "trimming took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
 	}
