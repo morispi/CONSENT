@@ -291,6 +291,10 @@ std::vector<std::pair<std::string, std::string>> computeConsensuses(std::string&
 	auto start_antoine = std::chrono::high_resolution_clock::now();
 	std::vector<std::pair<std::string, std::string>> res(1);
 
+	for (std::string s : piles) {
+		std::cerr << s << std::endl;
+	}
+
 	std::vector<std::vector<std::string>> result = MSABMAAC(piles, 7, 7);
 	auto end_antoine = std::chrono::high_resolution_clock::now();
 	std::cerr << "antoine took " << std::chrono::duration_cast<std::chrono::milliseconds>(end_antoine - start_antoine).count() << " ms\n";
@@ -731,30 +735,19 @@ void processRead(std::vector<Alignment>& alignments, std::string readsDir, unsig
 	std::vector<std::unordered_map<std::string, unsigned>> oldPilesMers = pilesMers;
 	unsigned i = 0;
 	while (i < piles.size()) {
-		// std::string tpl = piles[i][0];
-		// std::cerr << "pile " << i << std::endl;
 		piles[i] = removeBadSequencesPrev(piles[i], piles[i][0], pilesMers[i], merSize, commonKMers, solidThresh, windowSize);
 		if (piles[i].size() < minSupport) {
 			piles.erase(piles.begin() + i);
 			pilesPos.erase(pilesPos.begin() + i);
 			pilesMers.erase(pilesMers.begin() + i);
 		} else {
-			// newPiles.push_back(piles[i]);
-			// newPilesPos.push_back(pilesPos[i]);
-			// newPilesMers.push_back(pilesMers[i]);
 			i++;
 		}
 	}
-	// piles = newPiles;
-	// pilesPos = newPilesPos;
-	// pilesMers = newPilesMers;
 	auto c_endR = std::chrono::high_resolution_clock::now();
 	std::cerr << "removing took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_endR - c_startR).count() << " ms\n";
 
-	// std::cerr << "tri : " << piles.size() << " ; " << pilesPos.size() << " ; " << pilesMers.size() << std::endl;
-
 	// Compute consensuses for all the piles
-
 	auto c_start1 = std::chrono::high_resolution_clock::now();
 	std::vector<std::pair<std::string, std::string>> consensuses;
 	std::vector<std::pair<std::string, std::string>> curCons;
@@ -864,6 +857,7 @@ void runCorrection(std::string alignmentFile, std::string readsDir, unsigned min
 			curReadAlignments.push_back(al);
 			getline(f, line);
 		} else {
+			std::sort(curReadAlignments.begin(), curReadAlignments.end());
 			reads[readNumber % nbThreads].push_back(curReadAlignments);	
 			readNumber++;
 			curReadAlignments.clear();
