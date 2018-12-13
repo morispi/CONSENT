@@ -1,7 +1,7 @@
 #!/bin/bash
 
-cd poaV2;
-make poa;
+cd BMEAN;
+./install.sh;
 cd ..;
 cd minimap2;
 make;
