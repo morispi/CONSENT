@@ -391,34 +391,63 @@ int xlate_lpo_to_al(LPOSequence_T *seq,
 /** writes the LPO in FASTA format, including all sequences in the 
   specified bundle */
 void write_lpo_bundle_as_fasta(FILE *ifile,LPOSequence_T *seq,
-			       int nsymbol,char symbol[],int ibundle)
+			       int nsymbol,char symbol[],int ibundle, int CONS)
 {
-  int i,j,nring=0,iprint,k=0;
+  int i,j,nring=0,iprint, k=0;
   char **seq_pos=NULL,*p=NULL,*include_in_save=NULL;
 
   nring=xlate_lpo_to_al(seq,nsymbol,symbol,ibundle, /* TRANSLATE TO */
 			FASTA_GAP_CHARACTER,        /* RC-MSA FMT */
 			&seq_pos,&p,&include_in_save);
-  LOOPF (i,seq->nsource_seq) { /* NOW WRITE OUT FASTA FORMAT */
-    // fprintf(stderr, "is currently is : %d\n", i);
-    if ((ibundle<0 /* PRINT ALL BUNDLES */ || seq->source_seq[i].bundle_id == ibundle) && strcmp(seq->source_seq[i].title, "untitled") != 0) { /* OR JUST THIS BUNDLE*/
-      //TODO: write all in a temp string along with a counter, then print in main file
-      fprintf(ifile,">%s %s%s",seq->source_seq[i].name,seq->source_seq[i].title,"\n");
-      iprint=0;
-      //LOOPF (j,nring) { /* WRITE OUT 60 CHARACTER SEQUENCE LINES */
-	if (NULL==include_in_save || include_in_save[j]) {
-	  for (k = 0; k < nring; k++) {
-	    if (seq_pos[i][k] != '.') {
-	      fprintf(ifile, "%c", seq_pos[i][k]);
-	    }
-	  }
-	  //fprintf(ifile, "%s", "\n");
-	  //fprintf(ifile,"%s%c",iprint%nring? "":"\n", seq_pos[i][j]);
-	  //~ fprintf(ifile,"%s%c",iprint%60? "":"\n", seq_pos[i][j]);
-	  iprint++; /* KEEP COUNT OF PRINTED CHARACTERS */
-	}
-      //}
-      fputc('\n',ifile);
+
+  fprintf(stderr, "CONS : %d\n", CONS);
+
+  if (!CONS) {
+    fprintf(stderr, "MDRRRRRRRRR\n");
+    LOOPF (i,seq->nsource_seq) { /* NOW WRITE OUT FASTA FORMAT */
+      if (ibundle<0 /* PRINT ALL BUNDLES */
+  	|| seq->source_seq[i].bundle_id == ibundle) { /* OR JUST THIS BUNDLE*/
+        fprintf(ifile,">%s %s%s",seq->source_seq[i].name,seq->source_seq[i].title,"\n");
+        iprint=0;
+    //    LOOPF (j,nring) { /* WRITE OUT 60 CHARACTER SEQUENCE LINES */
+  	if (NULL==include_in_save || include_in_save[j]) {
+  	  for (k = 0; k < nring; k++) {
+              //if (seq_pos[i][k] != '.') {
+                fprintf(ifile, "%c", seq_pos[i][k]);
+              //}
+            }
+  	  iprint++; /* KEEP COUNT OF PRINTED CHARACTERS */
+  	}
+  //      }
+        fputc('\n',ifile);
+      } else {
+        fprintf(ifile, ">%s %s%s", seq->source_seq[i].name, seq->source_seq[i].title, "\n");
+        fputc('\n', ifile);
+      }
+    }
+
+  } else {
+      LOOPF (i,seq->nsource_seq) { /* NOW WRITE OUT FASTA FORMAT */
+      // fprintf(stderr, "is currently is : %d\n", i);
+      if ((ibundle<0 /* PRINT ALL BUNDLES */ || seq->source_seq[i].bundle_id == ibundle) && strcmp(seq->source_seq[i].title, "") != 0) { /* OR JUST THIS BUNDLE*/
+        //TODO: write all in a temp string along with a counter, then print in main file
+        fprintf(ifile,">%s %s%s",seq->source_seq[i].name,seq->source_seq[i].title,"\n");
+        iprint=0;
+        //LOOPF (j,nring) { /* WRITE OUT 60 CHARACTER SEQUENCE LINES */
+    if (NULL==include_in_save || include_in_save[j]) {
+      for (k = 0; k < nring; k++) {
+        if (seq_pos[i][k] != '.') {
+          fprintf(ifile, "%c", seq_pos[i][k]);
+        }
+      }
+      //fprintf(ifile, "%s", "\n");
+      //fprintf(ifile,"%s%c",iprint%nring? "":"\n", seq_pos[i][j]);
+      //~ fprintf(ifile,"%s%c",iprint%60? "":"\n", seq_pos[i][j]);
+      iprint++; /* KEEP COUNT OF PRINTED CHARACTERS */
+    }
+        //}
+        fputc('\n',ifile);
+      }
     }
   }
 
@@ -442,7 +471,7 @@ void write_lpo_bundle_as_fasta(FILE *ifile,LPOSequence_T *seq,
 void write_lpo_as_fasta(FILE *ifile,LPOSequence_T *seq,
 			int nsymbol,char symbol[])
 { /* WRAPPER FUNCTION FOR SAVING ALL BUNDLES!! */
-  write_lpo_bundle_as_fasta(ifile,seq,nsymbol,symbol,ALL_BUNDLES);
+  write_lpo_bundle_as_fasta(ifile,seq,nsymbol,symbol,ALL_BUNDLES, 0);
 }
 
 

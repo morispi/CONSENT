@@ -7,131 +7,31 @@
 #include "localAlignment.h"
 #include "kMersProcessing.h"
 #include "DBG.h"
+#include "../BMEAN/bmean.h"
+#include "../BMEAN/utils.h"
+#include "../BMEAN/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h"
 
 std::mutex outMtx;
 
-bool compareLen(const std::string& a, const std::string& b) {
-    return (a.size() > b.size()); 
+bool isUpperCase(char c) {
+	return 'A' <= c and c <= 'Z';
 }
 
-std::vector<std::string> removeBadSequencesPrev(std::vector<std::string>& sequences, std::string tplSeq, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowSize) {
-	std::map<std::string, std::vector<unsigned>> kMers = getKMersPos(tplSeq, merSize);
-	std::map<std::string, unsigned> merCounts = getKMersCounts(sequences, merSize);
-	std::string curSeq;
-	unsigned i, j, c;
-	int pos, tplBegPos, tplEndPos, curSeqBegPos, curSeqEndPos;
-	std::set<std::string> anchored;
-	std::string mer;
-	std::map<int, std::vector<std::string>> mapCommonMers;
-
-	// Iterate through the sequences of the alignment window, and only keep those sharing enough solid k-mers with the template
-	i = 1;
-	while (i < sequences.size()) {
-		curSeq = sequences[i];
-		j = 0;
-		c = 0;
-		anchored.clear();
-		pos = -1;
-		tplBegPos = -1;
-		tplEndPos = -1;
-		curSeqBegPos = -1;
-		curSeqEndPos = -1;
-
-		std::vector<std::string> smallerMSAs;
-
-		// Allow overlapping k-mers
-		// while (j < curSeq.length() - merSize + 1) {
-		// 	mer = (curSeq.substr(j, merSize));
-		// 	bool found = false;
-		// 	unsigned p = 0;
-		// 	// Check if the current k-mer (of the current sequence) appears in the template sequence after the current position
-		// 	while (!found and p < kMers[mer].size()) {
-		// 		found = pos == -1 or kMers[mer][p] > pos;
-		// 		p++;
-		// 	}
-		// 	// Allow repeated k-mers
-		// 	// if (merCounts[mer] >= solidThresh and found) {
-		// 	// Non-repeated k-mers only
-		// 	if (merCounts[mer] >= solidThresh and found and anchored.find(mer) == anchored.end() and kMers[mer].size() == 1) {
-		// 		pos = kMers[mer][p-1];
-		// 		if (tplBegPos == -1) {
-		// 			tplBegPos = pos;
-		// 			curSeqBegPos = j;
-		// 		}
-
-		// 		c++;
-		// 		j += 1;
-		// 		anchored.insert(mer);
-		// 		tplEndPos = pos + merSize - 1;
-		// 		curSeqEndPos = j + merSize - 2;
-		// 	} else {
-		// 		j += 1;
-		// 	}
-		// }
-
-		// Non-overlapping k-mers only
-		while (j < curSeq.length() - merSize + 1) {
-			mer = (curSeq.substr(j, merSize));
-			bool found = false;
-			unsigned p = 0;
-			while (!found and p < kMers[mer].size()) {
-				found = pos == -1 or kMers[mer][p] >= pos + merSize;
-				p++;
-			}
-			// Allow repeated k-mers
-			if (merCounts[mer] >= solidThresh and found) {
-			// Non-repeated k-mers only
-			// if (merCounts[mer] >= solidThresh and found and anchored.find(mer) == anchored.end() and kMers[mer].size() == 1) {
-				pos = kMers[mer][p-1];
-				if (tplBegPos == -1) {
-					tplBegPos = pos;
-					curSeqBegPos = j;
-				}
-
-				c++;
-				j += merSize;
-				anchored.insert(mer);
-				tplEndPos = pos + merSize - 1;
-				curSeqEndPos = j - 1;
-			} else {
-				j += 1;
-			}
-		}
-
-		if (c >= commonKMers) {
-			int beg, end;
-            beg = std::max(0, curSeqBegPos - tplBegPos);
-            end = std::min(curSeqEndPos + tplSeq.length() - tplEndPos - 1, curSeq.length() - 1);
-            std::string tmpSeq = sequences[i].substr(beg, end + 1);
-
-			// Only add the substring from the leftmost anchor to the rightmost anchor to the MSA (anchor = shared k-mer wth the template)
-			mapCommonMers[c].push_back(tmpSeq);
-			// Add the whole sequence to the MSA
-			// mapCommonMers[c].push_back(sequences[i]);
-		}
-
-		i++;
-	}
-
-	// Insert sequences from the alignment pile into the result vector according to their number of shared k-mers with the template sequence
-	// (useful to compute consensus quicker with POA). If two sequences have the same numer of shared k-mer, sort them according to their length.
-	// Both sorts are done in descending order.
-	std::vector<std::string> newSequences;
-	newSequences.push_back(sequences[0]);
-	std::vector<std::string> tmpNewSeqs;
-	for (std::map<int, std::vector<std::string>>::reverse_iterator it = mapCommonMers.rbegin(); it != mapCommonMers.rend(); it++) {
-		tmpNewSeqs.clear();
-		for (std::string s : it->second) {
-			tmpNewSeqs.push_back(s);
-		}
-		std::sort(tmpNewSeqs.begin(), tmpNewSeqs.end(), compareLen);
-		for (std::string s : tmpNewSeqs) {
-			newSequences.push_back(s);
+int nbCorBases(std::string correctedRead) {
+	int n = 0;
+	for (unsigned i = 0; i < correctedRead.length(); i++) {
+		if ('A' <= correctedRead[i] && correctedRead[i] <= 'Z') {
+			n++;
 		}
 	}
 
-	return newSequences;
+	return n;
 }
+
+bool dropRead(std::string correctedRead) {
+	return (float) nbCorBases(correctedRead) / correctedRead.length() < 0.75;
+}
+
 
 void toUpperCase(std::string& s, int beg, int end) {
 	std::locale loc;
@@ -147,19 +47,55 @@ void toLowerCase(std::string& s, int beg, int end) {
 	}
 }
 
+std::vector<std::string> trimRead(std::string correctedRead, unsigned merSize) {
+	return {correctedRead};
+	std::vector<std::string> res;
+	unsigned beg, end, n;
+	beg = 0;
+	end = 0;
+	unsigned i = 0;
+	n = 0;
 
+	while (i < correctedRead.length()) {
+		while (i < correctedRead.length() and !isUpperCase(correctedRead[i])) {
+			i++;
+		}
+		beg = i;
+		n = 0;
 
-std::string weightConsensus(std::string& consensus, std::vector<std::string> pile, unsigned merSize, unsigned windowSize, unsigned solidThresh) {
+		while (i < correctedRead.length() and n < merSize) {
+			if (!isUpperCase(correctedRead[i])) {
+				n++;
+			} else {
+				n = 0;
+			}
+			i++;
+		}
+
+		end = i - n - 1;
+		if (end >= beg) {
+			std::string split = correctedRead.substr(beg, end - beg + 1);
+			// std::cerr << "split : " << split << std::endl;
+			if (!dropRead(split)) {
+				res.push_back(split);
+			}
+		}
+	}
+
+	return res;
+}
+
+std::string weightConsensus(std::string& consensus, std::vector<std::string>& pile, std::unordered_map<std::string, unsigned>& merCounts, unsigned merSize, unsigned windowSize, unsigned solidThresh) {
 	std::vector<std::string> splits;
 	std::string curSplit;
-	std::map<std::string, unsigned> merCounts = getKMersCounts(pile, merSize);
 
 	std::string header = "";
 	std::string sequence = "";
+	std::string curFct;
 
 	unsigned i = 0;
 	while (i < consensus.length() - merSize + 1) {
-		std::string curFct = consensus.substr(i, merSize);
+		curFct = consensus.substr(i, merSize);
 		toUpperCase(curFct, 0, merSize);
 		if (merCounts[curFct] >= solidThresh) {
 			toUpperCase(consensus, i, i + merSize - 1);
@@ -172,121 +108,169 @@ std::string weightConsensus(std::string& consensus, std::vector<std::string> pil
 	return consensus;
 }
 
-std::vector<std::pair<std::string, std::string>> computeConsensuses(std::string readId, std::vector<std::vector<std::string>>& piles, std::vector<std::pair<unsigned, unsigned>>& pilesPos, std::string readsDir, unsigned minSupport, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowSize) {
-	std::vector<std::pair<std::string, std::string>> res;
+std::string computeConsensuses(std::string& readId, std::vector<std::string> & piles, std::pair<unsigned, unsigned>& pilesPos, std::string& readsDir, unsigned& minSupport, unsigned& merSize, unsigned& commonKMers, unsigned& solidThresh, unsigned& windowSize) {
+	auto start_antoine = std::chrono::high_resolution_clock::now();
+	std::string res;
 
-	if (piles.size() == 0) {
-		return res;
-	}
+	// for (std::string s : piles) {
+	// 	std::cerr << s << std::endl;
+	// }
+	// return piles[0];
+	//6,10 curBest
+	std::vector<std::vector<std::string>> result = MSABMAAC(piles, 7, std::min(10, (int) piles.size()));
+	auto end_antoine = std::chrono::high_resolution_clock::now();
+	// std::cerr << "antoine took " << std::chrono::duration_cast<std::chrono::milliseconds>(end_antoine - start_antoine).count() << " ms\n";
 
-	// Split strings to compute consensuses quicker
-	std::vector<std::vector<std::string>> result = MSABMAAC(piles, 8);
-	std::vector<std::vector<std::string>> splits;
-	std::vector<std::string> curSplit;
-
-	for(uint32_t is(0);is<result[0].size();++is){
-		curSplit.clear();
-		for(uint32_t iR(0);iR<result.size();++iR){
-			if (!result[iR][is].empty())
-			curSplit.push_back(result[iR][is]);
-		}
-		splits.push_back(curSplit);
-	}
-
-	// Prepare POA input file
-	std::string POAinFile = readsDir + "../POAInput/" + readId;
-	const char* cPOAinFile = POAinFile.c_str();
-	std::ofstream inPOA(POAinFile);
-	int nbReg = 0;
-	for (std::vector<std::string> p : piles) {
-		unsigned mySize = (int) p.size();
-		// mySize = std::min(15, (int) p.size());
-		inPOA << mySize << std::endl;
-		for (unsigned i = 0; i < mySize; i++) {
-			std::string s = p[i];
-			std::cerr << ">" << nbReg << std::endl << s << std::endl;
-			inPOA << ">" << nbReg << std::endl << s << std::endl;
-			nbReg++;
-		}
-		std::cerr << std::endl;
-	}
-	inPOA.close();
-
-	// Run POA
-	std::string POAoutFile = readsDir + "../POAOutput/" + readId;
-	const char* cPOAOutFile = POAoutFile.c_str();
-	std::string cmd = "poaV2/poa -read_fasta " + POAinFile + " -lower -hb -best -pir " + POAoutFile + " poaV2/blosum80.mat > /dev/null 2> /dev/null";
-	const char *ccmd = cmd.c_str();
 	auto c_start = std::chrono::high_resolution_clock::now();
-	if (system(ccmd) == -1) {
-		exit(EXIT_FAILURE);
+	std::string consSeq = result[0][0];
+	// std::cerr << "I GOT : " << consSeq << std::endl;
+	std::transform(consSeq.begin(), consSeq.end(), consSeq.begin(), ::toupper);
+	// Align the computed consensus to the template, to retrieve the (raw, corrected) pairs of subsequences
+	std::string corTpl = consSeq;
+	std::string rawTpl = piles[0];
+	if (!consSeq.empty()) {
+		// std::cerr << ">consSeq" << std::endl << consSeq << std::endl;
+
+		// Declares a default Aligner
+		StripedSmithWaterman::Aligner aligner;
+		// Declares a default filter
+		StripedSmithWaterman::Filter filter;
+		// Declares an alignment that stores the result
+		StripedSmithWaterman::Alignment alignment;
+		// Declares the masklen (useful only for suboptimal alignments)
+		int32_t maskLen = 15;
+
+		// Aligns the query to the ref
+		// aligner.Align(piles[0].c_str(), consSeq.c_str(), consSeq.size(), filter, &alignment, maskLen);
+
+		// int qBeg, qEnd, rBeg, rEnd;
+		// qBeg = alignment.query_begin;
+		// qEnd = alignment.query_end;
+		// rBeg = alignment.ref_begin;
+		// rEnd = alignment.ref_end;
+		
+		// rawTpl = piles[0].substr(qBeg, qEnd - qBeg + 1);
+		// corTpl = consSeq.substr(rBeg, rEnd - rBeg + 1);
+
+
+
+		// Polish the consensus
+		std::vector<std::pair<std::string, std::string>> corList;
+		auto merCounts = getKMersCounts(piles, merSize, solidThresh);
+		if (corTpl.length() >= merSize) {
+			corTpl = weightConsensus(corTpl, piles, merCounts, merSize, windowSize, solidThresh);
+		}
+		auto c_start = std::chrono::high_resolution_clock::now();
+		corList = polishCorrection(corTpl, merCounts, merSize, solidThresh);
+		auto c_end = std::chrono::high_resolution_clock::now();
+		std::cerr << "polishing took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
+		for (std::pair<std::string, std::string> p : corList) {
+			std::string r = p.first;
+			// std::cerr << ">replacing" << std::endl << r << std::endl;
+			std::string c = p.second;
+			// std::cerr << ">with" << std::endl << c << std::endl;
+			int b, l;
+			b = corTpl.find(r);
+			l = r.length();
+			if ((int) b != -1) {
+				corTpl.replace(b, l, c);
+			}
+		}
+		std::transform(corTpl.begin(), corTpl.end(), corTpl.begin(), ::toupper);
+
+		// std::cerr << ">corTpl" << std::endl << corTpl << std::endl;
+		// res[0] = std::make_pair(rawTpl, corTpl);
+		res = corTpl;
 	}
 	auto c_end = std::chrono::high_resolution_clock::now();
-	remove(cPOAinFile);
-	std::cerr << "POA took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
-
-	// Store templates corrections in the result vector
-	res.clear();
-	std::ifstream cons(POAoutFile);
-	std::string consHeader = "";
-	std::string consSeq = "";
-	int i = 0;
-	while (getline(cons, consHeader)) {
-		getline(cons, consSeq);
-		// Align the computed consensus to the template, to retrieve the (raw, corrected) pairs of subsequences
-		std::pair<std::pair<int, int>, std::pair<int, int>> posPair = NeedlemanWunschLocalAlignments(piles[i][0], consSeq);
-		std::pair<int, int> rawPos = posPair.first;
-		std::pair<int, int> corPos = posPair.second;
-		std::string corTpl = consSeq.substr(corPos.first, corPos.second - corPos.first + 1);
-		std::string rawTpl = piles[i][0].substr(rawPos.first, rawPos.second - rawPos.first + 1);
-		// std::string rawTpl = piles[i][0];
-		corTpl = weightConsensus(corTpl, piles[i], merSize, windowSize, solidThresh);
-		res.push_back(std::make_pair(rawTpl, corTpl));
-		i++;
-	}
-	cons.close();
-	remove(cPOAOutFile);
-
-	c_end = std::chrono::high_resolution_clock::now();
+	// std::cerr << "voting took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
 
 	return res;
 }
 
-std::pair<std::string, std::vector<std::pair<std::pair<int, int>, int>>> alignConsensuses(std::string rawRead, std::map<std::string, std::string>& sequences, std::vector<std::pair<std::string, std::string>>& consensuses, std::vector<std::pair<unsigned, unsigned>> pilesPos, std::vector<std::vector<std::string>> piles, int startPos) {
-	std::vector<std::pair<std::string, std::string>> correctedReads;
+std::string alignConsensuses(std::string rawRead, std::string sequence, std::vector<std::string>& consensuses, std::vector<std::pair<unsigned, unsigned>>& pilesPos, std::vector<std::vector<std::string>>& piles, int startPos) {
 	int beg, end;
-	std::string sequence;
-	sequence = sequences[rawRead];
-	std::transform(sequence.begin() + startPos, sequence.end(), sequence.begin() + startPos, ::tolower);
-	std::vector<std::pair<std::pair<int, int>, int>> corPosPiles;
+	std::string outSequence;
+	outSequence = sequence;
+	std::transform(outSequence.begin() + startPos, outSequence.end(), outSequence.begin() + startPos, ::tolower);
 
-	// Anchor the corrected templates on the read
+	std::cerr << "sizes : " << consensuses.size() << " ; " << pilesPos.size() << std::endl;
+
 	std::string corWindow;
 	unsigned i = 0;
+	std::pair<std::string, std::string> c;
+	std::string tmpSequence, consUp;
+	std::pair<unsigned, unsigned> pPos;
+	int curPos = 0;
 	for (i = 0; i < consensuses.size(); i++) {
-		std::pair<std::string, std::string> c = consensuses[i];
+		// c = consensuses[i];
+		consUp = consensuses[i];
+		pPos = pilesPos[i];
 		// Don't proceed if no consensus was produced by POA
-		if (!c.second.empty()) {
-			// Replace the template by its correction on the read
-			std::transform(c.first.begin(), c.first.end(), c.first.begin(), ::tolower);
-			std::string tmpSequence = sequence;
-			std::transform(tmpSequence.begin(), tmpSequence.end(), tmpSequence.begin(), ::tolower);
-			beg = (int) tmpSequence.find(c.first);
-			end = beg + c.first.length() - 1;
-			if ((int) beg != -1) {
-				sequence.replace(beg, c.first.length(), c.second);
+		if (!consUp.empty()) {
+			// Align the consensus to the read
+			// consUp = c.second;
+			// Declares a default Aligner
+			StripedSmithWaterman::Aligner aligner;
+			// Declares a default filter
+			StripedSmithWaterman::Filter filter;
+			// Declares an alignment that stores the result
+			StripedSmithWaterman::Alignment alignment;
+			// Declares the masklen (useful only for suboptimal alignments)
+			int32_t maskLen = 15;
+			// std::cerr << "pilePos : " << pPos.first << " ; " << pPos.second << std::endl;
+
+			std::cerr << "aligning : " << consUp << std::endl;
+			std::cerr << "to : " << outSequence.substr(curPos, pPos.second - pPos.first + 1 + 100) << std::endl;
+			int sizeAl;
+			if (curPos + pPos.second - pPos.first + 1 + 100 >= outSequence.length()) {
+				sizeAl = outSequence.length() - curPos;
+			} else {
+				sizeAl = pPos.second - pPos.first + 1 + 100;
 			}
-			end = beg + c.second.length() - 1;
+			aligner.Align(consUp.c_str(), outSequence.c_str() + curPos, sizeAl, filter, &alignment, maskLen);
+
+			std::cerr << "aligned" << std::endl;
+
+			beg = alignment.ref_begin + curPos;
+			end = alignment.ref_end + curPos;
+			consUp = consUp.substr(alignment.query_begin, alignment.query_end - alignment.query_begin + 1);
+
+			// aligner.Align(c.second.c_str(), outSequence.c_str(), outSequence.length(), filter, &alignment, maskLen);
+			// beg = alignment.ref_begin;
+			// end = alignment.ref_end;
+			// consUp = consUp.substr(alignment.query_begin, alignment.query_end - alignment.query_begin + 1);
+			
+			outSequence.replace(beg, end - beg + 1, consUp);
+			curPos = end - 50;
+
+			// std::pair<std::pair<int, int>, std::pair<int, int>> posPair = NeedlemanWunschLocalAlignments(c.second, outSequence);
+			// beg = posPair.second.first;
+			// end = posPair.second.second;
+			// consUp = consUp.substr(posPair.first.first, posPair.first.second - posPair.first.first + 1);
+
+
+			// std::cerr << "cons size : " << consUp.length() << std::endl;
+			// std::cerr << "beg : " << alignment.query_begin << std::endl;
+			// std::cerr << "end : " << alignment.query_end << std::endl;
+
+			// std::cerr << "cons size : " << consUp.length() << std::endl;
+			// std::cerr << "beg : " << posPair.first.first << std::endl;
+			// std::cerr << "end : " << posPair.first.second << std::endl;
+			// std::cerr << "read size : " << outSequence.length() << std::endl;
+			// std::cerr << "beg : " << posPair.second.first << std::endl;
+			// std::cerr << "end : " << posPair.second.second << std::endl;
+			
+			// std::cerr << std::endl;
+
+		} else {
+			// TODO: may cause bugs
+			beg = -1;
+			end = -1;
 		}
-		// Specify that positions beg..end of the corrected read correspond to the current pile
-		corPosPiles.push_back(std::make_pair(std::make_pair(beg, end), i));
 	}
 
-	return std::make_pair(sequence, corPosPiles);
-}
-
-bool isUpperCase(char c) {
-	return 'A' <= c and c <= 'Z';
+	return outSequence;
 }
 
 int getNextSrc(std::string correctedRead, unsigned beg, unsigned merSize) {
@@ -321,137 +305,55 @@ int getNextDst(std::string correctedRead, unsigned beg, unsigned merSize) {
 	return nb >= merSize ? i - 1 : -1;
 }
 
-std::pair<std::vector<std::string>, int> getRegPiles(std::vector<std::pair<std::pair<int, int>, int>> corPosPiles, std::vector<std::vector<std::string>> piles, int beg, int end, int lastPile) {
-	int pileBeg, pileEnd;
-	std::vector<std::string> res;
-
-	unsigned i = lastPile;
-	while (i < corPosPiles.size() and corPosPiles[i].first.first <= end) {
-		pileBeg = corPosPiles[i].first.first;
-		pileEnd = corPosPiles[i].first.second;
-
-		if ((pileBeg <= beg and beg <= pileEnd) or (pileBeg <= end and end <= pileEnd)) {
-			for (unsigned j = 0; j < piles[corPosPiles[i].second].size(); j++) {
-				// Push current pile, as it spans the required positions
-				res.push_back(piles[corPosPiles[i].second][j]);
-
-				// Push previous and following piles, as they can contain information
-				// if (j - 1 >= 0) {
-				// 	res.push_back(piles[corPosPiles[i].second][j-1]);
-				// }
-				// if (j + 1 < piles[corPosPiles[i].second].size()) {
-				// 	res.push_back(piles[corPosPiles[i].second][j+1]);
-				// }
-			}
-		}
-		i++;
-	}
-
-	return std::make_pair(res, i - 1);
-}
-
-std::vector<std::string> removeUnanchoredPiles(std::vector<std::string>& regPiles, std::string src, std::string dst, unsigned merSize) {
-	std::vector<std::string> res;
-
-	for (std::string s : regPiles) {
-		std::map<std::string, std::vector<unsigned>> mersPos = getKMersPos(s, merSize);
-
-		std::vector<unsigned> posSrc = mersPos[src];
-		std::vector<unsigned> posDst = mersPos[dst];
-
-		if (!posSrc.empty() or !posDst.empty()) {
-			res.push_back(s);
-		}
-
-		// bool found = false;
-		// int p, q;			
-		// if (!posSrc.empty() and !posDst.empty()) {
-		// 	p = 0;
-		// 	found = false;
-		// 	while (!found and p < posSrc.size()) {
-		// 		q = 0;
-		// 		while (!found and q < posDst.size()) {
-		// 			found = posDst[q] > posSrc[p];
-		// 			q++;
-		// 		}
-		// 		p++;
-		// 	}
-
-		// 	if (found) {
-		// 		// res.push_back(s.substr(posSrc[p-1], posDst[q-1] - posSrc[p-1] + merSize));
-		// 		res.push_back(s);
-		// 	}
-		// }
-	}
-
-	return res;
-}
-
-std::pair<int, int> getNextBadRegion(std::string correctedRead, unsigned beg) {
-	int posBeg, posEnd;
-	unsigned i = beg;
-
-	while (i < correctedRead.length() and isUpperCase(correctedRead[i])) {
-		i++;
-	}
-	posBeg = i;
-
-	int nb = 0;
-	while (i < correctedRead.length() and nb < 4) {
-		if (isUpperCase(correctedRead[i])) {
-			nb++;
-		} else {
-			nb = 0;
-		}
-		i++;
-	}
-	posEnd = i - nb - 1;
-
-	return std::make_pair(posBeg, posEnd);
-}
-
 
 // Anchors without repeated k-mers
-std::vector<std::string> getAnchors(std::vector<std::string> pile, std::string region, unsigned merSize, int nb) {
-	std::vector<std::string> res;
+std::vector<std::pair<std::string, std::string>> getAnchors(std::unordered_map<std::string, unsigned>& merCounts, std::string srcZone, std::string dstZone, unsigned merSize, unsigned nb) {
+	std::vector<std::pair<std::string, std::string>> res;
+	unsigned i;
 
-	// Get the counts of the k-mers of the pile
-	std::map<std::string, unsigned> merCounts = getKMersCounts(pile, merSize);
+	std::unordered_map<std::string, std::vector<unsigned>> mersPosSrc = getKMersPos(srcZone, merSize);
+	std::unordered_map<std::string, std::vector<unsigned>> mersPosDst = getKMersPos(dstZone, merSize);
 
-	std::map<std::string, std::vector<unsigned>> mersPos = getKMersPos(region, merSize);
-
-	// Consider all k-mers of the region as potential anchors
-	std::vector<std::string> candidates;
-	for (unsigned i = 0; i < region.size() - merSize + 1; i++) {
-		candidates.push_back(region.substr(i, merSize));
+	// Consider all k-mers of the src zone as potential anchors
+	std::vector<std::string> candidatesSrc(srcZone.size() - merSize + 1);
+	for (i = 0; i < srcZone.size() - merSize + 1; i++) {
+		candidatesSrc[i] = srcZone.substr(i, merSize);
+	}
+	// Same with the dst zone
+	std::vector<std::string> candidatesDst(dstZone.size() - merSize + 1);
+	for (i = 0; i < dstZone.size() - merSize + 1; i++) {
+		candidatesDst[i] = dstZone.substr(i, merSize);
 	}
 
-	// Sort the k-mers set in ascending order of number of occurrences
-	std::sort(candidates.begin(), candidates.end(), 
-		[&merCounts](std::string& n1, std::string& n2) {
-			int occ1 = merCounts[n1];
-			int occ2 = merCounts[n2];
-			return  occ1 > occ2;
+	// Add the anchors pairs to the result vector, without allowing repeated k-mers
+	for (std::string csrc : candidatesSrc) {
+		if (mersPosSrc[csrc].size() == 1) {
+			for (std::string cdst : candidatesDst) {
+				if (mersPosDst[cdst].size() == 1) {
+					res.push_back(std::make_pair(csrc, cdst));
+				}
+			}
+		}
+	}
+
+	// Sort the anchors vector in ascending order of the number of occurrences of (src + dst)
+	std::sort(res.begin(), res.end(),
+		[&merCounts](std::pair<std::string, std::string>& r1, std::pair<std::string, std::string>& r2) {
+			int occ1 = merCounts[r1.first] + merCounts[r1.second];
+			int occ2 = merCounts[r2.first] + merCounts[r2.second];
+			return occ1 > occ2;
 		}
 	);
 
-	// Add the nb most frequent k-mers to the result set
-	unsigned i = 0;
-	int n = 0;
-	while (i < candidates.size() and n < nb) {
-		if (mersPos[candidates[i]].size() == 1) {
-			res.push_back(candidates[i]);
-			n++;
-		}
-		i++;
+	std::vector<std::pair<std::string, std::string>> finalRes;
+	for (i = 0; i < nb and i < res.size(); i++) {
+		finalRes.push_back(res[i]);
 	}
 
-	return res;
+	return finalRes;
 }
 
-std::vector<std::pair<std::string, std::string>> polishCorrection(std::string correctedRead, std::vector<std::pair<std::pair<int, int>, int>> corPosPiles, std::vector<std::vector<std::string>> piles, unsigned merSize, int solidThresh, int minGap, int maxGap) {
-	std::map<std::string, int> merCounts;
-	std::map<int, std::map<std::string, unsigned>> mapMerCounts;
+std::vector<std::pair<std::string, std::string>> polishCorrection(std::string correctedRead, std::unordered_map<std::string, unsigned>& merCounts, unsigned merSize, int solidThresh) {
 	std::set<std::string> visited;
 	unsigned curBranches;
 	unsigned dist;
@@ -460,8 +362,16 @@ std::vector<std::pair<std::string, std::string>> polishCorrection(std::string co
 	unsigned maxSize;
 	unsigned maxBranches = 50;
 	std::vector<std::pair<std::string, std::string>> corList;
-
+	// int zone = 4;
 	int zone = 3;
+	int srcBeg, srcEnd, dstBeg, dstEnd;
+	int tmpSrcBeg = 0, tmpSrcEnd = 0, tmpDstBeg = 0, tmpDstEnd = 0;
+	std::string src, dst;
+	std::pair<int, int> pos;
+	std::vector<std::pair<std::string, std::string>> anchors;
+	unsigned anchorNb;
+	std::string srcZone, dstZone;
+	std::unordered_map<std::string, std::vector<unsigned>> srcPos, dstPos;
 
 	// Skip uncorrected head of the read
 	unsigned i = 0;
@@ -469,266 +379,115 @@ std::vector<std::pair<std::string, std::string>> polishCorrection(std::string co
 		i++;
 	}
 
-	int srcBeg, srcEnd, dstBeg, dstEnd, k;
-	int tmpSrcBeg, tmpSrcEnd, tmpDstBeg, tmpDstEnd;
-	std::string src, dst;
-	int lastPile = 0;
-	// search for poorly supported regions bordered by solid corrected regions
+	// Search for poorly supported regions bordered by solid corrected regions
 	while (i < correctedRead.length()) {
-		std::pair<int, int> pos = getNextBadRegion(correctedRead, i);
-		std::cerr << "bad region is : " << correctedRead.substr(pos.first, pos.second - pos.first + 1) << std::endl;
 		srcEnd = getNextSrc(correctedRead, i, merSize + zone);
 		dstEnd = getNextDst(correctedRead, srcEnd + 1, merSize + zone);
 		srcBeg = srcEnd - merSize - zone + 1;
 		dstBeg = dstEnd - merSize - zone + 1;
 
-		k = zone;
-		tmpSrcBeg = srcBeg + k;
-		tmpSrcEnd = tmpSrcBeg + merSize - 1;
-		tmpDstBeg = dstBeg + merSize - k;
-		tmpDstEnd = tmpDstBeg + merSize - 1;
-
 		// Polish the poorly supported region region if 2 anchors were found
 		if (srcEnd != -1 and dstEnd != -1) {
-			if (minGap <= dstBeg - srcEnd - 1 && dstBeg - srcEnd - 1 <= maxGap) {
-				// Retrieve sequences of the windows overlapping to the region to polish
-				std::pair<std::vector<std::string>, int> p = getRegPiles(corPosPiles, piles, srcBeg, dstEnd, lastPile);
-				std::vector<std::string> regPiles = p.first;
-				lastPile = p.second;
-				std::vector<std::string> oldRegPiles = regPiles;
-				// regPiles = removeUnanchoredPiles(regPiles, src, dst, merSize);
+			correctedRegion = "";
+			srcZone = correctedRead.substr(srcBeg, merSize + zone);
+			dstZone = correctedRead.substr(dstBeg, merSize + zone);
+			anchors = getAnchors(merCounts, srcZone, dstZone, merSize, 5);
+			srcPos = getKMersPos(srcZone, merSize);
+			dstPos = getKMersPos(dstZone, merSize);
 
-				// std::cerr << "regpiles size : " << regPiles.size() << std::endl;
-
-				// Get the k-mers of the windows sequences
-				int minOrder = merSize;
-				for (int j = merSize; j >= minOrder; j--) {
-					mapMerCounts[j] = getKMersCounts(regPiles, j);
-				}
-
-				std::cerr << "got sequences" << std::endl;
-
-				// Attempt to link the anchors that are closest to the region to polish
-				correctedRegion = "";
-				src = correctedRead.substr(tmpSrcBeg, merSize);
-				dst = correctedRead.substr(tmpDstBeg, merSize);
+			// Attempt to link frequent anchors
+			anchorNb = 0;
+			while (anchorNb < anchors.size() and correctedRegion.empty()) {
+				src = anchors[anchorNb].first;
+				dst = anchors[anchorNb].second;
+				tmpSrcBeg = srcBeg + srcPos[src][0];
+				tmpSrcEnd = tmpSrcBeg + merSize - 1;
+				tmpDstBeg = dstBeg + dstPos[dst][0];
+				tmpDstEnd = tmpDstBeg + merSize - 1;
+				
+				auto c_start = std::chrono::high_resolution_clock::now();
 				if (src != dst) {
-					visited.clear();
 					curBranches = 0;
 					dist = 0;
 					curExt = src;
 					correctedRegion = "";
 					maxSize = 15.0 / 100.0 * 2.0 * (tmpDstBeg - tmpSrcEnd - 1) + (tmpDstBeg - tmpSrcEnd - 1) + merSize;
-					std::cerr << "Linking : " << src << " to " << dst << std::endl;
-					link(mapMerCounts, src, dst, merSize, visited, &curBranches, dist, curExt, correctedRegion, merSize, maxSize, maxBranches, solidThresh, minOrder);
-					std::cerr << "Result is : " << correctedRegion << std::endl;
-
-					// Link from tgt to src, inefficient in practice
-					// if (correctedRegion.empty()) {
-					// 	visited.clear();
-					// 	curBranches = 0;
-					// 	dist = 0;
-					// 	curExt = rev_comp::run(dst);
-					// 	correctedRegion = "";
-					// 	maxSize = 15.0 / 100.0 * 2.0 * (tmpDstBeg - tmpSrcEnd - 1) + (tmpDstBeg - tmpSrcEnd - 1) + merSize;
-					// 	std::cerr << "RCLinking : " << src << " to " << dst << std::endl;
-					// 	link(mapMerCounts, rev_comp::run(dst), rev_comp::run(src), merSize, visited, &curBranches, dist, curExt, correctedRegion, merSize, maxSize, maxBranches, solidThresh, minOrder);
-					// 	std::cerr << "RC bResult is : " << correctedRegion << std::endl;						
-					// }
+					link(merCounts, src, dst, merSize, visited, &curBranches, dist, curExt, correctedRegion, merSize, maxSize, maxBranches, solidThresh, merSize);
 				}
-
-
-				if (correctedRegion.empty()) {
-					// Compute frequent anchors to try to link again if first linking fails
-					std::vector<std::string> srcList = getAnchors(regPiles, correctedRead.substr(srcBeg, merSize + zone), merSize, zone + 1);
-					std::vector<std::string> dstList = getAnchors(regPiles, correctedRead.substr(dstBeg, merSize + zone), merSize, zone + 1);
-					std::vector<std::pair<std::string, std::string>> anchors;				
-					for (std::string s : srcList) {
-						for (std::string d : dstList) {
-							if (s != src or d != dst) {
-								anchors.push_back(std::make_pair(s, d));
-							}
-						}
-					}
-					std::map<std::string, std::vector<unsigned>> srcPos = getKMersPos(correctedRead.substr(srcBeg, merSize + zone), merSize);
-					std::map<std::string, std::vector<unsigned>> dstPos = getKMersPos(correctedRead.substr(dstBeg, merSize + zone), merSize);
-					
-
-					// Attempt to link frequent anchors
-					unsigned anchorNb = 0;
-					while (anchorNb < anchors.size() and minGap <= tmpDstBeg - tmpSrcEnd - 1 and tmpDstBeg - tmpSrcEnd - 1 <= maxGap and correctedRegion.empty()) {
-						src = anchors[anchorNb].first;
-						dst = anchors[anchorNb].second;
-						tmpSrcBeg = srcBeg + srcPos[src][0];
-						tmpSrcEnd = tmpSrcBeg + merSize - 1;
-						tmpDstBeg = dstBeg + dstPos[dst][0];
-						tmpDstEnd = tmpDstBeg + merSize - 1;
-						
-						if (src != dst) {
-							visited.clear();
-							curBranches = 0;
-							dist = 0;
-							curExt = src;
-							correctedRegion = "";
-							maxSize = 15.0 / 100.0 * 2.0 * (tmpDstBeg - tmpSrcEnd - 1) + (tmpDstBeg - tmpSrcEnd - 1) + merSize;
-							std::cerr << "Linking : " << src << " to " << dst << std::endl;
-							link(mapMerCounts, src, dst, merSize, visited, &curBranches, dist, curExt, correctedRegion, merSize, maxSize, maxBranches, solidThresh, minOrder);
-							std::cerr << "Result is : " << correctedRegion << std::endl;
-						}
-						anchorNb++;
-					}
-				}
-
-				if (!correctedRegion.empty()) {
-					corList.push_back(std::make_pair(correctedRead.substr(tmpSrcBeg, tmpDstEnd - tmpSrcBeg + 1), correctedRegion));
-				}
+				anchorNb++;
+				auto c_end = std::chrono::high_resolution_clock::now();
+				// std::cerr << "linking2 took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
 			}
+
+			if (!correctedRegion.empty()) {
+				corList.push_back(std::make_pair(correctedRead.substr(tmpSrcBeg, tmpDstEnd - tmpSrcBeg + 1), correctedRegion));
+			}
+
 			i = tmpDstBeg;
 		} else {
-			i = correctedRead.length();
+			i = correctedRead.length();	
 		}
 	}
 
-	std::cerr << "return" << std::endl;
 	return corList;
-}
-
-int nbCorBases(std::string correctedRead) {
-	int n = 0;
-	for (unsigned i = 0; i < correctedRead.length(); i++) {
-		if ('A' <= correctedRead[i] && correctedRead[i] <= 'Z') {
-			n++;
-		}
-	}
-
-	return n;
-}
-
-bool dropRead(std::string correctedRead) {
-	return (float) nbCorBases(correctedRead) / correctedRead.length() < 0.6;
-}
-
-std::string trimRead(std::string correctedRead, unsigned merSize) {
-	unsigned beg, end, n;
-	int i;
-	i = 0;
-	n = 0;
-	while (i < correctedRead.length() and n < merSize) {
-		if (isUpperCase(correctedRead[i])) {
-			n++;
-		} else {
-			n = 0;
-		}
-		i++;
-	}
-	beg = i - merSize + 1;
-
-	i = correctedRead.length() - 1;
-	n = 0;
-	while (i >= 0 and n < merSize) {
-		if (isUpperCase(correctedRead[i])) {
-			n++;
-		} else {
-			n = 0;
-		}
-		i--;
-	}
-	end = i + merSize - 1;
-
-	if (end > beg) {
-		return correctedRead.substr(beg, end - beg + 1);
-	} else {
-		return "";
-	}
 }
 
 void processRead(std::vector<Alignment>& alignments, std::string readsDir, unsigned minSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap) {
 	std::string readId = alignments.begin()->qName;
 
 	// Compute alignment piles
-	std::map<std::string, std::string> sequences = getSequencesMaps(alignments, readsDir);
+	auto c_start = std::chrono::high_resolution_clock::now();
+	std::unordered_map<std::string, std::string> sequences = getSequencesunordered_maps(alignments, readsDir);
 	std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<std::string>>> pairPiles = getAlignmentPiles(alignments, minSupport, windowSize, windowOverlap, sequences);
 	std::vector<std::vector<std::string>> piles = pairPiles.second;
 	std::vector<std::pair<unsigned, unsigned>> pilesPos = pairPiles.first;
-
-	// Remove sequences sharing too few solid k-mers with their associated template
-	std::vector<std::vector<std::string>> oldPiles = piles;
+	auto c_end = std::chrono::high_resolution_clock::now();
+	// std::cerr << "init took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
 	unsigned i = 0;
-	while (i < piles.size()) {
-		std::string tpl = piles[i][0];
 
-		piles[i] = removeBadSequencesPrev(piles[i], piles[i][0], merSize, commonKMers, solidThresh, windowSize);
-		if (piles[i].size() < minSupport) {
-			piles.erase(piles.begin() + i);
-			pilesPos.erase(pilesPos.begin() + i);
-		} else {
-			i++;
-		}
-	}
-
-	// Compute consensuses for all the piles at once
-	std::vector<std::pair<std::string, std::string>> consensuses;
-
+	// Compute consensuses for all the piles
+	auto c_start1 = std::chrono::high_resolution_clock::now();
+	std::vector<std::string> consensuses(piles.size());
+	// std::vector<std::pair<std::string, std::string>> curCons;
 	for (i = 0; i < piles.size(); i++) {
-		std::vector<std::pair<unsigned, unsigned>> curPos;
-		curPos.push_back(pilesPos[i]);
-
-		std::vector<std::vector<std::string>> curPiles;
-		curPiles.push_back(piles[i]);
-
-		consensuses.push_back(computeConsensuses(readId, curPiles, curPos, readsDir, minSupport, merSize, commonKMers, solidThresh, windowSize)[0]);
+		std::cerr << "go compute" << std::endl;
+		consensuses[i] = computeConsensuses(readId, piles[i], pilesPos[i], readsDir, minSupport, merSize, commonKMers, solidThresh, windowSize);
+		std::cerr << "did compute" << std::endl;
 	}
-	
+	auto c_end1 = std::chrono::high_resolution_clock::now();
+	// std::cerr << "consensus took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end1 - c_start1).count() << " ms\n";
+
 	// Align computed consensuses to the read and retrieve poorly supported regions windows positions
-	std::pair<std::string, std::vector<std::pair<std::pair<int, int>, int>>> p = alignConsensuses(readId, sequences, consensuses, pilesPos, piles, 0);
-	std::string correctedRead = p.first;
-	std::vector<std::pair<std::pair<int, int>, int>> corPosPiles = p .second;
+	c_start = std::chrono::high_resolution_clock::now();
+	std::cerr << "go align" << std::endl;
+	std::string correctedRead = alignConsensuses(readId, sequences[alignments[0].qName], consensuses, pilesPos, piles, 0);
+	std::cerr << "did align" << std::endl;
+	c_end = std::chrono::high_resolution_clock::now();
+	std::cerr << "anchoring1 took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
 
 	// Drop read if it contains too many poorly supported bases
 	// if (!dropRead(correctedRead)) {
 	if (1) {
-		// Polish poorly supported regions with local DBGs
-		std::vector<std::pair<std::string, std::string>> corList, newList;
-
-		// Polish small regions with a small k-mer size
-		newList = polishCorrection(correctedRead, corPosPiles, oldPiles, merSize, 2, 1, 2 * merSize);
-		for (auto p : newList) {
-			corList.push_back(p);
-		}
-
-		// Polish larger ergions with a larger k-mer size
-		newList = polishCorrection(correctedRead, corPosPiles, oldPiles, 2 * merSize, 2, 2 * merSize + 1, 100);
-		for (auto p : newList) {
-			corList.push_back(p);
-		}
-
-
-		// Polish extremely large regions with a largerer k-mer size. Inefficient, would be better to split the read
-		// newList = polishCorrection(correctedRead, corPosPiles, oldPiles, 3 * merSize, 1, 101, 300);
-		// for (auto p : newList) {
-		// 	corList.push_back(p);
-		// }
-
-		// Anchor the polished regions to the read (replace the original region by its polished version). Non-optimal, should be done online.
-		for (std::pair<std::string, std::string> p : corList) {
-			std::string r = p.first;
-			std::string c = p.second;
-			int b, l;
-			b = correctedRead.find(r);
-			l = r.length();
-			if ((int) b != -1) {
-				correctedRead.replace(b, l, c);
-			}
-		}
-
 		// Trim the read (trims until a long sketch of corrected bases if found. Ex: aaaaCCggagtAttagGGACTTACGATCGATCGATCa => GGACTTACGATCGATCGATC)
-		correctedRead = trimRead(correctedRead, 100);
-		if (!correctedRead.empty()) {
+		c_start = std::chrono::high_resolution_clock::now();
+		std::vector<std::string> correctedSplits = trimRead(correctedRead, windowSize);
+		unsigned nbSplit = 0;
+		while (nbSplit < correctedSplits.size()) {
 			outMtx.lock();
-			std::cout << ">" << readId << std::endl << correctedRead << std::endl;
+			std::cout << ">" << readId << "_" << nbSplit + 1 << std::endl << correctedSplits[nbSplit] << std::endl;
 			outMtx.unlock();
+			nbSplit++;
 		}
+
+		// outMtx.lock();
+		// std::cout << ">" << readId << std::endl << correctedRead << std::endl;
+		// outMtx.unlock();
 	}
+
+	sequences.clear();
+	piles.clear();
+	pilesPos.clear();
+	alignments.clear();
 }
 
 
@@ -739,9 +498,10 @@ void processReads(std::vector<std::vector<Alignment>>& reads, std::string readsD
 		auto c_start = std::chrono::high_resolution_clock::now();
 		processRead(alignments, readsDir, minSupport, windowSize, merSize, commonKMers, solidThresh, windowOverlap);
 		auto c_end = std::chrono::high_resolution_clock::now();
-		std::cerr << "processing " << alignments[0].qName << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
+		// std::cerr << "kMersProcessingng " << alignments[0].qName << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
 	}
 
+	reads.clear();
 }
 
 // Multithread ok, but running with GNU parallel for now.
@@ -755,9 +515,9 @@ void runCorrection(std::string alignmentFile, std::string readsDir, unsigned min
 	int readNumber = 0;
 
 	// Init threads
-	std::vector<std::vector<std::vector<Alignment>>> reads;
+	std::vector<std::vector<std::vector<Alignment>>> reads(nbThreads);
 	for (unsigned i = 0; i < nbThreads; i++) {
-		reads.push_back(std::vector<std::vector<Alignment>>());
+		reads[i] = std::vector<std::vector<Alignment>>();
 	}
 
 	getline(f, line);
@@ -770,6 +530,7 @@ void runCorrection(std::string alignmentFile, std::string readsDir, unsigned min
 			curReadAlignments.push_back(al);
 			getline(f, line);
 		} else {
+			std::sort(curReadAlignments.begin(), curReadAlignments.end());
 			reads[readNumber % nbThreads].push_back(curReadAlignments);	
 			readNumber++;
 			curReadAlignments.clear();
@@ -778,12 +539,12 @@ void runCorrection(std::string alignmentFile, std::string readsDir, unsigned min
 	}
 
 	// Launch threads
-	std::vector<std::future<void>> threads;
+	std::vector<std::future<void>> threads(nbThreads);
 	for (unsigned i = 0 ; i < nbThreads ; i++) {
 		std::vector<std::vector<Alignment>> als = reads[i];
-		threads.push_back(async(std::launch::async, [als, readsDir, minSupport, windowSize, merSize, commonKMers, solidThresh, windowOverlap]() mutable {
+		threads[i] = async(std::launch::async, [als, readsDir, minSupport, windowSize, merSize, commonKMers, solidThresh, windowOverlap]() mutable {
 			processReads(als, readsDir, minSupport, windowSize, merSize, commonKMers, solidThresh, windowOverlap);
-		}));
+		});
 	}
 	
 	// Get threads results

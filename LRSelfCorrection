@@ -28,11 +28,11 @@ nproc=$(nproc)
 tmpdir="."
 out=""
 minSupport=3
-windowSize=400
-merSize=10
+windowSize=350
+merSize=9
 commonKMers=4
 solid=3
-windowOverlap=0
+windowOverlap=50
 
 #Print help if no argument specified
 if [[ "$1" == "" ]] ; then
@@ -149,10 +149,9 @@ LRSCs=$(readlink -f "$0")
 LRSCf=$(dirname $LRSCs)
 
 echo "["$(date)"] Self-aligning the long reads (minimap2)"
-$LRSCf/minimap2/minimap2 -w5 --dual=yes -PD --no-long-join -g1000 "$reads" "$reads" > $tmpdir/"dual_$alignments"
+$LRSCf/minimap2/minimap2 --dual=yes -PD --no-long-join -w5 -t4 -g1000 -m30 -n1 "$reads" "$reads" > $tmpdir/"$alignments"
 
 echo "["$(date)"] Sorting the alignments file"
-sort -T $tmpdir/ -k1,1 -k3,3n -k4,4n -k8,8n -k9,9n $tmpdir/"dual_$alignments" > $tmpdir/"$alignments"
 
 echo "["$(date)"] Preparing the temporary files"
 $LRSCf/bin/prepareRawLongReads.py "$reads" $tmpdir/RawLongReads/
@@ -162,6 +161,7 @@ ls $tmpdir/ExplodedAlignments > $tmpdir/ListAlignments
 
 echo "["$(date)"] Correcting the long reads"
 $LRSCf/bin/parallelCorrection.sh $tmpdir "$minSupport" "$windowSize" "$merSize" "$commonKMers" "$solid" "$windowOverlap" "$nproc" "$out"
+#./bin/LRSelfCorrection -a $tmpdir/"$alignments" -d $tmpdir/RawLongReads/ -s "$minSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -f "$solid" -m "$windowOverlap" -j "$nproc" >> "$out"
 echo "["$(date)"] Removing the temporary files"
 # rm -Rf $tmpdir
 echo "["$(date)"] Exiting"

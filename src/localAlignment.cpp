@@ -20,9 +20,11 @@ std::pair<int**, std::pair<int, int>> NeedlemanWunschLocalMatrix(std::string s1,
 	int s;
 	for (i = 1 ; i < s1.length() + 1; i++) {
 		for (j = 1 ; j < s2.length() + 1; j++) {
-			s = s1[i-1] == s2[j-1] ? 1 : -6;
+			// s = s1[i-1] == s2[j-1] ? 5: -10;
+			// matrix[i][j] = std::max(std::max(0, matrix[i-1][j-1] + s), std::max(matrix[i-1][j] - 5, matrix[i][j-1] - 5));
+			s = s1[i-1] == s2[j-1] ? 1 : -5;
 			matrix[i][j] = std::max(std::max(0, matrix[i-1][j-1] + s), std::max(matrix[i-1][j] - 1, matrix[i][j-1] - 1));
-			if (matrix[i][j] > maximum) {
+			if (matrix[i][j] >= maximum) {
 				maximum = matrix[i][j];
 				maxI = i;
 				maxJ = j;
@@ -38,52 +40,33 @@ std::pair<std::pair<int, int>, std::pair<int, int>> NeedlemanWunschLocalAlignmen
 	int** matrix = res.first;
 	std::pair<int, int> maxs = res.second;
 
-	std::string al1, al2;
 	int i = maxs.first;
 	int j = maxs.second;
 
 	int score, scoreDiag, scoreLeft, s;
-	int editDistance = 0;
 
 	while (i > 0 and j > 0 and matrix[i][j] != 0) {
 		score = matrix[i][j];
 		scoreDiag = matrix[i-1][j-1];
 		scoreLeft = matrix[i-1][j];
-		s = s1[i-1] == s2[j-1] ? 1 : -1;
+		s = s1[i-1] == s2[j-1] ? 1 : -5;
 
 		if (score == scoreDiag + s) {
-			al1 = s1[i-1] + al1;
-			al2 = s2[j-1] + al2;
-			if (s1[i-1] != s2[j-1]) {
-				editDistance++;
-			}
 			i--;
 			j--;
 		} else if (score == scoreLeft - 1) {
-			al1 = s1[i-1] + al1;
-			al2 = "-" + al2;
 			i--;
-			editDistance++;
 		} else {
-			al1 = "-" + al1;
-			al2 = s2[j-1] + al2;
 			j--;
-			editDistance++;
 		}
 	}
 
 	while (i > 0 and matrix[i][j] != 0) {
-		al1 = s1[i-1] + al1;
-		al2 = "-" + al2;
 		i--;
-		editDistance++;
 	}
 
 	while (j > 0 and matrix[i][j] != 0) {
-		al1 = "-" + al1;
-		al2 = s2[j-1] + al2;
 		j--;
-		editDistance++;
 	}
 
 	for(unsigned k = 0 ; k < s1.size() ; k++) {

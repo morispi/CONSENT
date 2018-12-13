@@ -10,9 +10,9 @@ struct Alignment {
 	unsigned tLength;
 	unsigned tStart;
 	unsigned tEnd;
-	std::string resMatches;
-	std::string alBlockLen;
-	std::string unordered_mapQual;
+	// std::string resMatches;
+	// std::string alBlockLen;
+	// std::string unordered_mapQual;
 
 	bool operator<(const Alignment& a2) const {
 		if (qName < a2.qName) {
@@ -51,8 +51,7 @@ struct Alignment {
 	Alignment(std::string al) {
 		std::string token;
 		std::stringstream iss(al);
-		getline(iss, token, '\t');
-		qName = token;
+		getline(iss, qName, '\t');
 		getline(iss, token, '\t');
 		qLength = stoi(token);
 		getline(iss, token, '\t');
@@ -62,8 +61,7 @@ struct Alignment {
 		qEnd = stoi(token) - 1;
 		getline(iss, token, '\t');
 		strand = token == "+" ? false : true;
-		getline(iss, token, '\t');
-		tName = token;
+		getline(iss, tName, '\t');
 		getline(iss, token, '\t');
 		tLength = stoi(token);
 		getline(iss, token, '\t');
@@ -71,11 +69,11 @@ struct Alignment {
 		getline(iss, token, '\t');
 		// Has to be -1, cause miniunordered_map flags as endPosition the nt following the last match
 		tEnd = stoi(token) - 1;
-		getline(iss, token, '\t');
-		resMatches = token;
-		getline(iss, token, '\t');
-		alBlockLen = token;
-		getline(iss, token, '\t');
-		unordered_mapQual = token;
+		// getline(iss, token, '\t');
+		// resMatches = token;
+		// getline(iss, token, '\t');
+		// alBlockLen = token;
+		// getline(iss, token, '\t');
+		// unordered_mapQual = token;
 	}
 };

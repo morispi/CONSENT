@@ -11,7 +11,7 @@ long timediff(clock_t t1, clock_t t2) {
     return elapsed;
 }
 
-void buildAndAnalysePOMSA (int n_input_seqs, LPOSequence_T* lpo_out, LPOSequence_T **input_seqs, ResidueScoreMatrix_T score_matrix, int use_aggressive_fusion, int do_progressive, char* pair_score_file, int do_global, int do_preserve_sequence_order, char* comment, FILE* seq_ifile, char* fasta_out, FILE* errfile, int ibundle, int bundling_threshold);
+void buildAndAnalysePOMSA (int n_input_seqs, LPOSequence_T* lpo_out, LPOSequence_T **input_seqs, ResidueScoreMatrix_T score_matrix, int use_aggressive_fusion, int do_progressive, char* pair_score_file, int do_global, int do_preserve_sequence_order, char* comment, FILE* seq_ifile, char* fasta_out, FILE* errfile, int ibundle, int bundling_threshold, int CONS);
 
 static LPOSequence_T *read_partial_order_file (char *po_filename, char *subset_filename, int remove_listed_seqs, int keep_all_links, int do_switch_case, ResidueScoreMatrix_T *mat);
 
@@ -207,6 +207,23 @@ clock_t t1, t2;
     fprintf(errfile,"...Read %d sequences from MSA file %s...\n",lpo_in->nsource_seq,po_filename);
     input_seqs[n_input_seqs++] = lpo_in;
     lpo_in = NULL;
+
+    FILE* outFile = fopen(fasta_out, "w");
+
+    buildAndAnalysePOMSA (n_input_seqs, lpo_out, input_seqs, score_matrix,  use_aggressive_fusion, do_progressive, pair_score_file, do_global,  do_preserve_sequence_order,  comment, outFile, fasta_out, errfile,ibundle, bundling_threshold, 1);
+
+      for (i=0;i<n_input_seqs;i++) {
+        for (j=0;j<nseq;j++) {
+          if (input_seqs[i]==&(seq[j])) {
+            break;
+          }
+        }
+        free_lpo_sequence(input_seqs[i],(j==nseq));
+      }
+      n_input_seqs = 0;
+
+      fclose(outFile);
+
   }
   
   if (po2_filename) {
@@ -282,7 +299,7 @@ clock_t t1, t2;
         }
       }
 
-      buildAndAnalysePOMSA (n_input_seqs, lpo_out, input_seqs, score_matrix,  use_aggressive_fusion, do_progressive, pair_score_file, do_global,  do_preserve_sequence_order,  comment, outFile, fasta_out, errfile,ibundle, bundling_threshold);
+      buildAndAnalysePOMSA (n_input_seqs, lpo_out, input_seqs, score_matrix,  use_aggressive_fusion, do_progressive, pair_score_file, do_global,  do_preserve_sequence_order,  comment, outFile, fasta_out, errfile,ibundle, bundling_threshold, 0);
 
       for (i=0;i<n_input_seqs;i++) {
         for (j=0;j<nseq;j++) {
@@ -296,6 +313,7 @@ clock_t t1, t2;
 
     }
     fclose(seq_ifile);
+    fclose(outFile);
 
     // nseq = read_fasta (seq_ifile, &seq, do_switch_case, &comment);
     // fclose (seq_ifile);
@@ -340,7 +358,7 @@ t2 = clock();
 }
 
 
-void buildAndAnalysePOMSA (int n_input_seqs, LPOSequence_T* lpo_out, LPOSequence_T **input_seqs, ResidueScoreMatrix_T score_matrix, int use_aggressive_fusion, int do_progressive, char* pair_score_file, int do_global, int do_preserve_sequence_order, char* comment, FILE* outFile, char* fasta_out, FILE* errfile, int ibundle, int bundling_threshold) {
+void buildAndAnalysePOMSA (int n_input_seqs, LPOSequence_T* lpo_out, LPOSequence_T **input_seqs, ResidueScoreMatrix_T score_matrix, int use_aggressive_fusion, int do_progressive, char* pair_score_file, int do_global, int do_preserve_sequence_order, char* comment, FILE* outFile, char* fasta_out, FILE* errfile, int ibundle, int bundling_threshold, int CONS) {
   /** BUILD AND ANALYZE OUTPUT PO-MSA **/
   // if (n_input_seqs == 0) { /* HMM.. NO DATA. */
   //   WARN_MSG(USERR,(ERRTXT,"No input sequences were provided; use one of the -read_ flags.\nExiting."), "$Revision: 1.2.2.9 $");
@@ -379,7 +397,7 @@ void buildAndAnalysePOMSA (int n_input_seqs, LPOSequence_T* lpo_out, LPOSequence
   //   if (seq_ifile=fopen(fasta_out,"w")) { /* FASTA-PIR ALIGNMENT*/
       // fprintf(stderr, "calling write lpo\n");
       write_lpo_bundle_as_fasta(outFile,lpo_out,score_matrix.nsymbol,
-        score_matrix.symbol,ibundle);
+        score_matrix.symbol,ibundle, CONS);
   //     fclose(seq_ifile);
   //     fprintf(errfile,"...Wrote %d sequences to FASTA-PIR file %s...\n",lpo_out->nsource_seq,fasta_out);
   //   }
