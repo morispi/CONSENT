@@ -12,6 +12,40 @@
 #include "../BMEAN/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h"
 
 std::mutex outMtx;
+std::map<std::string, std::vector<bool>> readIndex;
+
+std::vector<bool> fullstr2num(const string& str){
+  std::vector<bool> res;
+  for(uint i(0);i<str.size();i++){
+    switch (str[i]){
+      case 'A':res.push_back(false);res.push_back(false);break;
+      case 'C':res.push_back(false);res.push_back(true);break;
+      case 'G':res.push_back(true);res.push_back(false);break;
+      default:res.push_back(true);res.push_back(true);break;
+    }
+  }
+  return res;
+}
+
+std::string fullnum2str(vector<bool> num){
+  string str;
+  for(uint i(0);i<num.size();i+=2){
+    if(num[i]){
+      if(num[i+1]){
+        str.push_back('T');
+      }else{
+        str.push_back('G');
+      }
+    }else{
+      if(num[i+1]){
+        str.push_back('C');
+      }else{
+        str.push_back('A');
+      }
+    }
+  }
+  return str;
+}
 
 bool isUpperCase(char c) {
 	return 'A' <= c and c <= 'Z';
@@ -343,12 +377,28 @@ std::string polishCorrection(std::string correctedRead, std::unordered_map<kmer,
 	return correctedRead;
 }
 
+std::unordered_map<std::string, std::string> getSequencesMap(std::vector<Alignment>& alignments) {
+	std::unordered_map<std::string, std::string> sequences;
+	std::string header, seq;
+
+	// Insert template sequence
+	sequences[alignments.begin()->qName] = fullnum2str(readIndex[alignments.begin()->qName]);
+
+	// Insert aligned sequences
+	for (Alignment al : alignments) {
+		sequences[al.tName] = fullnum2str(readIndex[al.tName]);
+	}
+
+	return sequences;
+}
+
 void processRead(std::vector<Alignment>& alignments, std::string readsDir, unsigned minSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap) {
 	std::string readId = alignments.begin()->qName;
 
 	// Compute alignment piles
 	// auto c_start = std::chrono::high_resolution_clock::now();
-	std::unordered_map<std::string, std::string> sequences = getSequencesunordered_maps(alignments, readsDir);
+	// std::unordered_map<std::string, std::string> sequences = getSequencesunordered_maps(alignments, readsDir);
+	std::unordered_map<std::string, std::string> sequences = getSequencesMap(alignments);
 	std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<std::string>>> pairPiles = getAlignmentPiles(alignments, minSupport, windowSize, windowOverlap, sequences);
 	std::vector<std::vector<std::string>> piles = pairPiles.second;
 	std::vector<std::pair<unsigned, unsigned>> pilesPos = pairPiles.first;
@@ -404,14 +454,31 @@ void processReads(std::vector<std::vector<Alignment>>& reads, std::string readsD
 	}
 }
 
+std::map<std::string, std::vector<bool>> indexReads(std::string readsFile) {
+	std::ifstream f(readsFile);
+	std::string header, sequence;
+	std::map<std::string, std::vector<bool>> res;
+
+	getline(f, header);
+	while (header.length() > 0) {
+		header.erase(0, 1);
+		getline(f, sequence);
+		res[header] = fullstr2num(sequence);
+		getline(f, header);
+	}
+	return res;
+}
+
 // Multithread ok, but running with GNU parallel for now as BOA still has memory leaks
-void runCorrection(std::string alignmentFile, std::string readsDir, unsigned minSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap, unsigned nbThreads) {	
+void runCorrection(std::string alignmentFile, std::string readsDir, unsigned minSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap, unsigned nbThreads, std::string readsFile) {	
 	std::ifstream f(alignmentFile);
 	std::vector<Alignment> curReadAlignments;
 	Alignment al;
 	std::string curRead, line;
 	curRead = "";
 	int readNumber = 0;
+
+	readIndex = indexReads(readsFile);
 
 	// Init threads
 	std::vector<std::vector<std::vector<Alignment>>> reads(nbThreads);

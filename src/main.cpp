@@ -6,7 +6,7 @@ int main(int argc, char* argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	std::string alignmentFile, readsDir;
+	std::string alignmentFile, readsDir, readsFile;
 	unsigned minSupport, windowSize, nbThreads, opt, merSize, commonKMers, solidThresh, windowOverlap;
 
 	readsDir =  "RawLongReads/";
@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
 	nbThreads = 1;
 
 
-	while ((opt = getopt(argc, argv, "a:d:k:s:l:f:e:p:c:m:j:w:m:")) != -1) {
+	while ((opt = getopt(argc, argv, "a:d:k:s:l:f:e:p:c:m:j:w:m:r:")) != -1) {
         switch (opt) {
 			case 'a':
 				alignmentFile = optarg;
@@ -45,6 +45,9 @@ int main(int argc, char* argv[]) {
 			case 'm':
 				windowOverlap = atoi(optarg);
 				break;
+			case 'r':
+				readsFile = optarg;
+				break;
 			case 'j':
 				nbThreads = atoi(optarg);
 				break;
@@ -54,7 +57,7 @@ int main(int argc, char* argv[]) {
         }
     }
     
-	runCorrection(alignmentFile, readsDir, minSupport, windowSize, merSize, commonKMers, solidThresh, windowOverlap, nbThreads);
+	runCorrection(alignmentFile, readsDir, minSupport, windowSize, merSize, commonKMers, solidThresh, windowOverlap, nbThreads, readsFile);
 
 	return EXIT_SUCCESS;
 }
