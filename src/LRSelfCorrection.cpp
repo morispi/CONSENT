@@ -392,7 +392,7 @@ std::unordered_map<std::string, std::string> getSequencesMap(std::vector<Alignme
 	return sequences;
 }
 
-void processRead(std::vector<Alignment>& alignments, std::string readsDir, unsigned minSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap) {
+std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& alignments, std::string readsDir, unsigned minSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap) {
 	std::string readId = alignments.begin()->qName;
 
 	// Compute alignment piles
@@ -426,15 +426,17 @@ void processRead(std::vector<Alignment>& alignments, std::string readsDir, unsig
 	// if (!dropRead(correctedRead)) {
 	if (1) {
 		// Split the read if it contains uncorrected windows
-		c_start = std::chrono::high_resolution_clock::now();
-		std::vector<std::string> correctedSplits = trimRead(correctedRead, windowSize);
-		unsigned nbSplit = 0;
-		while (nbSplit < correctedSplits.size()) {
-			outMtx.lock();
-			std::cout << ">" << readId << "_" << nbSplit + 1 << std::endl << correctedSplits[nbSplit] << std::endl;
-			outMtx.unlock();
-			nbSplit++;
-		}
+		// c_start = std::chrono::high_resolution_clock::now();
+		// std::vector<std::string> correctedSplits = trimRead(correctedRead, windowSize);
+		// unsigned nbSplit = 0;
+		// while (nbSplit < correctedSplits.size()) {
+		// 	outMtx.lock();
+		// 	std::cout << ">" << readId << "_" << nbSplit + 1 << std::endl << correctedSplits[nbSplit] << std::endl;
+		// 	outMtx.unlock();
+		// 	nbSplit++;
+		// }
+
+		return std::make_pair(readId, correctedRead);
 
 		// outMtx.lock();
 		// std::cout << ">" << readId << std::endl << correctedRead << std::endl;
@@ -443,16 +445,19 @@ void processRead(std::vector<Alignment>& alignments, std::string readsDir, unsig
 }
 
 
-void processReads(std::vector<std::vector<Alignment>>& reads, std::string readsDir, unsigned minSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap) {
-	std::vector<std::pair<std::string, std::string>> consensuses;
+// void processReads(std::vector<std::vector<Alignment>>& reads, std::string readsDir, unsigned minSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap) {
+// 	std::vector<std::pair<std::string, std::string>> consensuses;
 
-	for (std::vector<Alignment> alignments : reads) {
-		auto c_start = std::chrono::high_resolution_clock::now();
-		processRead(alignments, readsDir, minSupport, windowSize, merSize, commonKMers, solidThresh, windowOverlap);
-		auto c_end = std::chrono::high_resolution_clock::now();
-		std::cerr << "processing " << alignments[0].qName << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
-	}
-}
+// 	for (std::vector<Alignment> alignments : reads) {
+// 		auto c_start = std::chrono::high_resolution_clock::now();
+// 		std::pair<std::string, std::string> correctedRead = processRead(alignments, readsDir, minSupport, windowSize, merSize, commonKMers, solidThresh, windowOverlap);
+// 		outMtx.lock();
+// 		std::cout << ">" << correctedRead.first << std::endl << correctedRead.second << std::endl;
+// 		outMtx.unlock();
+// 		auto c_end = std::chrono::high_resolution_clock::now();
+// 		std::cerr << "processing " << alignments[0].qName << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
+// 	}
+// }
 
 std::map<std::string, std::vector<bool>> indexReads(std::string readsFile) {
 	std::ifstream f(readsFile);
@@ -470,21 +475,59 @@ std::map<std::string, std::vector<bool>> indexReads(std::string readsFile) {
 }
 
 // Multithread ok, but running with GNU parallel for now as BOA still has memory leaks
-void runCorrection(std::string alignmentFile, std::string readsDir, unsigned minSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap, unsigned nbThreads, std::string readsFile) {	
-	std::ifstream f(alignmentFile);
+// void runCorrection(std::string alignmentFile, std::string readsDir, unsigned minSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap, unsigned nbThreads, std::string readsFile) {	
+// 	std::ifstream f(alignmentFile);
+// 	std::vector<Alignment> curReadAlignments;
+// 	Alignment al;
+// 	std::string curRead, line;
+// 	curRead = "";
+// 	int readNumber = 0;
+
+// 	readIndex = indexReads(readsFile);
+
+// 	// Init threads
+// 	std::vector<std::vector<std::vector<Alignment>>> reads(nbThreads);
+// 	for (unsigned i = 0; i < nbThreads; i++) {
+// 		reads[i] = std::vector<std::vector<Alignment>>();
+// 	}
+
+// 	getline(f, line);
+// 	while(line.length() > 0 or !curReadAlignments.empty()) {
+// 		if (line.length() > 0) {
+// 			al = Alignment(line);
+// 		}
+// 		if (line.length() > 0 and (curRead == "" or al.qName == curRead)) {
+// 			curRead = al.qName;
+// 			curReadAlignments.push_back(al);
+// 			getline(f, line);
+// 		} else {
+// 			std::sort(curReadAlignments.begin(), curReadAlignments.end());
+// 			reads[readNumber % nbThreads].push_back(curReadAlignments);	
+// 			readNumber++;
+// 			curReadAlignments.clear();
+// 			curRead = "";
+// 		}
+// 	}
+
+// 	// Launch threads
+// 	std::vector<std::future<void>> threads(nbThreads);
+// 	for (unsigned i = 0 ; i < nbThreads ; i++) {
+// 		std::vector<std::vector<Alignment>> als = reads[i];
+// 		threads[i] = async(std::launch::async, [als, readsDir, minSupport, windowSize, merSize, commonKMers, solidThresh, windowOverlap]() mutable {
+// 			processReads(als, readsDir, minSupport, windowSize, merSize, commonKMers, solidThresh, windowOverlap);
+// 		});
+// 	}
+	
+// 	// Get threads results
+// 	for (std::future<void> &t: threads) {
+// 		t.get();
+// 	}
+// }
+
+std::vector<Alignment> getNextReadPile(std::ifstream& f) {
 	std::vector<Alignment> curReadAlignments;
 	Alignment al;
-	std::string curRead, line;
-	curRead = "";
-	int readNumber = 0;
-
-	readIndex = indexReads(readsFile);
-
-	// Init threads
-	std::vector<std::vector<std::vector<Alignment>>> reads(nbThreads);
-	for (unsigned i = 0; i < nbThreads; i++) {
-		reads[i] = std::vector<std::vector<Alignment>>();
-	}
+	std::string line, curRead;
 
 	getline(f, line);
 	while(line.length() > 0 or !curReadAlignments.empty()) {
@@ -496,25 +539,76 @@ void runCorrection(std::string alignmentFile, std::string readsDir, unsigned min
 			curReadAlignments.push_back(al);
 			getline(f, line);
 		} else {
+			std::cerr << curRead << " : " << curReadAlignments.size() << std::endl;
 			std::sort(curReadAlignments.begin(), curReadAlignments.end());
-			reads[readNumber % nbThreads].push_back(curReadAlignments);	
-			readNumber++;
-			curReadAlignments.clear();
-			curRead = "";
+			if (!f.eof()) {
+				f.seekg(-line.length()-1, f.cur);
+			}
+			return curReadAlignments;
+			// reads[readNumber % nbThreads].push_back(curReadAlignments);	
+			// readNumber++;
+			// curReadAlignments.clear();
+			// curRead = "";
 		}
 	}
+}
 
-	// Launch threads
-	std::vector<std::future<void>> threads(nbThreads);
-	for (unsigned i = 0 ; i < nbThreads ; i++) {
-		std::vector<std::vector<Alignment>> als = reads[i];
-		threads[i] = async(std::launch::async, [als, readsDir, minSupport, windowSize, merSize, commonKMers, solidThresh, windowOverlap]() mutable {
-			processReads(als, readsDir, minSupport, windowSize, merSize, commonKMers, solidThresh, windowOverlap);
-		});
+void runCorrection(std::string alignmentFile, std::string readsDir, unsigned minSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap, unsigned nbThreads, std::string readsFile, unsigned nbReads) {
+	std::ifstream f(alignmentFile);
+	std::vector<Alignment> curReadAlignments;
+	std::string curRead, line;
+	curRead = "";
+	int readNumber = 0;
+
+	readIndex = indexReads(readsFile);
+
+	int poolSize = 10000;
+	ctpl::thread_pool myPool(nbThreads);
+	int jobsToProcess = 100000000;
+	int jobsLoaded = 0;
+	int jobsCompleted = 0;
+
+	// Load the first jobs
+	vector<std::future<std::pair<std::string, std::string>>> results(poolSize);
+    for(int i = 0; i < poolSize && !f.eof() && jobsLoaded < jobsToProcess; i++) {
+        curReadAlignments = getNextReadPile(f);
+        results[i] = myPool.push(processRead, curReadAlignments, readsDir, minSupport, windowSize, merSize, commonKMers, solidThresh, windowOverlap);
+        jobsLoaded++;
 	}
-	
-	// Get threads results
-	for (std::future<void> &t: threads) {
-		t.get();
+
+	// Load the remaining jobs as other jobs terminate
+	int curJob = 0;
+    std::pair<std::string, std::string> curRes;
+    while(!f.eof() && jobsLoaded < jobsToProcess) {
+    	// Get the job results
+        curRes = results[curJob].get();
+        std::cout << ">" << curRes.first << std::endl << curRes.second << std::endl;
+        jobsCompleted++;
+        
+        // Load the next job
+        curReadAlignments = getNextReadPile(f);
+        results[curJob] = myPool.push(processRead, curReadAlignments, readsDir, minSupport, windowSize, merSize, commonKMers, solidThresh, windowOverlap);
+        jobsLoaded++;
+        
+        // Increment the current job nb, and loop if needed
+        curJob++;
+        if(curJob == poolSize) {
+            curJob = 0;
+        }
 	}
+
+	// Wait for the remaining jobs to terminate
+	while(jobsCompleted < jobsLoaded) {
+        // Get the job results
+        curRes = results[curJob].get();
+        std::cout << ">" << curRes.first << std::endl << curRes.second << std::endl;
+        jobsCompleted++;
+        
+        // Increment the current job nb, and loop if needed
+        curJob++;
+        if(curJob == poolSize) {
+            curJob = 0;
+        }
+	}
+
 }
