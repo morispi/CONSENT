@@ -647,4 +647,9 @@ void runCorrection(std::string alignmentFile, std::string readsDir, unsigned min
         }
 	}
 
+	// for (auto p : readIndex) {
+	// 	p.second.clear();
+	// }
+	// readIndex.clear();
+
 }
