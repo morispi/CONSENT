@@ -378,7 +378,7 @@ std::string polishCorrection(std::string correctedRead, std::unordered_map<kmer,
 				corList.push_back(std::make_pair(correctedRead.substr(tmpSrcBeg, tmpDstEnd - tmpSrcBeg + 1), correctedRegion));
 			}
 
-			i = tmpDstBeg != 0 ? tmpDstBeg : dstBeg;
+			i = tmpDstBeg > i ? tmpDstBeg : dstBeg;
 		} else {
 			i = correctedRead.length();	
 		}
@@ -646,10 +646,5 @@ void runCorrection(std::string alignmentFile, std::string readsDir, unsigned min
             curJob = 0;
         }
 	}
-
-	// for (auto p : readIndex) {
-	// 	p.second.clear();
-	// }
-	// readIndex.clear();
 
 }
