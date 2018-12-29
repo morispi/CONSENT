@@ -202,7 +202,7 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 		consUp = consUp.substr(alignment.query_begin, alignment.query_end - alignment.query_begin + 1);
 		
 		outSequence.replace(beg, end - beg + 1, consUp);
-		curPos = end - windowOverlap;
+		curPos = (beg + consUp.length() - 1) - windowOverlap;
 	}
 
 	return outSequence;
