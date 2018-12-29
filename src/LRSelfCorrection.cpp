@@ -496,6 +496,7 @@ std::map<std::string, std::vector<bool>> indexReads(std::string readsFile) {
 	while (header.length() > 0) {
 		header.erase(0, 1);
 		getline(f, sequence);
+		std::transform(sequence.begin(), sequence.end(), sequence.begin(), ::toupper);
 		res[header] = fullstr2num(sequence);
 		getline(f, header);
 	}
