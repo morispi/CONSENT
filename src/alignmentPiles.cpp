@@ -95,6 +95,29 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 		}
 	}
 
+	int pushed = 0;
+	beg = 0;
+	end = tplLen - 1;
+	curLen = 0;
+	i = tplLen - 1;
+	while (i > 0 and !pushed) {
+		if (curLen >= windowSize) {
+			// std::cerr << "end : " << end << " ; tplLen : " << tplLen << std::endl;
+			pilesPos.push_back(std::make_pair(end - curLen + 1, end));
+			pushed = 1;
+			end = i;
+			curLen = 0;
+		}
+		if (coverages[i] < minSupport) {
+			curLen = 0;
+			i--;
+			end = i;
+		} else {
+			curLen++;
+			i--;
+		}
+	}
+
 	delete [] coverages;
 
 	return pilesPos;
