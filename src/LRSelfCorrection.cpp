@@ -312,7 +312,6 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 					solidMersSeq1 = nbUpperCase(seq1);
 					solidMersSeq2 = nbUpperCase(seq2);
 					std::cerr << "solid mers : " << solidMersSeq1 << " ; " << solidMersSeq2 << std::endl;
-					std::cerr << std::endl;
 					if (solidMersSeq1 > solidMersSeq2) {
 						aligner.Align(seq1.c_str(), seq2.c_str(), seq1.length(), filter, &subAlignment, maskLen);
 						// std::cerr << "align pos : " << subAlignment.query_end << std::endl;
@@ -324,9 +323,14 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 						std::cerr << "cigar : " << subAlignment.cigar_string << std::endl;
 						std::cerr << "ins : " << ins << std::endl;
 						std::cerr << "del : " << del << std::endl;
+						std::cerr << std::endl;
 						// std::cerr << "op : " << (seq2.length() - 1 - subAlignment.query_end) << std::endl;
 						// beg = beg + overlap - 1 - ins + del;
-						curCons = seq1 + curCons.substr(overlap - ins + del);
+						if (overlap - ins + del < curCons.length()) {
+							curCons = seq1 + curCons.substr(overlap - ins + del);
+						} else {
+							curCons = "";
+						}
 						// beg = beg + overlap - (seq2.length() - 1 - subAlignment.query_end);
 						// curCons = curCons.substr(overlap - (seq2.length() - 1 - subAlignment.query_end));
 					}
@@ -334,14 +338,16 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 			}
 		}
 
-		consUp = curCons;
-		std::transform(consUp.begin(), consUp.end(), consUp.begin(), ::toupper);
-		outSequence.replace(beg, end - beg + 1, consUp);
-		curPos = (beg + consUp.length() - 1) - windowOverlap;
-		oldCons = curCons;
-		oldMers = merCounts[i];
-		oldBeg = beg;
-		oldEnd = beg + consUp.length() - 1;
+		if (curCons != "") {
+			consUp = curCons;
+			std::transform(consUp.begin(), consUp.end(), consUp.begin(), ::toupper);
+			outSequence.replace(beg, end - beg + 1, consUp);
+			curPos = (beg + consUp.length() - 1) - windowOverlap;
+			oldCons = curCons;
+			oldMers = merCounts[i];
+			oldBeg = beg;
+			oldEnd = beg + consUp.length() - 1;
+		}
 	}
 
 	return outSequence;
