@@ -297,7 +297,7 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 		beg = alignment.ref_begin + curPos;
 		end = alignment.ref_end + curPos;
 		curCons = curCons.substr(alignment.query_begin, alignment.query_end - alignment.query_begin + 1);
-
+		// std::cerr << "curCons : " << curCons << std::endl;
 		// Check if windows overlap, and if they do, chose the best subsequence
 		if (i != 0) {
 			if (oldEnd >= beg) {
@@ -305,11 +305,13 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 				seq1 = oldCons.substr(oldCons.length() - 1 - overlap + 1, overlap);
 				seq2 = curCons.substr(0, overlap);
 				if (toUpperCase(seq1, 0, seq1.length() - 1) != toUpperCase(seq2, 0, seq2.length() - 1)) {
-					solidMersSeq1 = nbSolidMers(seq1, oldMers, merSize, solidThresh);
-					solidMersSeq2 = nbSolidMers(seq2, curMers, merSize, solidThresh);
-					// solidMersSeq1 = nbUpperCase(seq1);
-					// solidMersSeq2 = nbUpperCase(seq2);
-					// std::cerr << "solid mers : " << solidMersSeq1 << " ; " << solidMersSeq2 << std::endl;
+					if (overlap >= merSize) {
+						solidMersSeq1 = nbSolidMers(seq1, oldMers, merSize, solidThresh);
+						solidMersSeq2 = nbSolidMers(seq2, curMers, merSize, solidThresh);
+					} else {
+						solidMersSeq1 = nbUpperCase(seq1);
+						solidMersSeq2 = nbUpperCase(seq2);
+					}
 					if (solidMersSeq1 > solidMersSeq2) {
 						aligner.Align(seq1.c_str(), seq2.c_str(), std::min(seq1.length(), seq2.length()), filter, &subAlignment, maskLen);
 						indels = getIndels(subAlignment.cigar_string);
@@ -327,7 +329,7 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 
 		if (curCons != "") {
 			consUp = curCons;
-			// std::transform(consUp.begin(), consUp.end(), consUp.begin(), ::toupper);
+			std::transform(consUp.begin(), consUp.end(), consUp.begin(), ::toupper);
 			outSequence.replace(beg, end - beg + 1, consUp);
 			curPos = (beg + consUp.length() - 1) - windowOverlap;
 			oldCons = curCons;
@@ -571,7 +573,6 @@ std::string polishCorrection(std::string correctedRead, std::unordered_map<kmer,
 	// 	}
 	// }
 	// std::transform(correctedRead.begin(), correctedRead.end(), correctedRead.begin(), ::toupper);
-
 	return correctedRead;
 }
 
@@ -624,7 +625,9 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& 
 
 	// Align computed consensuses to the read
 	// auto c_start = std::chrono::high_resolution_clock::now();
+	// std::cerr << "go align" << std::endl;
 	std::string correctedRead = alignConsensuses(readId, sequences[alignments[0].qName], consensuses, merCounts, pilesPos, piles, 0, windowSize, windowOverlap, solidThresh, merSize);
+	// std::cerr << "end align" << std::endl;
 	// auto c_end = std::chrono::high_resolution_clock::now();
 	// std::cerr << "anchoring1 took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
 
