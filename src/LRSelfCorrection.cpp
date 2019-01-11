@@ -335,7 +335,7 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 						// std::cerr << "cigar : " << subAlignment.cigar_string << std::endl;
 						// std::cerr << "ins : " << ins << std::endl;
 						// std::cerr << "del : " << del << std::endl;
-						std::cerr << std::endl;
+						// std::cerr << std::endl;
 						// std::cerr << "op : " << (seq2.length() - 1 - subAlignment.query_end) << std::endl;
 						// beg = beg + overlap - 1 - ins + del;
 						if (overlap - ins + del < curCons.length()) {
