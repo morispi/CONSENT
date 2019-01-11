@@ -314,10 +314,10 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 				if (toUpperCase(seq1, 0, seq1.length()) != toUpperCase(seq2, 0, seq2.length())) {
 					// std::cerr << "seq 1 : " << seq1 << std::endl;
 					// std::cerr << "seq 2 : " << seq2 << std::endl;
-					// solidMersSeq1 = nbSolidMers(seq1, oldMers, merSize, solidThresh);
-					// solidMersSeq2 = nbSolidMers(seq2, curMers, merSize, solidThresh);
-					solidMersSeq1 = nbUpperCase(seq1);
-					solidMersSeq2 = nbUpperCase(seq2);
+					solidMersSeq1 = nbSolidMers(seq1, oldMers, merSize, solidThresh);
+					solidMersSeq2 = nbSolidMers(seq2, curMers, merSize, solidThresh);
+					// solidMersSeq1 = nbUpperCase(seq1);
+					// solidMersSeq2 = nbUpperCase(seq2);
 					// std::cerr << "solid mers : " << solidMersSeq1 << " ; " << solidMersSeq2 << std::endl;
 					if (solidMersSeq1 > solidMersSeq2) {
 						// std::cerr << "aligning" << std::endl;
