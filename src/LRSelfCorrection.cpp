@@ -70,7 +70,7 @@ bool dropRead(std::string correctedRead) {
 std::string toUpperCase(std::string& s, int beg, int end) {
 	std::string res = s;
 	std::locale loc;
-	for (int i = beg; i < end; i++) {
+	for (int i = beg; i <= end; i++) {
 		res[i] = std::toupper(res[i], loc);
 	}
 
@@ -80,7 +80,7 @@ std::string toUpperCase(std::string& s, int beg, int end) {
 std::string toLowerCase(std::string& s, int beg, int end) {
 	std::string res = s;
 	std::locale loc;
-	for (int i = beg; i < end; i++) {
+	for (int i = beg; i <= end; i++) {
 		res[i] = std::tolower(res[i], loc);
 	}
 
@@ -284,6 +284,7 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 	unsigned ins, del;
 	for (i = 0; i < consensuses.size(); i++) {
 		curCons = consensuses[i];
+		std::cerr << ">cons" << std::endl << curCons << std::endl;
 		// std::cerr << "antoine : " << curCons << std::endl;
 		curMers = merCounts[i];
 		if (curPos + windowSize + 2 * windowOverlap >= outSequence.length()) {
@@ -296,53 +297,29 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 		beg = alignment.ref_begin + curPos;
 		end = alignment.ref_end + curPos;
 		curCons = curCons.substr(alignment.query_begin, alignment.query_end - alignment.query_begin + 1);
-		// std::cerr << "aligning : " << std::endl;
-  //       std::cerr << curCons << std::endl;
-  //       std::cerr << outSequence.substr(curPos, sizeAl) << std::endl;
-		// std::cerr << alignment.ref_begin << " ; " << alignment.ref_end << " ; " << alignment.query_begin << " ; " << alignment.query_end << " ; " << std::endl;
-		// std::cerr << std::endl;
 
 		// Check if windows overlap, and if they do, chose the best subsequence
 		if (i != 0) {
-		// if (0){
 			if (oldEnd >= beg) {
  				overlap = oldEnd - beg + 1;
-				// std::cerr << "oldCons : " << oldCons << std::endl;
-    //             std::cerr << "curCons : " << curCons << std::endl;
 				seq1 = oldCons.substr(oldCons.length() - 1 - overlap + 1, overlap);
 				seq2 = curCons.substr(0, overlap);
-				if (toUpperCase(seq1, 0, seq1.length()) != toUpperCase(seq2, 0, seq2.length())) {
-					// std::cerr << "seq 1 : " << seq1 << std::endl;
-					// std::cerr << "seq 2 : " << seq2 << std::endl;
+				if (toUpperCase(seq1, 0, seq1.length() - 1) != toUpperCase(seq2, 0, seq2.length() - 1)) {
 					solidMersSeq1 = nbSolidMers(seq1, oldMers, merSize, solidThresh);
 					solidMersSeq2 = nbSolidMers(seq2, curMers, merSize, solidThresh);
 					// solidMersSeq1 = nbUpperCase(seq1);
 					// solidMersSeq2 = nbUpperCase(seq2);
 					// std::cerr << "solid mers : " << solidMersSeq1 << " ; " << solidMersSeq2 << std::endl;
 					if (solidMersSeq1 > solidMersSeq2) {
-						// std::cerr << "aligning" << std::endl;
-     	//                 std::cerr << "seq1 : " << seq1 << std::endl;
-      //                   std::cerr << "seq2 : " << seq2 << std::endl;
 						aligner.Align(seq1.c_str(), seq2.c_str(), std::min(seq1.length(), seq2.length()), filter, &subAlignment, maskLen);
-						// std::cerr << "align pos : " << subAlignment.query_end << std::endl;
-						// std::cerr << "endin pos : " << seq2.length() - 1 << std::endl;
-						// std::cerr << subAlignment.ref_begin << " ; " << subAlignment.ref_end << " ; " << subAlignment.query_begin << " ; " << subAlignment.query_end << std::endl;
 						indels = getIndels(subAlignment.cigar_string);
 						ins = indels.first;
 						del = indels.second;
-						// std::cerr << "cigar : " << subAlignment.cigar_string << std::endl;
-						// std::cerr << "ins : " << ins << std::endl;
-						// std::cerr << "del : " << del << std::endl;
-						// std::cerr << std::endl;
-						// std::cerr << "op : " << (seq2.length() - 1 - subAlignment.query_end) << std::endl;
-						// beg = beg + overlap - 1 - ins + del;
 						if (overlap - ins + del < curCons.length()) {
 							curCons = seq1 + curCons.substr(overlap - ins + del);
 						} else {
 							curCons = "";
 						}
-						// beg = beg + overlap - (seq2.length() - 1 - subAlignment.query_end);
-						// curCons = curCons.substr(overlap - (seq2.length() - 1 - subAlignment.query_end));
 					}
 				}
 			}
@@ -350,7 +327,7 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 
 		if (curCons != "") {
 			consUp = curCons;
-			std::transform(consUp.begin(), consUp.end(), consUp.begin(), ::toupper);
+			// std::transform(consUp.begin(), consUp.end(), consUp.begin(), ::toupper);
 			outSequence.replace(beg, end - beg + 1, consUp);
 			curPos = (beg + consUp.length() - 1) - windowOverlap;
 			oldCons = curCons;
@@ -467,6 +444,9 @@ std::string polishCorrection(std::string correctedRead, std::unordered_map<kmer,
 	unsigned anchorNb;
 	std::string srcZone, dstZone;
 	std::unordered_map<std::string, std::vector<unsigned>> srcPos, dstPos;
+	// std::string oldCorrectedRead;
+	int b, l;
+	std::string r, c;
 
 	// Skip uncorrected head of the read
 	unsigned i = 0;
@@ -475,6 +455,17 @@ std::string polishCorrection(std::string correctedRead, std::unordered_map<kmer,
 		i++;
 	}
 	// std::cerr << "end skip" << std::endl;
+
+	if (i > 0) {
+		int extLen = i;
+		// oldCorrectedRead = correctedRead;
+		correctedRead = correctedRead.substr(i);
+		int extSize = extendLeft(merCounts, merSize, extLen, correctedRead, solidThresh);
+		if (extSize < extLen) {
+			// 	correctedRead = oldCorrectedRead.substr(0, extLen - extSize) + correctedRead;
+			i = i - (extLen - extSize);
+		}
+	}
 
 	// Search for poorly supported regions bordered by solid corrected regions
 	while (i < correctedRead.length()) {
@@ -530,27 +521,55 @@ std::string polishCorrection(std::string correctedRead, std::unordered_map<kmer,
 			}
 
 			if (!correctedRegion.empty()) {
-				corList.push_back(std::make_pair(correctedRead.substr(tmpSrcBeg, tmpDstEnd - tmpSrcBeg + 1), correctedRegion));
-			}
+				// corList.push_back(std::make_pair(correctedRead.substr(tmpSrcBeg, tmpDstEnd - tmpSrcBeg + 1), correctedRegion));
 
-			i = tmpDstBeg > i ? tmpDstBeg : dstBeg;
+				// Anchor the correction to the read
+				r = correctedRead.substr(tmpSrcBeg, tmpDstEnd - tmpSrcBeg + 1);
+				c = correctedRegion;
+				b = correctedRead.find(r);
+				l = r.length();
+				if ((int) b != -1) {
+					correctedRead.replace(b, l, c);
+					i = b;
+				} else {
+					i = tmpDstBeg > i ? tmpDstBeg : dstBeg;	
+				}
+
+			} else {
+				i = tmpDstBeg > i ? tmpDstBeg : dstBeg;
+			}
 		} else {
 			i = correctedRead.length();	
 		}
 	}
 
-	// Anchor the polished region to the corrected read
-	int b, l;
-	std::string r, c;
-	for (std::pair<std::string, std::string> p : corList) {
-		r = p.first;
-		c = p.second;
-		b = correctedRead.find(r);
-		l = r.length();
-		if ((int) b != -1) {
-			correctedRead.replace(b, l, c);
-		}
+	i = correctedRead.length() - 1;
+	while (i >= 0 and !isUpperCase(correctedRead[i])) {
+		i--;
 	}
+
+	if (i < correctedRead.length() - 1) {
+		int extLen = correctedRead.length() - 1 - i;
+		// oldCorrectedRead = correctedRead;
+		correctedRead = correctedRead.substr(0, i + 1);
+		extendRight(merCounts, merSize, extLen, correctedRead, solidThresh);
+		// if (extSize < extLen) {
+		// 	correctedRead = correctedRead + oldCorrectedRead.substr(oldCorrectedRead.length() - (extLen - extSize), extLen - extSize);
+		// }
+	}
+
+	// Anchor the polished region to the corrected read
+	// int b, l;
+	// std::string r, c;
+	// for (std::pair<std::string, std::string> p : corList) {
+	// 	r = p.first;
+	// 	c = p.second;
+	// 	b = correctedRead.find(r);
+	// 	l = r.length();
+	// 	if ((int) b != -1) {
+	// 		correctedRead.replace(b, l, c);
+	// 	}
+	// }
 	// std::transform(correctedRead.begin(), correctedRead.end(), correctedRead.begin(), ::toupper);
 
 	return correctedRead;
