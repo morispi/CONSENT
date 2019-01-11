@@ -17,35 +17,35 @@ std::string concatNucR(std::string f, int i) {
 
 std::vector<std::string> getNeighbours(std::string kMer, unsigned merSize, int left, std::unordered_map<kmer, unsigned> merCounts, unsigned solidThresh) {
 	std::vector<std::string> neighbours;
-	std::string f, n;
+	std::string f, n, t = "";
 	kmer k;
+	std::transform(kMer.begin(), kMer.end(), kMer.begin(), ::toupper);
 
-	if (left == 0) {
+	// if (left == 0) {
+		if (left == 1) {
+			kMer = rev_comp::run(kMer);
+		}
 		f = kMer.substr(1);
-		// for (char c : "ACGT") {
-		// 	n = f + c;
-		// 	if (merCounts[str2num(n)] >= solidThresh) {
-		// 		neighbours.push_back(n);
-		// 	}
-		// }
 		int i = 0;
 		for (i = 0; i < 4; i++) {
 			k = str2num(f);
 			k <<= 2;
 			k += i;
+			if (left == 1) {
+				t = kmer2str(k, merSize);
+				t = rev_comp::run(t);
+				k = str2num(t);
+			}
 			if (merCounts[k] >= solidThresh) {
-				neighbours.push_back(concatNucR(f, i));
+				if (left == 1) {
+					std::cerr << t << std::endl;
+					neighbours.push_back(t);
+				} else {
+					neighbours.push_back(concatNucR(f, i));
+				}
 			}
 		}
-	// } else {
-	// 	f = kMer.substr(0, merSize - 1);
-	// 	for (char c : "ACGT") {
-	// 		n = c + f;
-	// 		if (merCounts[str2num(n)] >= solidThresh) {
-	// 			neighbours.push_back(n);
-	// 		}
-	// 	}
-	}
+	// }
 
 	// Sort in ascending order of number of occurrences
 	std::sort(neighbours.begin(), neighbours.end(), 
@@ -53,7 +53,8 @@ std::vector<std::string> getNeighbours(std::string kMer, unsigned merSize, int l
 			return  merCounts[str2num(n1)] > merCounts[str2num(n2)];
 		}
 	);
-	
+	// std::cerr << "end" << std::endl;
+	// std::cerr << std::endl;
 	return neighbours;
 }
 
@@ -63,6 +64,7 @@ unsigned extendLeft(std::unordered_map<kmer, unsigned> merCounts, unsigned curK,
 		unsigned dist = 0;
 
 		// Get the leftmost k-mer and search for a path in the graph
+		std::cerr << "left of : " << LR.substr(0, curK) << std::endl;
 		neighbours = getNeighbours(LR.substr(0, curK), curK, 1, merCounts, solidThresh);
 		it = neighbours.begin();
 
@@ -84,11 +86,12 @@ unsigned extendLeft(std::unordered_map<kmer, unsigned> merCounts, unsigned curK,
 		unsigned dist = 0;
 
 		// Get the leftmost k-mer and search for a path in the graph
+		std::cerr << "right of : " << LR.length() - curK << std::endl;
 		neighbours = getNeighbours(LR.substr(LR.length() - curK), curK, 0, merCounts, solidThresh);
 		it = neighbours.begin();
 		
 		// Keep traversing the graph while the long reads's border or a branching path aren't reached
-		while (neighbours.size() == 1 && it != neighbours.end() && dist < extLen) {
+		while (it != neighbours.end() && dist < extLen) {
 			LR = LR + (*it).substr(curK - 1);
 			dist = dist + it->length() - (curK - 1);
 			// Get the leftmost k-mer and search for a path in the graph

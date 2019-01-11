@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <iostream>
 #include "../BMEAN/utils.h"
+#include "reverseComplement.h"
 using namespace std;
 
 unsigned extendLeft(std::unordered_map<kmer, unsigned> merCounts, unsigned curK, unsigned extLen, string &LR, unsigned solidThresh);
