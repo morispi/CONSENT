@@ -1,5 +1,8 @@
 #include <string>
 
+#ifndef __REVCOMP__
+#define __REVCOMP__
+
 class rev_comp {
     public:
         static std::string run(std::string seq);
@@ -16,3 +19,5 @@ class rev_comp {
     private:
         static char complement[int('t') + 1];
 };
+
+#endif
