@@ -22,7 +22,8 @@ alignmentPiles.o: src/alignmentPiles.cpp src/Alignment.h src/reverseComplement.h
 kMersProcessing.o: src/kMersProcessing.cpp
 	$(CC) -o src/kMersProcessing.o -c src/kMersProcessing.cpp $(CFLAGS)
 
-DBG.o: src/DBG.cpp
+
+DBG.o: src/DBG.cpp src/reverseComplement.h
 	$(CC) -o src/DBG.o -c src/DBG.cpp $(CFLAGS)
 
 #BMEAN.o: BMEAN/bmean.cpp
