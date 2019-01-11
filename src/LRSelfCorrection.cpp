@@ -284,7 +284,7 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 	unsigned ins, del;
 	for (i = 0; i < consensuses.size(); i++) {
 		curCons = consensuses[i];
-		std::cerr << ">cons" << std::endl << curCons << std::endl;
+		// std::cerr << ">cons" << std::endl << curCons << std::endl;
 		// std::cerr << "antoine : " << curCons << std::endl;
 		curMers = merCounts[i];
 		if (curPos + windowSize + 2 * windowOverlap >= outSequence.length()) {
