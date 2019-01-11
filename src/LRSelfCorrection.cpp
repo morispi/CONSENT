@@ -313,6 +313,9 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 					solidMersSeq2 = nbUpperCase(seq2);
 					std::cerr << "solid mers : " << solidMersSeq1 << " ; " << solidMersSeq2 << std::endl;
 					if (solidMersSeq1 > solidMersSeq2) {
+						std::cerr << "aligning" << std::endl;
+     	                std::cerr << "seq1 : " << seq1 << std::endl;
+                        std::cerr << "seq2 : " << seq2 << std::endl;
 						aligner.Align(seq1.c_str(), seq2.c_str(), seq1.length(), filter, &subAlignment, maskLen);
 						// std::cerr << "align pos : " << subAlignment.query_end << std::endl;
 						// std::cerr << "endin pos : " << seq2.length() - 1 << std::endl;
