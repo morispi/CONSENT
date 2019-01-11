@@ -286,6 +286,7 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 	int ins, del;
 	for (i = 0; i < consensuses.size(); i++) {
 		curCons = consensuses[i];
+		// std::cerr << "antoine : " << curCons << std::endl;
 		curMers = merCounts[i];
 		if (curPos + windowSize + 2 * windowOverlap >= outSequence.length()) {
 			sizeAl = outSequence.length() - curPos;
@@ -297,35 +298,43 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 		beg = alignment.ref_begin + curPos;
 		end = alignment.ref_end + curPos;
 		curCons = curCons.substr(alignment.query_begin, alignment.query_end - alignment.query_begin + 1);
-		
+		// std::cerr << "aligning : " << std::endl;
+  //       std::cerr << curCons << std::endl;
+  //       std::cerr << outSequence.substr(curPos, sizeAl) << std::endl;
+		// std::cerr << alignment.ref_begin << " ; " << alignment.ref_end << " ; " << alignment.query_begin << " ; " << alignment.query_end << " ; " << std::endl;
+		// std::cerr << std::endl;
+
 		// Check if windows overlap, and if they do, chose the best subsequence
 		if (i != 0) {
-			overlap = oldEnd - beg + 1;
+		// if (0){
+ 			overlap = oldEnd - beg + 1;
 			if (overlap > 0) {
+				// std::cerr << "oldCons : " << oldCons << std::endl;
+    //             std::cerr << "curCons : " << curCons << std::endl;
 				seq1 = oldCons.substr(oldCons.length() - 1 - overlap + 1, overlap);
 				seq2 = curCons.substr(0, overlap);
 				if (toUpperCase(seq1, 0, seq1.length()) != toUpperCase(seq2, 0, seq2.length())) {
-					std::cerr << "seq 1 : " << seq1 << std::endl;
-					std::cerr << "seq 2 : " << seq2 << std::endl;
+					// std::cerr << "seq 1 : " << seq1 << std::endl;
+					// std::cerr << "seq 2 : " << seq2 << std::endl;
 					// solidMersSeq1 = nbSolidMers(seq1, oldMers, merSize, solidThresh);
 					// solidMersSeq2 = nbSolidMers(seq2, curMers, merSize, solidThresh);
 					solidMersSeq1 = nbUpperCase(seq1);
 					solidMersSeq2 = nbUpperCase(seq2);
-					std::cerr << "solid mers : " << solidMersSeq1 << " ; " << solidMersSeq2 << std::endl;
+					// std::cerr << "solid mers : " << solidMersSeq1 << " ; " << solidMersSeq2 << std::endl;
 					if (solidMersSeq1 > solidMersSeq2) {
-						std::cerr << "aligning" << std::endl;
-     	                std::cerr << "seq1 : " << seq1 << std::endl;
-                        std::cerr << "seq2 : " << seq2 << std::endl;
-						aligner.Align(seq1.c_str(), seq2.c_str(), seq1.length(), filter, &subAlignment, maskLen);
+						// std::cerr << "aligning" << std::endl;
+     	//                 std::cerr << "seq1 : " << seq1 << std::endl;
+      //                   std::cerr << "seq2 : " << seq2 << std::endl;
+						aligner.Align(seq1.c_str(), seq2.c_str(), std::min(seq1.length(), seq2.length()), filter, &subAlignment, maskLen);
 						// std::cerr << "align pos : " << subAlignment.query_end << std::endl;
 						// std::cerr << "endin pos : " << seq2.length() - 1 << std::endl;
 						// std::cerr << subAlignment.ref_begin << " ; " << subAlignment.ref_end << " ; " << subAlignment.query_begin << " ; " << subAlignment.query_end << std::endl;
 						indels = getIndels(subAlignment.cigar_string);
 						ins = indels.first;
 						del = indels.second;
-						std::cerr << "cigar : " << subAlignment.cigar_string << std::endl;
-						std::cerr << "ins : " << ins << std::endl;
-						std::cerr << "del : " << del << std::endl;
+						// std::cerr << "cigar : " << subAlignment.cigar_string << std::endl;
+						// std::cerr << "ins : " << ins << std::endl;
+						// std::cerr << "del : " << del << std::endl;
 						std::cerr << std::endl;
 						// std::cerr << "op : " << (seq2.length() - 1 - subAlignment.query_end) << std::endl;
 						// beg = beg + overlap - 1 - ins + del;
