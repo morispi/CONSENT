@@ -127,7 +127,7 @@ std::string toLowerCase(std::string& s, int beg, int end) {
 
 std::string trimRead(std::string correctedRead, unsigned merSize) {
 	unsigned beg, end, n;
-	int i;
+	unsigned i;
 	i = 0;
 	n = 0;
 	while (i < correctedRead.length() and n < merSize) {
@@ -184,7 +184,7 @@ std::string weightConsensus(std::string& consensus, std::vector<std::string>& pi
 
 std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(std::string& readId, std::vector<std::string> & piles, std::pair<unsigned, unsigned>& pilesPos, std::string& readsDir, unsigned& minSupport, unsigned& merSize, unsigned& commonKMers, unsigned& solidThresh, unsigned& windowSize) {
 	// return piles[0];
-	auto start_antoine = std::chrono::high_resolution_clock::now();
+	// auto start_antoine = std::chrono::high_resolution_clock::now();
 	// std::cerr << "go MSABMAAC" << std::endl;
 	// std::cerr << "in : " << piles[0].length() <<  std::endl;
 	std::pair<std::vector<std::vector<std::string>>, std::unordered_map<kmer, unsigned>> rOut = MSABMAAC(piles, merSize, std::min((int) commonKMers, (int) piles.size()), solidThresh);
@@ -192,14 +192,14 @@ std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(st
 	// std::cerr << "end MSABMAAC" << std::endl;
 	auto result = rOut.first;
 	auto merCounts = rOut.second;
-	auto end_antoine = std::chrono::high_resolution_clock::now();
+	// auto end_antoine = std::chrono::high_resolution_clock::now();
 	// std::cerr << "antoine took " << std::chrono::duration_cast<std::chrono::milliseconds>(end_antoine - start_antoine).count() << " ms\n";
 	// auto c_start = std::chrono::high_resolution_clock::now();
 	std::string corTpl = result[0][0];
 
 	// Polish the consensus
 	std::vector<std::pair<std::string, std::string>> corList;
-	auto c_start = std::chrono::high_resolution_clock::now();
+	// auto c_start = std::chrono::high_resolution_clock::now();
 	if (corTpl.length() >= merSize) {
 		corTpl = weightConsensus(corTpl, piles, merCounts, merSize, windowSize, solidThresh);
 	}
@@ -208,7 +208,7 @@ std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(st
 	// corTpl = trimRead(corTpl, merSize);
 	// std::cerr << ">corTpl" << std::endl << corTpl << std::endl;
 	// std::cerr << "end polish" << std::endl;
-	auto c_end = std::chrono::high_resolution_clock::now();
+	// auto c_end = std::chrono::high_resolution_clock::now();
 	// std::cerr << "polishing took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
 	// c_end = std::chrono::high_resolution_clock::now();
 	// std::cerr << "voting took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
@@ -241,9 +241,8 @@ int nbUpperCase(std::string s) {
 std::pair<int, int> getIndels(std::string cigar){
 	int ins = 0;
 	int del = 0;
-	int len = 0;
 	int current = 0;
-	for(int i = 0; i < cigar.length(); i++){
+	for(unsigned i = 0; i < cigar.length(); i++){
 		if('0' <= cigar[i] && cigar[i] <= '9'){
 			current = (current * 10) + (cigar[i] - '0');
 		} else {
@@ -264,9 +263,8 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 	StripedSmithWaterman::Alignment alignment;
 	StripedSmithWaterman::Alignment subAlignment;	
 	int32_t maskLen = 15;
-	int beg, end, oldBeg, oldEnd;
-	beg = -1;
-	end = -1;
+	unsigned beg, end, oldEnd;
+	oldEnd = 0;
 	std::string outSequence;
 	outSequence = sequence;
 	std::transform(outSequence.begin() + startPos, outSequence.end(), outSequence.begin() + startPos, ::tolower);
@@ -279,11 +277,11 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 	std::string curCons, oldCons;
 	std::unordered_map<kmer, unsigned> oldMers;
 	std::unordered_map<kmer, unsigned> curMers;
-	int overlap;
+	unsigned overlap;
 	std::string seq1, seq2;
 	int solidMersSeq1, solidMersSeq2;
 	std::pair<int, int> indels;
-	int ins, del;
+	unsigned ins, del;
 	for (i = 0; i < consensuses.size(); i++) {
 		curCons = consensuses[i];
 		// std::cerr << "antoine : " << curCons << std::endl;
@@ -307,8 +305,8 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 		// Check if windows overlap, and if they do, chose the best subsequence
 		if (i != 0) {
 		// if (0){
- 			overlap = oldEnd - beg + 1;
-			if (overlap > 0) {
+			if (oldEnd >= beg) {
+ 				overlap = oldEnd - beg + 1;
 				// std::cerr << "oldCons : " << oldCons << std::endl;
     //             std::cerr << "curCons : " << curCons << std::endl;
 				seq1 = oldCons.substr(oldCons.length() - 1 - overlap + 1, overlap);
@@ -357,7 +355,7 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 			curPos = (beg + consUp.length() - 1) - windowOverlap;
 			oldCons = curCons;
 			oldMers = merCounts[i];
-			oldBeg = beg;
+			// oldBeg = beg;
 			oldEnd = beg + consUp.length() - 1;
 		}
 	}
@@ -462,7 +460,7 @@ std::string polishCorrection(std::string correctedRead, std::unordered_map<kmer,
 	// int zone = 4;
 	int zone = 3;
 	int srcBeg, srcEnd, dstBeg, dstEnd;
-	int tmpSrcBeg = 0, tmpSrcEnd = 0, tmpDstBeg = 0, tmpDstEnd = 0;
+	unsigned tmpSrcBeg = 0, tmpSrcEnd = 0, tmpDstBeg = 0, tmpDstEnd = 0;
 	std::string src, dst;
 	std::pair<int, int> pos;
 	std::vector<std::pair<std::string, std::string>> anchors;
@@ -606,9 +604,9 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& 
 	// std::cerr << "consensus took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end1 - c_start1).count() << " ms\n";
 
 	// Align computed consensuses to the read
-	auto c_start = std::chrono::high_resolution_clock::now();
+	// auto c_start = std::chrono::high_resolution_clock::now();
 	std::string correctedRead = alignConsensuses(readId, sequences[alignments[0].qName], consensuses, merCounts, pilesPos, piles, 0, windowSize, windowOverlap, solidThresh, merSize);
-	auto c_end = std::chrono::high_resolution_clock::now();
+	// auto c_end = std::chrono::high_resolution_clock::now();
 	// std::cerr << "anchoring1 took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
 
 	// Drop read if it contains too many poorly supported bases
@@ -741,6 +739,8 @@ std::vector<Alignment> getNextReadPile(std::ifstream& f) {
 			// curRead = "";
 		}
 	}
+
+	return curReadAlignments;
 }
 
 void runCorrection(std::string alignmentFile, std::string readsDir, unsigned minSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap, unsigned nbThreads, std::string readsFile, unsigned nbReads) {
@@ -748,7 +748,7 @@ void runCorrection(std::string alignmentFile, std::string readsDir, unsigned min
 	std::vector<Alignment> curReadAlignments;
 	std::string curRead, line;
 	curRead = "";
-	int readNumber = 0;
+	// int readNumber = 0;
 
 	readIndex = indexReads(readsFile);
 
