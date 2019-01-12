@@ -300,7 +300,7 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 		// std::cerr << "curCons : " << curCons << std::endl;
 		// Check if windows overlap, and if they do, chose the best subsequence
 		if (i != 0) {
-			if (oldEnd >= beg) {
+			if (oldEnd >= beg and oldCons.length() >= oldEnd - beg + 1) {
  				overlap = oldEnd - beg + 1;
 				seq1 = oldCons.substr(oldCons.length() - 1 - overlap + 1, overlap);
 				seq2 = curCons.substr(0, overlap);
