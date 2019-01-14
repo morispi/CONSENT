@@ -458,7 +458,7 @@ std::string polishCorrection(std::string correctedRead, std::unordered_map<kmer,
 	}
 	// std::cerr << "end skip" << std::endl;
 
-	if (i > 0) {
+	if (i > 0 and i < correctedRead.length() and correctedRead.length() >= merSize) {
 		int extLen = i;
 		// oldCorrectedRead = correctedRead;
 		correctedRead = correctedRead.substr(i);
@@ -546,11 +546,11 @@ std::string polishCorrection(std::string correctedRead, std::unordered_map<kmer,
 	}
 
 	i = correctedRead.length() - 1;
-	while (i >= 0 and !isUpperCase(correctedRead[i])) {
+	while (i > 0 and !isUpperCase(correctedRead[i])) {
 		i--;
 	}
 
-	if (i < correctedRead.length() - 1) {
+	if (i > 0 and i < correctedRead.length() - 1 and correctedRead.length() >= merSize) {
 		int extLen = correctedRead.length() - 1 - i;
 		// oldCorrectedRead = correctedRead;
 		correctedRead = correctedRead.substr(0, i + 1);
