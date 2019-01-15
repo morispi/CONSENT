@@ -867,7 +867,7 @@ std::vector<Alignment> getNextReadPile(std::ifstream& f) {
 		}
 		if (line.length() > 0 and (curRead == "" or al.qName == curRead)) {
 			curRead = al.qName;
-			std::cerr << (float) al.resMatches / al.alBlockLen << std::endl;
+			// std::cerr << (float) al.resMatches / al.alBlockLen << std::endl;
 			curReadAlignments.push_back(al);
 			getline(f, line);
 		} else {
