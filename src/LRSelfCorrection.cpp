@@ -28,21 +28,27 @@ std::vector<bool> fullstr2num(const string& str){
 }
 
 std::string fullnum2str(vector<bool> num){
-  string str;
+  string str(num.size()/2, 'N');
+  uint j = 0;
   for(uint i(0);i<num.size();i+=2){
     if(num[i]){
       if(num[i+1]){
-        str.push_back('T');
+        // str.push_back('T');
+      	str[j] = 'T';
       }else{
-        str.push_back('G');
+        // str.push_back('G');
+        str[j] = 'G';
       }
     }else{
       if(num[i+1]){
-        str.push_back('C');
+        // str.push_back('C');
+        str[j] = 'C';
       }else{
-        str.push_back('A');
+        // str.push_back('A');
+        str[j] = 'A';
       }
     }
+    j++;
   }
   return str;
 }
@@ -184,7 +190,7 @@ std::string weightConsensus(std::string& consensus, std::vector<std::string>& pi
 
 std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(std::string& readId, std::vector<std::string> & piles, std::pair<unsigned, unsigned>& pilesPos, std::string& readsDir, unsigned& minSupport, unsigned& merSize, unsigned& commonKMers, unsigned& solidThresh, unsigned& windowSize) {
 	// return piles[0];
-	auto start_antoine = std::chrono::high_resolution_clock::now();
+	// auto start_antoine = std::chrono::high_resolution_clock::now();
 	// std::cerr << "go MSABMAAC" << std::endl;
 	// std::cerr << "in : " << piles[0].length() <<  std::endl;
 	int bmeanSup;
@@ -199,16 +205,16 @@ std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(st
 	// std::cerr << "end MSABMAAC" << std::endl;
 	auto result = rOut.first;
 	auto merCounts = rOut.second;
-	auto end_antoine = std::chrono::high_resolution_clock::now();
-	outMtx.lock();
-	std::cerr << "antoine took " << std::chrono::duration_cast<std::chrono::milliseconds>(end_antoine - start_antoine).count() << " ms\n";
-	outMtx.unlock();
+	// auto end_antoine = std::chrono::high_resolution_clock::now();
+	// outMtx.lock();
+	// std::cerr << "antoine took " << std::chrono::duration_cast<std::chrono::milliseconds>(end_antoine - start_antoine).count() << " ms\n";
+	// outMtx.unlock();
 	// auto c_start = std::chrono::high_resolution_clock::now();
 	std::string corTpl = result[0][0];
 
 	// Polish the consensus
 	std::vector<std::pair<std::string, std::string>> corList;
-	auto c_start = std::chrono::high_resolution_clock::now();
+	// auto c_start = std::chrono::high_resolution_clock::now();
 	if (corTpl.length() >= merSize) {
 		corTpl = weightConsensus(corTpl, piles, merCounts, merSize, windowSize, solidThresh);
 	}
@@ -217,10 +223,10 @@ std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(st
 	// corTpl = trimRead(corTpl, merSize);
 	// std::cerr << ">corTpl" << std::endl << corTpl << std::endl;
 	// std::cerr << "end polish" << std::endl;
-	auto c_end = std::chrono::high_resolution_clock::now();
-	outMtx.lock();
-	std::cerr << "polishing took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
-	outMtx.unlock();
+	// auto c_end = std::chrono::high_resolution_clock::now();
+	// outMtx.lock();
+	// std::cerr << "polishing took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
+	// outMtx.unlock();
 	// c_end = std::chrono::high_resolution_clock::now();
 	// std::cerr << "voting took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
 
@@ -375,12 +381,12 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 		} else {
 			sizeAl = windowSize + 2 * windowOverlap;
 		}
-		auto al_start = std::chrono::high_resolution_clock::now();
+		// auto al_start = std::chrono::high_resolution_clock::now();
 		aligner.Align(curCons.c_str(), outSequence.c_str() + curPos, sizeAl, filter, &alignment, maskLen);
-		auto al_end = std::chrono::high_resolution_clock::now();
-		outMtx.lock();
-		std::cerr << "aligning took " << std::chrono::duration_cast<std::chrono::milliseconds>(al_end - al_start).count() << " ms\n";
-		outMtx.unlock();
+		// auto al_end = std::chrono::high_resolution_clock::now();
+		// outMtx.lock();
+		// std::cerr << "aligning took " << std::chrono::duration_cast<std::chrono::milliseconds>(al_end - al_start).count() << " ms\n";
+		// outMtx.unlock();
 
 		// std::string mapSequence = outSequence;
 		// std::transform(mapSequence.begin(), mapSequence.end(), mapSequence.begin(), ::toupper);
@@ -704,7 +710,9 @@ std::unordered_map<std::string, std::string> getSequencesMap(std::vector<Alignme
 
 	// Insert aligned sequences
 	for (Alignment al : alignments) {
-		sequences[al.tName] = fullnum2str(readIndex[al.tName]);
+		if (sequences[al.tName] == "") {
+			sequences[al.tName] = fullnum2str(readIndex[al.tName]);
+		}
 	}
 
 	return sequences;
@@ -743,14 +751,14 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& 
 	// std::cerr << "consensus took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end1 - c_start1).count() << " ms\n";
 
 	// Align computed consensuses to the read
-	auto c_start = std::chrono::high_resolution_clock::now();
+	// auto c_start = std::chrono::high_resolution_clock::now();
 	// std::cerr << "go align" << std::endl;
 	std::string correctedRead = alignConsensuses(readId, sequences[alignments[0].qName], consensuses, merCounts, pilesPos, piles, 0, windowSize, windowOverlap, solidThresh, merSize);
 	// std::cerr << "end align" << std::endl;
-	auto c_end = std::chrono::high_resolution_clock::now();
-	outMtx.lock();
-	std::cerr << "anchoring took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
-	outMtx.unlock();
+	// auto c_end = std::chrono::high_resolution_clock::now();
+	// outMtx.lock();
+	// std::cerr << "anchoring took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
+	// outMtx.unlock();
 
 	// Drop read if it contains too many poorly supported bases
 	// if (!dropRead(correctedRead)) {
