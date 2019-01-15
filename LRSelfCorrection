@@ -27,11 +27,11 @@ reads=""
 nproc=$(nproc)
 tmpdir="."
 out=""
-minSupport=3
+minSupport=4
 windowSize=500
 merSize=9
-commonKMers=9
-solid=3
+commonKMers=8
+solid=4
 windowOverlap=50
 
 #Print help if no argument specified
@@ -149,7 +149,7 @@ LRSCs=$(readlink -f "$0")
 LRSCf=$(dirname $LRSCs)
 
 echo "["$(date)"] Self-aligning the long reads (minimap2)"
-$LRSCf/minimap2/minimap2 --dual=yes -PD --no-long-join -w5 -t"$nproc" -g1000 -m30 -n1 "$reads" "$reads" > $tmpdir/"$alignments"
+$LRSCf/minimap2/minimap2 --dual=yes -PD --no-long-join -w5 -t"$nproc" -g1000 -m30 -n3 "$reads" "$reads" > $tmpdir/"$alignments"
 
 #echo "["$(date)"] Sorting the alignments file"
 
