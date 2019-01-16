@@ -191,7 +191,9 @@ std::string weightConsensus(std::string& consensus, std::vector<std::string>& pi
 std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(std::string& readId, std::vector<std::string> & piles, std::pair<unsigned, unsigned>& pilesPos, std::string& readsDir, unsigned& minSupport, unsigned& merSize, unsigned& commonKMers, unsigned& solidThresh, unsigned& windowSize) {
 	// return piles[0];
 	// auto start_antoine = std::chrono::high_resolution_clock::now();
+	// outMtx.lock();
 	// std::cerr << "go MSABMAAC" << std::endl;
+	// outMtx.unlock();
 	// std::cerr << "in : " << piles[0].length() <<  std::endl;
 	int bmeanSup;
 	// if (piles.size() > commonKMers) {
@@ -202,7 +204,13 @@ std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(st
 	bmeanSup = std::min((int) commonKMers, (int) piles.size() / 2);
 	std::pair<std::vector<std::vector<std::string>>, std::unordered_map<kmer, unsigned>> rOut = MSABMAAC(piles, merSize, bmeanSup, solidThresh);
 	// std::cerr << "out : " << rOut.first[0][0].length() << std::endl;
+	// outMtx.lock();
 	// std::cerr << "end MSABMAAC" << std::endl;
+	// outMtx.unlock();
+	if (rOut.first.size() == 0) {
+		// std::cerr << "return empty consensus" << std::endl;
+		return std::make_pair("", rOut.second);
+	}
 	auto result = rOut.first;
 	auto merCounts = rOut.second;
 	// auto end_antoine = std::chrono::high_resolution_clock::now();
@@ -210,7 +218,11 @@ std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(st
 	// std::cerr << "antoine took " << std::chrono::duration_cast<std::chrono::milliseconds>(end_antoine - start_antoine).count() << " ms\n";
 	// outMtx.unlock();
 	// auto c_start = std::chrono::high_resolution_clock::now();
+	// outMtx.lock();
+	// std::cerr << "get result" << std::endl;
 	std::string corTpl = result[0][0];
+	// std::cerr << "ok" << std::endl;
+	// outMtx.unlock();
 
 	// Polish the consensus
 	std::vector<std::pair<std::string, std::string>> corList;
@@ -218,11 +230,15 @@ std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(st
 	if (corTpl.length() >= merSize) {
 		corTpl = weightConsensus(corTpl, piles, merCounts, merSize, windowSize, solidThresh);
 	}
+	// outMtx.lock();
 	// std::cerr << "go polish" << std::endl;
+	// outMtx.unlock();
 	corTpl = polishCorrection(corTpl, merCounts, merSize, solidThresh);
 	// corTpl = trimRead(corTpl, merSize);
 	// std::cerr << ">corTpl" << std::endl << corTpl << std::endl;
+	// outMtx.lock();
 	// std::cerr << "end polish" << std::endl;
+	// outMtx.unlock();
 	// auto c_end = std::chrono::high_resolution_clock::now();
 	// outMtx.lock();
 	// std::cerr << "polishing took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
@@ -720,14 +736,20 @@ std::unordered_map<std::string, std::string> getSequencesMap(std::vector<Alignme
 
 std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& alignments, std::string readsDir, unsigned minSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap) {
 	std::string readId = alignments.begin()->qName;
-
+	// outMtx.lock();
+	// std::cerr << "correcting : " << readId << std::endl;
+	// outMtx.unlock();
 	// Compute alignment piles
 	// auto c_start = std::chrono::high_resolution_clock::now();
 	// std::unordered_map<std::string, std::str/ing> sequences = getSequencesunordered_maps(alignments, readsDir);
 	std::unordered_map<std::string, std::string> sequences = getSequencesMap(alignments);
+	// outMtx.lock();
 	// std::cerr << "got maps" << std::endl;
+	// outMtx.unlock();
 	std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<std::string>>> pairPiles = getAlignmentPiles(alignments, minSupport, windowSize, windowOverlap, sequences);
+	// outMtx.lock();
 	// std::cerr << "got piles : " << pairPiles.first.size() << std::endl;
+	// outMtx.unlock();
 	std::vector<std::vector<std::string>> piles = pairPiles.second;
 	std::vector<std::pair<unsigned, unsigned>> pilesPos = pairPiles.first;
 	// auto c_end = std::chrono::high_resolution_clock::now();
@@ -741,20 +763,28 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& 
 	std::vector<std::unordered_map<kmer, unsigned>> merCounts(piles.size()); 
 	// std::vector<std::pair<std::string, std::string>> curCons;
 	for (i = 0; i < piles.size(); i++) {
+		// outMtx.lock();
 		// std::cerr << "compute cons : " << i << std::endl;
+		// outMtx.unlock();
 		resCons = computeConsensuses(readId, piles[i], pilesPos[i], readsDir, minSupport, merSize, commonKMers, solidThresh, windowSize);
 		consensuses[i] = resCons.first;
 		merCounts[i] = resCons.second;
+		// outMtx.lock();
 		// std::cerr << "got it " << std::endl;
+		// outMtx.unlock();
 	}
 	// auto c_end1 = std::chrono::high_resolution_clock::now();
 	// std::cerr << "consensus took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end1 - c_start1).count() << " ms\n";
 
 	// Align computed consensuses to the read
 	// auto c_start = std::chrono::high_resolution_clock::now();
+	// outMtx.lock();
 	// std::cerr << "go align" << std::endl;
+	// outMtx.unlock();
 	std::string correctedRead = alignConsensuses(readId, sequences[alignments[0].qName], consensuses, merCounts, pilesPos, piles, 0, windowSize, windowOverlap, solidThresh, merSize);
+	// outMtx.lock();
 	// std::cerr << "end align" << std::endl;
+	// outMtx.unlock();
 	// auto c_end = std::chrono::high_resolution_clock::now();
 	// outMtx.lock();
 	// std::cerr << "anchoring took " << std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count() << " ms\n";
