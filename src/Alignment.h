@@ -1,4 +1,5 @@
 #include <sstream>
+#include <iostream>
 
 struct Alignment {
 	std::string qName;
@@ -10,9 +11,13 @@ struct Alignment {
 	unsigned tLength;
 	unsigned tStart;
 	unsigned tEnd;
-	// std::string resMatches;
-	// std::string alBlockLen;
-	// std::string unordered_mapQual;
+	unsigned resMatches;
+	unsigned alBlockLen;
+	unsigned mapQual;
+
+	bool cmpById(const Alignment& a1, const Alignment& a2) {
+		return a1.resMatches / a1.alBlockLen < a2.resMatches / a2.alBlockLen;
+	}
 
 	bool operator<(const Alignment& a2) const {
 		if (qName < a2.qName) {
@@ -69,11 +74,12 @@ struct Alignment {
 		getline(iss, token, '\t');
 		// Has to be -1, cause miniunordered_map flags as endPosition the nt following the last match
 		tEnd = stoi(token) - 1;
-		// getline(iss, token, '\t');
-		// resMatches = token;
-		// getline(iss, token, '\t');
-		// alBlockLen = token;
-		// getline(iss, token, '\t');
-		// unordered_mapQual = token;
+		getline(iss, token, '\t');
+		resMatches = stoi(token);
+		getline(iss, token, '\t');
+		alBlockLen = stoi(token);
+		getline(iss, token, '\t');
+		mapQual = stoi(token);
+		// std::cerr << "qual : " << (float) resMatches / alBlockLen << std::endl;
 	}
 };

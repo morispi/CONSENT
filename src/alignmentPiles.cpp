@@ -148,7 +148,7 @@ std::unordered_map<std::string, std::string> getSequencesunordered_maps(std::vec
 	return sequences;
 }
 
-std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, std::unordered_map<std::string, std::string>& sequences, unsigned qBeg, unsigned end) {
+std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, std::unordered_map<std::string, std::string>& sequences, unsigned qBeg, unsigned end, unsigned merSize) {
 	std::vector<std::string> curPile;
 	unsigned length, shift;
 	length = end - qBeg + 1;
@@ -215,9 +215,9 @@ std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments,
 			// length = std::min(length, al.qEnd - qBeg + 1);
 			tmpSeq = tmpSeq.substr(shift, length);
 			
-			// if (tmpSeq.length() >= 0.25 * windowSize) {
+			if (tmpSeq.length() >= merSize) {
 				curPile.push_back(tmpSeq);
-			// }
+			}
 		}
 		curPos++;
 	}
@@ -225,7 +225,7 @@ std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments,
 	return curPile;
 }
 
-std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<std::string>>> getAlignmentPiles(std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, std::unordered_map<std::string, std::string> sequences) {
+std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<std::string>>> getAlignmentPiles(std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, std::unordered_map<std::string, std::string> sequences, unsigned merSize) {
 	unsigned tplLen = alignments.begin()->qLength;
 
 	std::vector<std::pair<unsigned, unsigned>> pilesPos = getAlignmentPilesPositions(tplLen, alignments, minSupport, windowSize, windowOverlap);
@@ -233,7 +233,7 @@ std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<st
 	std::vector<std::vector<std::string>> piles;
 
 	for (std::pair<int, int> p : pilesPos) {
-		piles.push_back(getAlignmentPileSeq(alignments, minSupport, windowSize, windowOverlap, sequences, p.first, p.second));
+		piles.push_back(getAlignmentPileSeq(alignments, minSupport, windowSize, windowOverlap, sequences, p.first, p.second, merSize));
 	}
 
 	return std::make_pair(pilesPos, piles);
