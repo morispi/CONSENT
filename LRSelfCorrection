@@ -67,6 +67,7 @@ while [[ "$1" != "" ]] ; do
 			case "$2" in
 				"") echo "Error: $1 expcets an argument" ; exit 1 ;;
 				*) maxSupport="$2" ; shift 2 ;;
+			esac ;;
 		"--windowSize"|"-l")
 			case "$2" in
 				"") echo "Error: $1 expects an argument" ; exit 1 ;;
@@ -86,6 +87,7 @@ while [[ "$1" != "" ]] ; do
 			case "$2" in
 				"") echo "Error: $1 expects an argument" ; exit 1 ;;
 				*) minAnchors="$2" ; shift 2 ;;
+			esac ;;
 		"--solid"|"-f")
 			case "$2" in
 				"") echo "Error: $1 expects an argument" ; exit 1 ;;
