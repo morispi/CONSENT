@@ -69,6 +69,7 @@ int nbCorBases(std::string correctedRead) {
 }
 
 bool dropRead(std::string correctedRead) {
+	// std::cerr << (float) nbCorBases(correctedRead) / correctedRead.length() << std::endl;
 	return (float) nbCorBases(correctedRead) / correctedRead.length() < 0.1;
 }
 
@@ -894,6 +895,8 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& 
 		// outMtx.lock();
 		// std::cout << ">" << readId << std::endl << correctedRead << std::endl;
 		// outMtx.unlock();
+	} else {
+		return std::make_pair(readId, "");
 	}
 }
 
@@ -1081,8 +1084,10 @@ void runCorrection(std::string alignmentFile, std::string readsDir, unsigned min
         // Get the job results
         // std::cerr << "we are looping" << std::endl;
         curRes = results[curJob].get();
+        if (curRes.second.length() != 0) {
+	        std::cout << ">" << curRes.first << std::endl << curRes.second << std::endl;
+	    }
         // std::cerr << "we looped" << std::endl;
-        std::cout << ">" << curRes.first << std::endl << curRes.second << std::endl;
         jobsCompleted++;
         
         // Increment the current job nb, and loop if needed
