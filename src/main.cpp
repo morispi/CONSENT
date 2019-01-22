@@ -11,7 +11,7 @@ int main(int argc, char* argv[]) {
 
 	readsDir =  "RawLongReads/";
 	minSupport = 4;
-	maxSupport = 10;
+	maxSupport = 100;
 	windowSize = 500;
 	merSize = 9;
 	commonKMers = 8;
