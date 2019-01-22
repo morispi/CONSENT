@@ -173,7 +173,7 @@ $LRSCf/minimap2/minimap2 --dual=yes -PD --no-long-join -w5 -t"$nproc" -g1000 -m3
 
 echo "["$(date)"] Correcting the long reads"
 #$LRSCf/bin/parallelCorrection.sh $tmpdir "$minSupport" "$windowSize" "$merSize" "$commonKMers" "$solid" "$windowOverlap" "$nproc" "$out"
-./bin/LRSelfCorrection -a $tmpdir/"$alignments" -d $tmpdir/RawLongReads/ -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -a "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$reads" >> "$out"
+$LRSCf/bin/LRSelfCorrection -a $tmpdir/"$alignments" -d $tmpdir/RawLongReads/ -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -a "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$reads" >> "$out"
 echo "["$(date)"] Removing the temporary files"
-# rm -Rf $tmpdir
+rm -Rf $tmpdir
 echo "["$(date)"] Exiting"
