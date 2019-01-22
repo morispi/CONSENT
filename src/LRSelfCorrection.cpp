@@ -69,7 +69,7 @@ int nbCorBases(std::string correctedRead) {
 }
 
 bool dropRead(std::string correctedRead) {
-	return (float) nbCorBases(correctedRead) / correctedRead.length() < 0.5;
+	return (float) nbCorBases(correctedRead) / correctedRead.length() < 0.1;
 }
 
 
