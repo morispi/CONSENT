@@ -188,7 +188,7 @@ std::string weightConsensus(std::string& consensus, std::vector<std::string>& pi
 	return consensus;
 }
 
-std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(std::string& readId, std::vector<std::string> & piles, std::pair<unsigned, unsigned>& pilesPos, std::string& readsDir, unsigned& minSupport, unsigned& merSize, unsigned& commonKMers, unsigned& solidThresh, unsigned& windowSize) {
+std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(std::string& readId, std::vector<std::string> & piles, std::pair<unsigned, unsigned>& pilesPos, std::string& readsDir, unsigned& minSupport, unsigned& merSize, unsigned& commonKMers, unsigned& minAnchors, unsigned& solidThresh, unsigned& windowSize) {
 	// return piles[0];
 	// auto start_antoine = std::chrono::high_resolution_clock::now();
 	// outMtx.lock();
@@ -200,9 +200,16 @@ std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(st
 	// } else {
 	// 	bmeanSup = piles.size() / 2;
 	// }
+	// std::cerr << "support : " << piles.size() << std::endl;
+	int meanLength = 0;
+	for (std::string s : piles) {
+		meanLength += s.length();
+	}
+	meanLength = meanLength / piles.size();
+	// std::cerr << "meanLength : " << meanLength << std::endl;
 	// std::cerr << "go MSABMAAC" << std::endl;
 	bmeanSup = std::min((int) commonKMers, (int) piles.size() / 2);
-	std::pair<std::vector<std::vector<std::string>>, std::unordered_map<kmer, unsigned>> rOut = MSABMAAC(piles, merSize, bmeanSup, solidThresh);
+	std::pair<std::vector<std::vector<std::string>>, std::unordered_map<kmer, unsigned>> rOut = MSABMAAC(piles, merSize, bmeanSup, solidThresh, minAnchors);
 	// std::cerr << "ok" << std::endl;
 	// std::cerr << "out : " << rOut.first[0][0].length() << std::endl;
 	// outMtx.lock();
@@ -211,6 +218,8 @@ std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(st
 	if (rOut.first.size() == 0) {
 		// std::cerr << "return empty consensus" << std::endl;
 		return std::make_pair("", rOut.second);
+	} else {
+		// std::cerr << "out : " << rOut.first[0][0].length() << std::endl;
 	}
 	auto result = rOut.first;
 	auto merCounts = rOut.second;
@@ -796,7 +805,7 @@ std::unordered_map<std::string, std::string> getSequencesMap(std::vector<Alignme
 	return sequences;
 }
 
-std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& alignments, std::string readsDir, unsigned minSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap) {
+std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& alignments, std::string readsDir, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned minAnchors,unsigned solidThresh, unsigned windowOverlap) {
 	std::string readId = alignments.begin()->qName;
 	// outMtx.lock();
 	// std::cerr << "correcting : " << readId << std::endl;
@@ -810,7 +819,7 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& 
 	// std::cerr << "got maps" << std::endl;
 	// outMtx.unlock();
 	// std::cerr << "go alignment piles" << std::endl;
-	std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<std::string>>> pairPiles = getAlignmentPiles(alignments, minSupport, windowSize, windowOverlap, sequences, merSize);
+	std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<std::string>>> pairPiles = getAlignmentPiles(alignments, minSupport, maxSupport, windowSize, windowOverlap, sequences, merSize);
 	// std::cerr << "ok" << std::endl;
 	// outMtx.lock();
 	// std::cerr << "got piles : " << pairPiles.first.size() << std::endl;
@@ -834,7 +843,7 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& 
 		// outMtx.lock();
 		// std::cerr << "compute cons : " << i << std::endl;
 		// outMtx.unlock();
-		resCons = computeConsensuses(readId, piles[i], pilesPos[i], readsDir, minSupport, merSize, commonKMers, solidThresh, windowSize);
+		resCons = computeConsensuses(readId, piles[i], pilesPos[i], readsDir, minSupport, merSize, commonKMers, minAnchors, solidThresh, windowSize);
 		if (resCons.first.length() < merSize) {
 			// std::cerr << "consensus " << i << " was empty (" << resCons.first.length() << ")" << std::endl;
 			// consensuses[i] = piles[i][0];
@@ -1009,7 +1018,7 @@ std::vector<Alignment> getNextReadPile(std::ifstream& f) {
 	return curReadAlignments;
 }
 
-void runCorrection(std::string alignmentFile, std::string readsDir, unsigned minSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned solidThresh, unsigned windowOverlap, unsigned nbThreads, std::string readsFile, unsigned nbReads) {
+void runCorrection(std::string alignmentFile, std::string readsDir, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned minAnchors, unsigned solidThresh, unsigned windowOverlap, unsigned nbThreads, std::string readsFile, unsigned nbReads) {
 	std::ifstream f(alignmentFile);
 	std::vector<Alignment> curReadAlignments;
 	std::string curRead, line;
@@ -1031,7 +1040,7 @@ void runCorrection(std::string alignmentFile, std::string readsDir, unsigned min
         while (curReadAlignments.size() == 0 and !f.eof()) {
         	curReadAlignments = getNextReadPile(f);
         }
-        results[i] = myPool.push(processRead, curReadAlignments, readsDir, minSupport, windowSize, merSize, commonKMers, solidThresh, windowOverlap);
+        results[i] = myPool.push(processRead, curReadAlignments, readsDir, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap);
         // std::cerr << "pushed job" << std::endl;
         jobsLoaded++;
 	}
@@ -1055,7 +1064,7 @@ void runCorrection(std::string alignmentFile, std::string readsDir, unsigned min
         while (curReadAlignments.size() == 0 and !f.eof()) {
         	curReadAlignments = getNextReadPile(f);
         }
-        results[curJob] = myPool.push(processRead, curReadAlignments, readsDir, minSupport, windowSize, merSize, commonKMers, solidThresh, windowOverlap);
+        results[curJob] = myPool.push(processRead, curReadAlignments, readsDir, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap);
         jobsLoaded++;
         
         // Increment the current job nb, and loop if needed

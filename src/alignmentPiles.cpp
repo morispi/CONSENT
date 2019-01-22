@@ -29,7 +29,7 @@ unsigned* getCoverages(std::vector<Alignment>& alignments) {
 	return coverages;
 }
 
-std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned tplLen, std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, int overlappingWindows) {
+std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned tplLen, std::vector<Alignment>& alignments, unsigned minSupport, unsigned maxSupport, unsigned windowSize, int overlappingWindows) {
 	unsigned* coverages = new unsigned[tplLen];
 	unsigned i;
 	for (i = 0; i < tplLen; i++) {
@@ -85,7 +85,7 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 			beg = i;
 			curLen = 0;
 		}
-		if (coverages[i] < minSupport) {
+		if (coverages[i] < minSupport or coverages[i] > maxSupport) {
 			curLen = 0;
 			i++;
 			beg = i;
@@ -108,7 +108,7 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 			end = i;
 			curLen = 0;
 		}
-		if (coverages[i] < minSupport) {
+		if (coverages[i] < minSupport or coverages[i] > maxSupport) {
 			curLen = 0;
 			i--;
 			end = i;
@@ -225,10 +225,10 @@ std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments,
 	return curPile;
 }
 
-std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<std::string>>> getAlignmentPiles(std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, std::unordered_map<std::string, std::string> sequences, unsigned merSize) {
+std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<std::string>>> getAlignmentPiles(std::vector<Alignment>& alignments, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned windowOverlap, std::unordered_map<std::string, std::string> sequences, unsigned merSize) {
 	unsigned tplLen = alignments.begin()->qLength;
 
-	std::vector<std::pair<unsigned, unsigned>> pilesPos = getAlignmentPilesPositions(tplLen, alignments, minSupport, windowSize, windowOverlap);
+	std::vector<std::pair<unsigned, unsigned>> pilesPos = getAlignmentPilesPositions(tplLen, alignments, minSupport, maxSupport, windowSize, windowOverlap);
 
 	std::vector<std::vector<std::string>> piles;
 

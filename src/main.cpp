@@ -7,20 +7,22 @@ int main(int argc, char* argv[]) {
 	}
 
 	std::string alignmentFile, readsDir, readsFile;
-	unsigned minSupport, windowSize, nbThreads, opt, merSize, commonKMers, solidThresh, windowOverlap, nbReads;
+	unsigned minSupport, maxSupport, windowSize, nbThreads, opt, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, nbReads;
 
 	readsDir =  "RawLongReads/";
-	minSupport = 10;
-	windowSize = 50;
-	merSize = 8;
-	commonKMers = 2;
-	solidThresh = 10;
-	windowOverlap = 10;
+	minSupport = 4;
+	maxSupport = 10;
+	windowSize = 500;
+	merSize = 9;
+	commonKMers = 8;
+	minAnchors = 10;
+	solidThresh = 4;
+	windowOverlap = 50;
 	nbThreads = 1;
 	nbReads = 0;
 
 
-	while ((opt = getopt(argc, argv, "a:d:k:s:l:f:e:p:c:m:j:w:m:r:n:")) != -1) {
+	while ((opt = getopt(argc, argv, "a:A:d:k:s:S:l:f:e:p:c:m:j:w:m:r:n:")) != -1) {
         switch (opt) {
 			case 'a':
 				alignmentFile = optarg;
@@ -31,6 +33,9 @@ int main(int argc, char* argv[]) {
 			case 's':
 				minSupport = atoi(optarg);
 				break;
+			case 'S':
+				maxSupport = atoi(optarg);
+				break;
 			case 'l':
 				windowSize = atoi(optarg);
 				break;
@@ -39,6 +44,9 @@ int main(int argc, char* argv[]) {
 				break;
 			case 'c':
 				commonKMers = atoi(optarg);
+				break;
+			case 'A':
+				minAnchors = atoi(optarg);
 				break;
 			case 'f':
 				solidThresh = atoi(optarg);
@@ -61,7 +69,7 @@ int main(int argc, char* argv[]) {
         }
     }
     
-	runCorrection(alignmentFile, readsDir, minSupport, windowSize, merSize, commonKMers, solidThresh, windowOverlap, nbThreads, readsFile, nbReads);
+	runCorrection(alignmentFile, readsDir, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, nbThreads, readsFile, nbReads);
 
 	return EXIT_SUCCESS;
 }
