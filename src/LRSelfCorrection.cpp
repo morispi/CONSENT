@@ -69,7 +69,7 @@ int nbCorBases(std::string correctedRead) {
 }
 
 bool dropRead(std::string correctedRead) {
-	return (float) nbCorBases(correctedRead) / correctedRead.length() < 0.75;
+	return (float) nbCorBases(correctedRead) / correctedRead.length() < 0.5;
 }
 
 
@@ -876,8 +876,8 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& 
 	// outMtx.unlock();
 
 	// Drop read if it contains too many poorly supported bases
-	// if (!dropRead(correctedRead)) {
-	if (1) {
+	if (!dropRead(correctedRead)) {
+	// if (1) {
 		// Split the read if it contains uncorrected windows
 		// c_start = std::chrono::high_resolution_clock::now();
 		// std::vector<std::string> correctedSplits = trimRead(correctedRead, windowSize);
