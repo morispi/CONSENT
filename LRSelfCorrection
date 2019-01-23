@@ -34,7 +34,7 @@ maxSupport=100
 windowSize=500
 merSize=9
 commonKMers=8
-minAnchors=10
+minAnchors=5
 solid=4
 windowOverlap=50
 
