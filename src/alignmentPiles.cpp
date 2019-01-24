@@ -46,6 +46,8 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 		}
 	}
 
+	// std::cerr << "maxSupport is : " << maxSupport << std::endl;
+
 	// std::cerr << "coverages" << std::endl;
 	// for (i = 0; i < tplLen; i++) {
 	// 	std::cerr << coverages[i] << " ";
@@ -85,7 +87,11 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 			beg = i;
 			curLen = 0;
 		}
-		if (coverages[i] < minSupport or coverages[i] > maxSupport) {
+		// if (coverages[i] < minSupport or coverages[i] > maxSupport) {
+		if (coverages[i] < minSupport) {
+			// if (coverages[i] > maxSupport) {
+			// 	std::cerr << "depasse : " << coverages[i] << std::endl;
+			// }
 			curLen = 0;
 			i++;
 			beg = i;
@@ -95,6 +101,7 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 		}
 	}
 
+	// Special case for the last window
 	int pushed = 0;
 	beg = 0;
 	end = tplLen - 1;
@@ -108,7 +115,11 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 			end = i;
 			curLen = 0;
 		}
-		if (coverages[i] < minSupport or coverages[i] > maxSupport) {
+		// if (coverages[i] < minSupport or coverages[i] > maxSupport) {
+		if (coverages[i] < minSupport) {
+			// if (coverages[i] > maxSupport) {
+			// 	std::cerr << "depasse : " << coverages[i] << std::endl;
+			// }
 			curLen = 0;
 			i--;
 			end = i;
