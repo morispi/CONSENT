@@ -915,20 +915,20 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& 
 // 	}
 // }
 
-std::map<std::string, std::vector<bool>> indexReads(std::string readsFile) {
+void indexReads(std::map<std::string, std::vector<bool>>& index, std::string readsFile) {
 	std::ifstream f(readsFile);
 	std::string header, sequence;
-	std::map<std::string, std::vector<bool>> res;
+	// std::map<std::string, std::vector<bool>> res;
 
 	getline(f, header);
 	while (header.length() > 0) {
 		header.erase(0, 1);
 		getline(f, sequence);
 		std::transform(sequence.begin(), sequence.end(), sequence.begin(), ::toupper);
-		res[header] = fullstr2num(sequence);
+		index[header] = fullstr2num(sequence);
 		getline(f, header);
 	}
-	return res;
+	// return res;
 }
 
 // Multithread ok, but running with GNU parallel for now as BOA still has memory leaks
@@ -1021,14 +1021,16 @@ std::vector<Alignment> getNextReadPile(std::ifstream& f) {
 	return curReadAlignments;
 }
 
-void runCorrection(std::string alignmentFile, std::string readsDir, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned minAnchors, unsigned solidThresh, unsigned windowOverlap, unsigned nbThreads, std::string readsFile, unsigned nbReads) {
+void runCorrection(std::string alignmentFile, std::string readsDir, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned minAnchors, unsigned solidThresh, unsigned windowOverlap, unsigned nbThreads, std::string readsFile, std::string proofFile) {
 	std::ifstream f(alignmentFile);
 	std::vector<Alignment> curReadAlignments;
 	std::string curRead, line;
 	curRead = "";
 	// int readNumber = 0;
 
-	readIndex = indexReads(readsFile);
+	indexReads(readIndex, readsFile);
+	indexReads(readIndex, proofFile);
+
 
 	int poolSize = 10000;
 	ctpl::thread_pool myPool(nbThreads);

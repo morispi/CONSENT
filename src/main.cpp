@@ -6,7 +6,7 @@ int main(int argc, char* argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	std::string alignmentFile, readsDir, readsFile;
+	std::string alignmentFile, readsDir, readsFile, proofFile;
 	unsigned minSupport, maxSupport, windowSize, nbThreads, opt, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, nbReads;
 
 	readsDir =  "RawLongReads/";
@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
 	nbReads = 0;
 
 
-	while ((opt = getopt(argc, argv, "a:A:d:k:s:S:l:f:e:p:c:m:j:w:m:r:n:")) != -1) {
+	while ((opt = getopt(argc, argv, "a:A:d:k:s:S:l:f:e:p:c:m:j:w:m:r:R:n:")) != -1) {
         switch (opt) {
 			case 'a':
 				alignmentFile = optarg;
@@ -57,6 +57,9 @@ int main(int argc, char* argv[]) {
 			case 'r':
 				readsFile = optarg;
 				break;
+			case 'R':
+				proofFile = optarg;
+				break;
 			case 'n':
 				nbReads = atoi(optarg);
 				break;
@@ -69,7 +72,7 @@ int main(int argc, char* argv[]) {
         }
     }
     
-	runCorrection(alignmentFile, readsDir, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, nbThreads, readsFile, nbReads);
+	runCorrection(alignmentFile, readsDir, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, nbThreads, readsFile, proofFile);
 
 	return EXIT_SUCCESS;
 }

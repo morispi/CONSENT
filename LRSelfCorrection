@@ -3,21 +3,21 @@ set -e
 
 #Prints a help message
 function print_help {
-	echo "Usage: $0 [options] --in LR.fasta --out result.fasta"
+	echo "Usage: $0 [options] --1 toCorrect.fasta --2 proof.fasta --out result.fasta"
 	echo ""
 	echo "	Input:"
-	echo "	LR.fasta:                      Fasta file of long reads, one sequence per line."
-	echo "	result.fasta:                  Fasta file where to output the good regions of the long reads."
+	echo "	--1 toCorrect.fasta:           Fasta file of sequences to correct. Can either be long reads or contigs."
+	echo "	--2 proof.fasta:               Fasta file of long reads to use for correction."
+	echo "                                 If self-correcting a set of long reads, please provide the same file to --1 and --2."
+	echo "	--out result.fasta:            Fasta file where to output the corrected sequences."
 	echo ""
 	echo "	Options:"
-	echo "	--minSupport INT, -s INT:      Minimum support to consider a window for correction. (default: 4)"
-	echo "  --maxSupport INT, -S INT:      Maximum support to consider a window for correction. (default: 100)"
-	echo "	--windowSize INT, -l INT:      Size of windows to process. (default; 500)"
-	echo "  --merSize INT, -k INT:         k-mer size for chaining and polishing. (default: 8)"
-	echo "  --solid INT, -f INT:           Minimum number of occurrences to consider a k-mer as solid during polishing. (default: 4)"
-	echo "  --commonKMers INT, -c INT:     Minimum number of sequences supporting (Ai) - (Ai+1) to keep the two anchors in the chaining. (default: 8)"
-	echo "  --minAnchors INT, -a INT:      Minimum number of anchors in a window to compute consensus. (default: 10)"
-	echo "  --windowOverlap INT, -m INT:   Overlap size between consecutive windows. (default: 50)"
+	echo "	--minSupport INT, -s INT:      Minimum windowOverlap of a long read region for it to be considered as good, and output. (default: 3)"
+	echo "	--windowSize INT, -l INT:      Minimum length of a good region for it to be output. (default; 100)"
+	echo "	--merSize INT, -k INT:         k-mer size for consensus sequences discrimination. (default: 7)"
+	echo "	--solid INT, -f INT:           Minimum number of occurrences to consider a k-mer as solid. (default: 3)"
+	echo "	--commonKMers INT, -c INT:     Number of solid k-mers in common with the window to correct required to keep a sequence in the consensus building. (default: 3)"
+	echo "	--windowOverlap INT, -m INT:   Overlap size between consecutive windows. (default: 50)"
 	echo "	--nproc INT, -j INT:           Number of processes to run in parallel (default: number of cores)."
 	echo "	--tmpdir STRING, -t STRING:    Path where to store the directory containing temporary files (default: working directory)."
 	echo "	--help, -h:                    Print this help message."
@@ -26,16 +26,15 @@ function print_help {
 
 #Set options to default values
 reads=""
+proof=""
 nproc=$(nproc)
 tmpdir="."
 out=""
-minSupport=4
-maxSupport=100
-windowSize=500
+minSupport=3
+windowSize=350
 merSize=9
-commonKMers=8
-minAnchors=2
-solid=4
+commonKMers=9
+solid=3
 windowOverlap=50
 
 #Print help if no argument specified
@@ -48,10 +47,15 @@ while [[ "$1" != "" ]] ; do
 	case "$1" in
 		"--help"|"-h")
 			print_help ;;
-		"--in")
+		"--1")
 			case "$2" in
 				"") echo "Error: $1 expects an argument" ; exit 1 ;;
 				*) reads="$2" ; shift 2 ;;
+			esac;;
+		"--2")
+			case "$2" in
+				"") echo "Error: $1 expects an argument" ; exit 1 ;;
+				*) proof="$2" ; shift 2 ;;
 			esac;;
 		"--out")
 			case "$2" in
@@ -62,11 +66,6 @@ while [[ "$1" != "" ]] ; do
 			case "$2" in
 				"") echo "Error: $1 expects an argument" ; exit 1 ;;
 				*) minSupport="$2" ; shift 2 ;;
-			esac ;;
-		"--maxSupport"|"-S")
-			case "$2" in
-				"") echo "Error: $1 expcets an argument" ; exit 1 ;;
-				*) maxSupport="$2" ; shift 2 ;;
 			esac ;;
 		"--windowSize"|"-l")
 			case "$2" in
@@ -82,11 +81,6 @@ while [[ "$1" != "" ]] ; do
 			case "$2" in
 				"") echo "Error: $1 expects an argument" ; exit 1 ;;
 				*) commonKMers="$2" ; shift 2 ;;
-			esac ;;
-		"--minAnchors"|"-a")
-			case "$2" in
-				"") echo "Error: $1 expects an argument" ; exit 1 ;;
-				*) minAnchors="$2" ; shift 2 ;;
 			esac ;;
 		"--solid"|"-f")
 			case "$2" in
@@ -114,9 +108,13 @@ while [[ "$1" != "" ]] ; do
   	esac
 done
 
-#Exit if no short reads, no long reads, no temporary directory, or no output files have been specified
+#Exit if no input or no output files have been specified
 if [[ $reads == "" ]] ; then
-	echo "Error: --in must be specified";
+	echo "Error: --1 must be specified";
+	exit 1;
+fi
+if [[ $proof == "" ]] ; then
+	echo "Error: --2 must be specified";
 	exit 1;
 fi
 if [[ $out == "" ]] ; then
@@ -132,38 +130,18 @@ fi
 #Create the directory for temporary files
 if [[ ! -d $tmpdir ]] ; then
 	#tmpdir="$tmpdir/LRSC_"$$
-        mkdir -p $tmpdir
-fi
-
-#Create the subdirectory for raw long reads, if it does not exist
-if [[ ! -d $tmpdir/RawLongReads ]] ; then
-	mkdir $tmpdir/RawLongReads
-fi
-
-#Create the subdirectory for exploded alignments, if it does not exist
-if [[ ! -d $tmpdir/ExplodedAlignments ]] ; then
-	mkdir $tmpdir/ExplodedAlignments
-fi
-
-#Create the subdirectory for POA input files, if it does not exist
-if [[ ! -d $tmpdir/POAInput/ ]] ; then
-        mkdir -p $tmpdir/POAInput
-fi
-
-#Create the subdirectory for POA output files, if it does not exist
-if [[ ! -d $tmpdir/POAOutput/ ]] ; then
-        mkdir -p $tmpdir/POAOutput
+    mkdir -p $tmpdir
 fi
 
 #Temporary files names
-alignments="Alignments.paf"
+alignments="Alignments_"$$".paf"
 
 #Get the path to LRSC's folder
 LRSCs=$(readlink -f "$0")
 LRSCf=$(dirname $LRSCs)
 
 echo "["$(date)"] Self-aligning the long reads (minimap2)"
-$LRSCf/minimap2/minimap2 --dual=yes -PD --no-long-join -w5 -t"$nproc" -g1000 -m30 -n1 "$reads" "$reads" > $tmpdir/"$alignments"
+$LRSCf/minimap2/minimap2 --dual=yes -PD --no-long-join -w5 -t4 -g1000 -m30 -n1 "$reads" "$reads" > $tmpdir/"$alignments"
 
 #echo "["$(date)"] Sorting the alignments file"
 
@@ -175,7 +153,7 @@ $LRSCf/minimap2/minimap2 --dual=yes -PD --no-long-join -w5 -t"$nproc" -g1000 -m3
 
 echo "["$(date)"] Correcting the long reads"
 #$LRSCf/bin/parallelCorrection.sh $tmpdir "$minSupport" "$windowSize" "$merSize" "$commonKMers" "$solid" "$windowOverlap" "$nproc" "$out"
-$LRSCf/bin/LRSelfCorrection -a $tmpdir/"$alignments" -d $tmpdir/RawLongReads/ -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$reads" >> "$out"
+./bin/LRSelfCorrection -a $tmpdir/"$alignments" -d $tmpdir/RawLongReads/ -s "$minSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$reads" -R "$proof" >> "$out"
 echo "["$(date)"] Removing the temporary files"
-rm -Rf $tmpdir
+# rm -Rf $tmpdir
 echo "["$(date)"] Exiting"
