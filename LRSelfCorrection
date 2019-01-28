@@ -12,11 +12,13 @@ function print_help {
 	echo "	--out result.fasta:            Fasta file where to output the corrected sequences."
 	echo ""
 	echo "	Options:"
-	echo "	--minSupport INT, -s INT:      Minimum windowOverlap of a long read region for it to be considered as good, and output. (default: 3)"
-	echo "	--windowSize INT, -l INT:      Minimum length of a good region for it to be output. (default; 100)"
-	echo "	--merSize INT, -k INT:         k-mer size for consensus sequences discrimination. (default: 7)"
-	echo "	--solid INT, -f INT:           Minimum number of occurrences to consider a k-mer as solid. (default: 3)"
-	echo "	--commonKMers INT, -c INT:     Number of solid k-mers in common with the window to correct required to keep a sequence in the consensus building. (default: 3)"
+	echo "	--minSupport INT, -s INT:      Minimum support to consider a window for correction. (default: 4)"
+	echo "	--maxSupport INT, -S INT:      Maximum support to consider a window for correction. (default: 4)"
+	echo "	--windowSize INT, -l INT:      Size of the windows to process. (default: 500)"
+	echo "	--merSize INT, -k INT:         k-mer size for chaining and polishing. (default: 9)"
+	echo "  --solid INT, -f INT:           Minimum number of occurrences to consider a k-mer as solid during polishing. (default: 4)"
+	echo "  --anchorSupport INT, -c INT:   Minimum number of sequences supporting (Ai) - (Ai+1) to keep the two anchors in the chaining. (default: 8)"
+	echo "  --minAnchors INT, -a INT:      Minimum number of anchors in a window to compute consensus. (default: 10)"
 	echo "	--windowOverlap INT, -m INT:   Overlap size between consecutive windows. (default: 50)"
 	echo "	--nproc INT, -j INT:           Number of processes to run in parallel (default: number of cores)."
 	echo "	--tmpdir STRING, -t STRING:    Path where to store the directory containing temporary files (default: working directory)."
@@ -30,11 +32,13 @@ proof=""
 nproc=$(nproc)
 tmpdir="."
 out=""
-minSupport=3
-windowSize=350
+minSupport=4
+maxSupport=100
+windowSize=500
 merSize=9
-commonKMers=9
-solid=3
+commonKMers=8
+minAnchors=2
+solid=4
 windowOverlap=50
 
 #Print help if no argument specified
@@ -67,6 +71,11 @@ while [[ "$1" != "" ]] ; do
 				"") echo "Error: $1 expects an argument" ; exit 1 ;;
 				*) minSupport="$2" ; shift 2 ;;
 			esac ;;
+		"--maxSupport"|"-S")
+			case "$2" in
+				"") echo "Error: $1 expects an argument" ; exit 1 ;;
+				*) maxSupport="$2" ; shift 2 ;;
+			esac ;;
 		"--windowSize"|"-l")
 			case "$2" in
 				"") echo "Error: $1 expects an argument" ; exit 1 ;;
@@ -77,10 +86,15 @@ while [[ "$1" != "" ]] ; do
 				"") echo "Error: $1 expects an argument" ; exit 1 ;;
 				*) merSize="$2" ; shift 2 ;;
 			esac ;;
-		"--commonKMers"|"-c")
+		"--anchorSupport"|"-c")
 			case "$2" in
 				"") echo "Error: $1 expects an argument" ; exit 1 ;;
 				*) commonKMers="$2" ; shift 2 ;;
+			esac ;;
+		"--minAnchors"|"-a")
+			case "$2" in
+				"") echo "Error: $1 expects an argument" ; exit 1 ;;
+				*) minAnchors="$2" ; shift 2 ;;
 			esac ;;
 		"--solid"|"-f")
 			case "$2" in
