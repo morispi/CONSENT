@@ -1,5 +1,5 @@
 CC = g++ -std=c++11
-CFLAGS  = -Wall -O3 -std=c++14
+CFLAGS  = -Wall -O3 -std=c++11
 LDFLAGS = -lpthread
 
 all: alignmentPiles.o reverseComplement.o localAlignment.o kMersProcessing.o LRSelfCorrection.o DBG.o main.o LRSelfCorrection
