@@ -13,6 +13,7 @@
 
 std::mutex outMtx;
 std::map<std::string, std::vector<bool>> readIndex;
+bool doTrimRead = true;
 
 std::vector<bool> fullstr2num(const string& str){
   std::vector<bool> res;
@@ -881,6 +882,9 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& 
 		// Split the read if it contains uncorrected windows
 		// c_start = std::chrono::high_resolution_clock::now();
 		// std::vector<std::string> correctedSplits = trimRead(correctedRead, windowSize);
+		if (doTrimRead) {
+			correctedRead = trimRead(correctedRead, 1);
+		}
 		// unsigned nbSplit = 0;
 		// while (nbSplit < correctedSplits.size()) {
 		// 	outMtx.lock();
@@ -1030,6 +1034,7 @@ void runCorrection(std::string alignmentFile, unsigned minSupport, unsigned maxS
 	indexReads(readIndex, readsFile);
 	if (proofFile != "") {
 		indexReads(readIndex, proofFile);
+		doTrimRead = false;
 	}
 
 
