@@ -1,17 +1,18 @@
-#include "LRSelfCorrection.h"
+#include "CONSENT.h"
 
 int main(int argc, char* argv[]) {
 	if (argc < 2) {
-		fprintf(stderr, "Usage: %s [-a alignmentFile.paf] [-d RawLongReadsDir] [-s minSupportForGoodRegions] [-l minLengthForGoodRegions] [-j threadsNb] \n\n", argv[0]);
+		fprintf(stderr, "Usage: %s [-a alignmentFile.paf] [-s minSupportForGoodRegions] [-l minLengthForGoodRegions] [-j threadsNb] \n\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
 
-	std::string alignmentFile, readsDir, readsFile, proofFile;
+	std::string alignmentFile, readsFile, proofFile;
+	alignmentFile = "";
+	readsFile = "";
 	unsigned minSupport, maxSupport, windowSize, nbThreads, opt, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, nbReads;
 
-	readsDir =  "RawLongReads/";
 	minSupport = 4;
-	maxSupport = 100;
+	maxSupport = 1000;
 	windowSize = 500;
 	merSize = 9;
 	commonKMers = 8;
@@ -26,9 +27,6 @@ int main(int argc, char* argv[]) {
         switch (opt) {
 			case 'a':
 				alignmentFile = optarg;
-				break;
-			case 'd':
-				readsDir = optarg;
 				break;
 			case 's':
 				minSupport = atoi(optarg);
@@ -67,12 +65,12 @@ int main(int argc, char* argv[]) {
 				nbThreads = atoi(optarg);
 				break;
 			default: /* '?' */
-				fprintf(stderr, "Usage: %s [-a alignmentFile.paf] [-d RawLongReadsDir] [-k merSize] [-s minSupportForGoodRegions] [-l minLengthForGoodRegions] [-f freqThresholdForKMers] [-e maxError] [-p freqThresholdForKPersFreqs] [-c freqThresholdForKPersCons] [-m mode (0 for regions, 1 for cluster)] [-j threadsNb] \n\n", argv[0]);
+				fprintf(stderr, "Usage: %s [-a alignmentFile.paf] [-k merSize] [-s minSupportForGoodRegions] [-l minLengthForGoodRegions] [-f freqThresholdForKMers] [-e maxError] [-p freqThresholdForKPersFreqs] [-c freqThresholdForKPersCons] [-m mode (0 for regions, 1 for cluster)] [-j threadsNb] \n\n", argv[0]);
 				exit(EXIT_FAILURE);
         }
     }
     
-	runCorrection(alignmentFile, readsDir, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, nbThreads, readsFile, proofFile);
+	runCorrection(alignmentFile, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, nbThreads, readsFile, proofFile);
 
 	return EXIT_SUCCESS;
 }

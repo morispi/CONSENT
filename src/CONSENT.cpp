@@ -3,8 +3,7 @@
 #include <ctime>
 #include <cmath>
 #include <chrono>
-#include "LRSelfCorrection.h"
-#include "localAlignment.h"
+#include "CONSENT.h"
 #include "kMersProcessing.h"
 #include "DBG.h"
 #include "../BMEAN/bmean.h"
