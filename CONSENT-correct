@@ -140,6 +140,10 @@ if [[ $out == "" ]] ; then
 	echo "Error: --out must be specified";
 	exit 1;
 fi
+if [[ $minimapOptions == "" ]] ; then
+	echo "Error: --type must be specified";
+	exit 1;
+fi
 
 #Remove the output file if it already exists
 if [[ -f $out ]] ; then
