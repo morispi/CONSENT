@@ -1,6 +1,85 @@
-# LRSelfCorrection
+# CONSENT
 
-SelfCorrection method for long reads.
-Currently tested on simulated read from A. baylyi, with a 50x coverage and a 12% error rate.
-Still under development.
-Proper README to come later.
+CONSENT (CONsensus-based Self-corrEctioN of Third generation sequencing data) is a self-correction method for long reads.
+It works by, first, computing overlaps between the long reads, in order to define an alignment pile (i.e. a set of overlapping reads used for
+correction) for each read. Each read's alignment pile is then further divided into smaller windows, that are corrected idependently.
+First, a multiple alignment strategy is used in order to compute consensus. Then, this consensus is further polished with a local de Bruijn
+graph, in order to get rid of the remaining errors.
+Additionally to error correction, CONSENT can also perform contigs polishing.
+
+Requirments
+--------------
+
+  - A Linux based operating system.
+  - Python3.
+  - A g++ version supporting C++11
+  
+Installation
+--------------
+
+Clone the CONSENT repository, along with its submodules with:
+
+  ```bash
+  git clone --recursive https://github.com/morispi/CONSENT
+  ```
+
+Then run the install.sh script:
+
+  ```bash
+  ./install.sh
+  ```
+  
+Running CONSENT
+--------------
+
+### Self-correction
+
+To run CONSENT for long reads self-correction, run the following command:
+
+`./CONSENT-correct --in longReads.fasta --out result.fasta --type readsTechnology`
+
+  - longReads.fasta:	fasta file of long reads to correct, with one sequence per line.
+  - result.fasta:		fasta file where to output the corrected long reads.
+  - readsTechnology:	Indicate whether the long reads are from PacBio (--type PB) or Oxford Nanopore (--type ONT)
+
+
+### Polishing
+
+To run CONSENT for contigs polishing, run the followning command:
+
+`./CONSENT-correct --contigs contigs.fasta --reads longReads.fasta --out result.fasta --type readsTechnology`
+
+  - contigs.fasta:		fasta file of contigs to polish, with one sequence per line.
+  - longReads.fasta:	fasta file of long reads to use for polishing, with one sequence per line.
+  - result.fasta:		fasta file where to output the polished contigs.
+  - readsTechnology:	Indicate whether the long reads are from PacBio (--type PB) or Oxford Nanopore (--type ONT)
+
+### Options
+
+      --minSupport INT, -s INT:      Minimum support to consider a window for correction. (default: 4)
+      --maxSupport INT, -S INT:      Maximum support to consider a window for correction. (default: 1,000)
+      --windowSize INT, -l INT:      Size of the windows to process. (default: 500)
+      --merSize INT, -k INT:         k-mer size for chaining and polishing. (default: 9)
+      --solid INT, -f INT:           Minimum number of occurrences to consider a k-mer as solid during polishing. (default: 4)
+      --anchorSupport INT, -c INT:   Minimum number of sequences supporting (Ai) - (Ai+1) to keep the two anchors in the chaining. (default: 8)
+      --minAnchors INT, -a INT:      Minimum number of anchors in a window to allow consensus computation. (default: 2)
+      --windowOverlap INT, -m INT:   Overlap size between consecutive windows. (default: 50)
+      --nproc INT, -j INT:           Number of processes to run in parallel (default: number of cores).
+      --tmpdir STRING, -t STRING:    Path where to store the temporary overlaps file (default: working directory, as Alignments_dateTimeStamp.paf).
+      --help, -h:                    Print this help message.
+
+Notes
+--------------
+
+CONSENT has been developed and tested on x86-64 GNU/Linux.          
+Support for any other platform has not been tested.
+
+Authors
+--------------
+
+Pierre Morisse, Camille Marchet, Antoine Limasset, Arnaud Lefebvre and Thierry Lecroq.
+
+Contact
+--------------
+
+You can report problems and bugs to pierre[dot]morisse2[at]univ-rouen[dot]fr
