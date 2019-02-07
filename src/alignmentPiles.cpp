@@ -87,8 +87,8 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 			beg = i;
 			curLen = 0;
 		}
-		// if (coverages[i] < minSupport or coverages[i] > maxSupport) {
-		if (coverages[i] < minSupport) {
+		if (coverages[i] < minSupport or coverages[i] > maxSupport) {
+		// if (coverages[i] < minSupport) {
 			// if (coverages[i] > maxSupport) {
 			// 	std::cerr << "depasse : " << coverages[i] << std::endl;
 			// }
@@ -115,8 +115,8 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 			end = i;
 			curLen = 0;
 		}
-		// if (coverages[i] < minSupport or coverages[i] > maxSupport) {
-		if (coverages[i] < minSupport) {
+		if (coverages[i] < minSupport or coverages[i] > maxSupport) {
+		// if (coverages[i] < minSupport) {
 			// if (coverages[i] > maxSupport) {
 			// 	std::cerr << "depasse : " << coverages[i] << std::endl;
 			// }
