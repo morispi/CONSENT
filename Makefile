@@ -2,9 +2,9 @@ CC = g++ -std=c++11
 CFLAGS  = -Wall -O3 -std=c++11
 LDFLAGS = -lpthread
 
-all: alignmentPiles.o reverseComplement.o kMersProcessing.o CONSENT.o DBG.o main.o CONSENT
+all: CONSENT
 
-CONSENT: main.o CONSENT.o utils.o
+CONSENT: alignmentPiles.o reverseComplement.o kMersProcessing.o CONSENT.o DBG.o main.o
 	$(CC) -o bin/CONSENT src/main.o src/kMersProcessing.o src/reverseComplement.o src/alignmentPiles.o src/CONSENT.o src/DBG.o BMEAN/bmean.o BMEAN/utils.o BMEAN/BOA/align_lpo2.o  BMEAN/BOA/align_lpo_po2.o  BMEAN/BOA/align_score.o  BMEAN/BOA/black_flag.o  BMEAN/BOA/buildup_lpo.o  BMEAN/BOA/create_seq.o  BMEAN/BOA/fasta_format.o  BMEAN/BOA/heaviest_bundle.o  BMEAN/BOA/lpo_format.o  BMEAN/BOA/lpo.o   BMEAN/BOA/msa_format.o  BMEAN/BOA/numeric_data.o  BMEAN/BOA/remove_bundle.o  BMEAN/BOA/seq_util.o  BMEAN/BOA/stringptr.o BMEAN/Complete-Striped-Smith-Waterman-Library/src/*.o $(LDFLAGS)
 
 CONSENT.o: src/CONSENT.cpp src/CONSENT.h src/alignmentPiles.h src/kMersProcessing.h src/DBG.h
