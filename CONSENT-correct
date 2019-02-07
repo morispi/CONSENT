@@ -39,7 +39,7 @@ commonKMers=8
 minAnchors=2
 solid=4
 windowOverlap=50
-PB="--dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1"
+PB="--dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -I100G"
 ONT="-k15 -w5 -m100 -g10000 -r2000 --max-chain-skip 25 --dual=yes -PD --no-long-join -I100G"
 minimapOption=""
 
