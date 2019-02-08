@@ -209,7 +209,7 @@ std::pair<int, int> getIndels(std::string cigar){
 	return std::make_pair(ins, del);
 }
 
-std::string alignConsensuses(std::string rawRead, std::string sequence, std::vector<std::string>& consensuses, std::vector<std::unordered_map<kmer, unsigned>>& merCounts, std::vector<std::pair<unsigned, unsigned>>& pilesPos, std::vector<std::vector<std::string>>& piles, int startPos, unsigned windowSize, unsigned windowOverlap, unsigned solidThresh, unsigned merSize) {
+std::string alignConsensuses(std::string rawRead, std::string sequence, std::vector<std::string>& consensuses, std::vector<std::unordered_map<kmer, unsigned>>& merCounts, std::vector<std::pair<unsigned, unsigned>>& pilesPos, std::vector<std::string>& templates, int startPos, unsigned windowSize, unsigned windowOverlap, unsigned solidThresh, unsigned merSize) {
 	StripedSmithWaterman::Aligner aligner;
 	StripedSmithWaterman::Filter filter;
 	StripedSmithWaterman::Alignment alignment;
@@ -237,7 +237,7 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 
 	for (i = 0; i < consensuses.size(); i++) {
 		if (consensuses[i].length() < merSize) {
-			curCons = piles[i][0];
+			curCons = templates[i];
 			std::transform(consUp.begin(), consUp.end(), consUp.begin(), ::tolower);
 		} else {
 			curCons = consensuses[i];
@@ -517,18 +517,23 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& 
 	std::unordered_map<std::string, std::string> sequences = getSequencesMap(alignments);
 	std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<std::string>>> pairPiles = getAlignmentPiles(alignments, minSupport, maxSupport, windowSize, windowOverlap, sequences, merSize);
 	std::vector<std::vector<std::string>> piles = pairPiles.second;
-	std::vector<std::pair<unsigned, unsigned>> pilesPos = pairPiles.first;
-	if (piles.size() == 0) {
+	std::vector<std::pair<unsigned, unsigned>> pilesPos = getAlignmentPilesPositions(alignments.begin()->qLength, alignments, minSupport, maxSupport, windowSize, windowOverlap);
+	// std::vector<std::pair<unsigned, unsigned>> pilesPos = pairPiles.first;
+	if (pilesPos.size() == 0) {
 		return std::make_pair(readId, "");
 	}
 	unsigned i = 0;
 
 	// Compute consensuses for all the piles
 	std::pair<std::string, std::unordered_map<kmer, unsigned>> resCons;
-	std::vector<std::string> consensuses(piles.size());
-	std::vector<std::unordered_map<kmer, unsigned>> merCounts(piles.size()); 
-	for (i = 0; i < piles.size(); i++) {
-		resCons = computeConsensuses(readId, piles[i], pilesPos[i], minSupport, merSize, commonKMers, minAnchors, solidThresh, windowSize);
+	std::vector<std::string> consensuses(pilesPos.size());
+	std::vector<std::unordered_map<kmer, unsigned>> merCounts(pilesPos.size()); 
+	std::vector<std::string> curPile;
+	std::vector<std::string> templates(pilesPos.size());
+	for (i = 0; i < pilesPos.size(); i++) {
+		curPile = getAlignmentPileSeq(alignments, minSupport, windowSize, windowOverlap, sequences, pilesPos[i].first, pilesPos[i].second, merSize);
+		templates[i] = curPile[0];
+		resCons = computeConsensuses(readId, curPile, pilesPos[i], minSupport, merSize, commonKMers, minAnchors, solidThresh, windowSize);
 		if (resCons.first.length() < merSize) {
 			consensuses[i] = resCons.first;
 		} else {
@@ -538,7 +543,7 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& 
 	}
 
 	// Align computed consensuses to the read
-	std::string correctedRead = alignConsensuses(readId, sequences[alignments[0].qName], consensuses, merCounts, pilesPos, piles, pilesPos[0].first, windowSize, windowOverlap, solidThresh, merSize);
+	std::string correctedRead = alignConsensuses(readId, sequences[alignments[0].qName], consensuses, merCounts, pilesPos, templates, pilesPos[0].first, windowSize, windowOverlap, solidThresh, merSize);
 
 	// Drop read if it contains too many poorly supported bases
 	if (!dropRead(correctedRead)) {
@@ -605,7 +610,7 @@ void runCorrection(std::string alignmentFile, unsigned minSupport, unsigned maxS
 	}
 
 
-	int poolSize = 10000;
+	int poolSize = 1000;
 	ctpl::thread_pool myPool(nbThreads);
 	int jobsToProcess = 100000000;
 	int jobsLoaded = 0;
