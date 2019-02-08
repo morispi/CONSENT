@@ -160,6 +160,7 @@ echo "["$(date)"] Self-aligning the long reads (minimap2)"
 $LRSCf/minimap2/minimap2 -t"$nproc" "$reads" "$reads" > $tmpdir/"$alignments"
 
 echo "["$(date)"] Correcting the long reads"
-$LRSCf/bin/LRSelfCorrection -a $tmpdir/"$alignments" -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$reads" >> "$out"echo "["$(date)"] Removing the temporary files"
+$LRSCf/bin/LRSelfCorrection -a $tmpdir/"$alignments" -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$reads" >> "$out"
+echo "["$(date)"] Removing the temporary files"
 rm $tmpdir/"$alignments"
 echo "["$(date)"] Exiting"
