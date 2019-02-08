@@ -3,7 +3,7 @@ set -e
 
 #Prints a help message
 function print_help {
-	echo "Usage: $0 [options] --1 toCorrect.fasta --2 proof.fasta --out result.fasta --type readsTechnology"
+	echo "Usage: $0 [options] --in longReads.fasta --out result.fasta --type readsTechnology"
 	echo ""
 	echo "	Input:"
 	echo "	longReads.fasta:               fasta file of long reads to correct, with one sequence per line."
@@ -58,7 +58,6 @@ while [[ "$1" != "" ]] ; do
 				"") echo "Error: $1 expects an argument" ; exit 1 ;;
 				*) reads="$2" ; shift 2 ;;
 			esac;;
-		"--2")
 		"--out")
 			case "$2" in
 				"") echo "Error: $1 expects an argument" ; exit 1 ;;
