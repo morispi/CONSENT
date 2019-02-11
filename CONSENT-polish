@@ -3,13 +3,12 @@ set -e
 
 #Prints a help message
 function print_help {
-	echo "Usage: $0 [options] --contigs contigs.fasta --reads longReads.fasta --out result.fasta --type readsTechnology"
+	echo "Usage: $0 [options] --contigs contigs.fasta --reads longReads.fasta --out result.fasta"
 	echo ""
 	echo "	Input:"
 	echo "	contigs.fasta:                 fasta file of contigs to polish, with one sequence per line."
-	echo "	proof.fasta:                   fasta file of long reads to use for polishing, with one sequence per line."
+	echo "	longReads.fasta:                   fasta file of long reads to use for polishing, with one sequence per line."
 	echo "	result.fasta:                  fasta file where to output the polished contigs."
-	echo "	readsTechnology:               Indicate whether the long reads are from PacBio (--type PB) or Oxford Nanopore (--type ONT)"
 	echo ""
 	echo "	Options:"
 	echo "	--minSupport INT, -s INT:      Minimum support to consider a window for correction. (default: 4)"
@@ -40,8 +39,6 @@ commonKMers=8
 minAnchors=2
 solid=4
 windowOverlap=50
-PB="--dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -I100G"
-ONT="-k15 -w5 -m100 -g10000 -r2000 --max-chain-skip 25 --dual=yes -PD --no-long-join -I100G"
 minimapOptions=""
 
 #Print help if no argument specified
@@ -149,10 +146,6 @@ if [[ $out == "" ]] ; then
 	echo "Error: --out must be specified";
 	exit 1;
 fi
-if [[ $minimapOptions == "" ]] ; then
-	echo "Error: --type must be specified";
-	exit 1;
-fi
 
 #Remove the output file if it already exists
 if [[ -f $out ]] ; then
@@ -167,7 +160,7 @@ LRSCs=$(readlink -f "$0")
 LRSCf=$(dirname $LRSCs)
 
 echo "["$(date)"] Self-aligning the long reads (minimap2)"
-$LRSCf/minimap2/minimap2 -t"$nproc" "$contigs" "$reads" > $tmpdir/"$alignments"
+$LRSCf/minimap2/minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -I100G -t"$nproc" "$contigs" "$reads" > $tmpdir/"$alignments"
 $hgf/bin/reformatPAF.py $tmpdir/"$alignments" > $tmpdir/"formatted_$alignments"
 sort -k1 -T $tmpdir --parallel"$nproc" $tmpdir/"formatted_$alignments" > $tmpdir/"$alignments" 
 
