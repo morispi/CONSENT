@@ -545,15 +545,16 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& 
 	// Align computed consensuses to the read
 	std::string correctedRead = alignConsensuses(readId, sequences[alignments[0].qName], consensuses, merCounts, pilesPos, templates, pilesPos[0].first, windowSize, windowOverlap, solidThresh, merSize);
 
-	// Drop read if it contains too many poorly supported bases
-	if (!dropRead(correctedRead)) {
-		// Trim the read if performing correcton
-		if (doTrimRead) {
+	// Trim read if need (ie when performing correction), and drop it if it contains too many uncorrected bases
+	if (doTrimRead) {
+		if (!dropRead(correctedRead)) {
 			correctedRead = trimRead(correctedRead, 1);
+			return std::make_pair(readId, correctedRead);
+		} else {
+			return std::make_pair(readId, "");
 		}
-		return std::make_pair(readId, correctedRead);
 	} else {
-		return std::make_pair(readId, "");
+		return std::make_pair(readId, correctedRead);	
 	}
 }
 
