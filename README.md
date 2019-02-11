@@ -47,12 +47,11 @@ To run CONSENT for long reads self-correction, run the following command:
 
 To run CONSENT for contigs polishing, run the followning command:
 
-`./CONSENT-correct --contigs contigs.fasta --reads longReads.fasta --out result.fasta --type readsTechnology`
+`./CONSENT-polish --contigs contigs.fasta --reads longReads.fasta --out result.fasta`
 
   - contigs.fasta:		fasta file of contigs to polish, with one sequence per line.
   - longReads.fasta:	fasta file of long reads to use for polishing, with one sequence per line.
   - result.fasta:		fasta file where to output the polished contigs.
-  - readsTechnology:	Indicate whether the long reads are from PacBio (--type PB) or Oxford Nanopore (--type ONT)
 
 ### Options
 
