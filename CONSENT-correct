@@ -12,7 +12,7 @@ function print_help {
 	echo ""
 	echo "	Options:"
 	echo "	--minSupport INT, -s INT:      Minimum support to consider a window for correction. (default: 4)"
-	echo "	--maxSupport INT, -S INT:      Maximum support to consider a window for correction. (default: 1,000)"
+	echo "	--maxSupport INT, -S INT:      Maximum support to consider a window for correction. (default: 5,000)"
 	echo "	--windowSize INT, -l INT:      Size of the windows to process. (default: 500)"
 	echo "	--merSize INT, -k INT:         k-mer size for chaining and polishing. (default: 9)"
 	echo "	--solid INT, -f INT:           Minimum number of occurrences to consider a k-mer as solid during polishing. (default: 4)"
@@ -32,15 +32,13 @@ nproc=$(nproc)
 tmpdir="."
 out=""
 minSupport=4
-maxSupport=1000
+maxSupport=5000
 windowSize=500
 merSize=9
 commonKMers=8
 minAnchors=2
 solid=4
-windowOverlap=50
-PB="--dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -I100G"
-ONT="-k15 -w5 -m100 -g10000 -r2000 --max-chain-skip 25 --dual=yes -PD --no-long-join -I100G"
+windowOverlap=5
 minimapOption=""
 
 #Print help if no argument specified
@@ -67,9 +65,9 @@ while [[ "$1" != "" ]] ; do
 			case "$2" in
 				"") echo "Error: $1 expects an argument" ; exit 1 ;;
 				*) if [[ "$2" == "PB" ]] ; then
-						minimapOptions="--dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1" ; shift 2 ;
+						minimapOptions="PB" ; shift 2 ;
 				   elif [[ "$2" == "ONT" ]] ; then
-				   		minimapOptions="-k15 -w5 -m100 -g10000 -r2000 --max-chain-skip 25 --dual=yes -PD --no-long-join -I100G" ; shift 2 ;
+				   		minimapOptions="ONT" ; shift 2 ;
 				   else
 				   		echo "Error: $1 must be either PB or ONT" ; exit 1 ;
 				   fi
@@ -157,7 +155,11 @@ LRSCs=$(readlink -f "$0")
 LRSCf=$(dirname $LRSCs)
 
 echo "["$(date)"] Self-aligning the long reads (minimap2)"
-$LRSCf/minimap2/minimap2 -t"$nproc" "$reads" "$reads" > $tmpdir/"$alignments"
+if [[ $minimapOptions == "PB" ]] ; then
+	$LRSCf/minimap2/minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -I100G -t"$nproc" "$reads" "$reads" > $tmpdir/"$alignments"
+else
+	$LRSCf/minimap2/minimap2 -k15 -w5 -m100 -g10000 -r2000 --max-chain-skip 25 --dual=yes -PD --no-long-join -I100G -t"$nproc" "$reads" "$reads" > $tmpdir/"$alignments"
+fi
 
 echo "["$(date)"] Correcting the long reads"
 $LRSCf/bin/LRSelfCorrection -a $tmpdir/"$alignments" -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$reads" >> "$out"
