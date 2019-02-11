@@ -102,7 +102,7 @@ std::string trimRead(std::string correctedRead, unsigned merSize) {
 		}
 		i++;
 	}
-	beg = i - merSize + 1;
+	beg = i - merSize;
 
 	i = correctedRead.length() - 1;
 	n = 0;
@@ -114,7 +114,7 @@ std::string trimRead(std::string correctedRead, unsigned merSize) {
 		}
 		i--;
 	}
-	end = i + merSize - 1;
+	end = i + merSize;
 
 	if (end > beg) {
 		return correctedRead.substr(beg, end - beg + 1);
