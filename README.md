@@ -1,6 +1,6 @@
 # CONSENT
 
-CONSENT (CONsensus-based Self-corrEctioN of Third generation sequencing data) is a self-correction method for long reads.
+CONSENT (sCalable self-cOrrectioN of long reads with multiple SEquence alignmeNT) is a self-correction method for long reads.
 It works by, first, computing overlaps between the long reads, in order to define an alignment pile (i.e. a set of overlapping reads used for
 correction) for each read. Each read's alignment pile is then further divided into smaller windows, that are corrected idependently.
 First, a multiple alignment strategy is used in order to compute consensus. Then, this consensus is further polished with a local de Bruijn
