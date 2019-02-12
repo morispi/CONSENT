@@ -46,32 +46,7 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 		}
 	}
 
-	// std::cerr << "maxSupport is : " << maxSupport << std::endl;
-
-	// std::cerr << "coverages" << std::endl;
-	// for (i = 0; i < tplLen; i++) {
-	// 	std::cerr << coverages[i] << " ";
-	// }
-	// std::cerr << std::endl;
-
 	std::vector<std::pair<unsigned, unsigned>> pilesPos;
-
-	// unsigned curLen = 0;
-	// beg = 0;
-	// end = 0;
-	// i = 1;
-	// while (i < tplLen) {
-	// 	if (coverages[i] == coverages[i-1] and coverages[i] >= minSupport) {
-	// 		curLen++;
-	// 	} else {
-	// 		if (curLen >= windowSize) {
-	// 			pilesPos.push_back(std::make_pair(beg, beg + curLen - 1));
-	// 		}
-	// 		beg = i;
-	// 		curLen = 0;
-	// 	}
-	// 	i++;
-	// }
 
 	unsigned curLen = 0;
 	beg = 0;
@@ -79,7 +54,6 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 	i = 0;
 	while (i < tplLen) {
 		if (curLen >= windowSize) {
-		// if (curLen >= 1) {
 			pilesPos.push_back(std::make_pair(beg, beg + curLen - 1));
 			if (overlappingWindows) {
 				i = i - overlappingWindows;
@@ -87,11 +61,8 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 			beg = i;
 			curLen = 0;
 		}
-		if (coverages[i] < minSupport or coverages[i] > maxSupport) {
-		// if (coverages[i] < minSupport) {
-			// if (coverages[i] > maxSupport) {
-			// 	std::cerr << "depasse : " << coverages[i] << std::endl;
-			// }
+		// if (coverages[i] < minSupport or coverages[i] > maxSupport) {
+		if (coverages[i] < minSupport) {
 			curLen = 0;
 			i++;
 			beg = i;
@@ -115,11 +86,8 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 			end = i;
 			curLen = 0;
 		}
-		if (coverages[i] < minSupport or coverages[i] > maxSupport) {
-		// if (coverages[i] < minSupport) {
-			// if (coverages[i] > maxSupport) {
-			// 	std::cerr << "depasse : " << coverages[i] << std::endl;
-			// }
+		// if (coverages[i] < minSupport or coverages[i] > maxSupport) {
+		if (coverages[i] < minSupport) {
 			curLen = 0;
 			i--;
 			end = i;
@@ -159,7 +127,7 @@ std::unordered_map<std::string, std::string> getSequencesunordered_maps(std::vec
 	return sequences;
 }
 
-std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, std::unordered_map<std::string, std::string>& sequences, unsigned qBeg, unsigned end, unsigned merSize) {
+std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, std::unordered_map<std::string, std::string>& sequences, unsigned qBeg, unsigned end, unsigned merSize, unsigned maxSupport) {
 	std::vector<std::string> curPile;
 	unsigned length, shift;
 	length = end - qBeg + 1;
@@ -176,7 +144,7 @@ std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments,
 	Alignment al;
 	std::string tmpSeq;
 	// Insert aligned sequences
-	while (curPos < alignments.size()) {
+	while (curPos < alignments.size() and curPile.size() < maxSupport) {
 		al = alignments[curPos];
 		tBeg = al.tStart;
 		tEnd = al.tEnd;
@@ -186,9 +154,6 @@ std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments,
 		} else {
 			shift = 0;
 		}
-		// For alignments spanning the query window
-		// if (al.qStart <= qBeg and end <= al.qEnd and al.tStart + qBeg - al.qStart + length - 1 <= al.tEnd) {
-		// if (al.qStart <= qBeg and end <= al.qEnd and al.tStart + shift <= al.tEnd) {
 		
 		// For all alignments than span, or begin/end in the query window
 		if ( ((al.qStart <= qBeg and al.qEnd > qBeg) or (end <= al.qEnd and al.qStart < end)) and al.tStart + shift <= al.tEnd) {
@@ -202,28 +167,16 @@ std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments,
 				shift = 0;
 				tBeg = std::max(0, (int) al.tStart - ((int) al.qStart - (int) qBeg));
 				length = std::min((int) length, std::min((int) al.tLength - 1, (int) tBeg + (int) length - 1) - (int) tBeg + 1);
-				// tEnd = tBeg + length - 1;
-				// std::cerr << tBeg << " ; " << tEnd << std::endl;
-				// tEnd = std::min((int) al.tLength - 1, (int) tBeg + (int) length - 1);
 			} else if (al.qEnd < end) {
 				tEnd = std::min((int) al.tLength - 1, (int) al.tEnd + ((int) end - (int) al.qEnd));
 				length = std::min((int) length, (int) tEnd - std::max(0, (int) tEnd - (int) length + 1) + 1);
-				// tBeg = tEnd - length + 1;
-				// std::cerr << tBeg << " ; " << tEnd << std::endl;
-				// // tBeg = std::max(0, (int) tEnd - (int) length + 1);
-				// length = tEnd - std::max(0, (int) tEnd - (int) length + 1) + 1;
 			}
 
-			// tmpSeq = sequences[al.tName].substr(al.tStart, al.tEnd - al.tStart + 1);
-			// tBeg = (unsigned) std::max((int) 0, (int) tBeg - 50);
-			// tEnd += 50;
 			tmpSeq = sequences[al.tName].substr(tBeg, tEnd - tBeg + 1);
 			if (al.strand) {
 				tmpSeq = rev_comp::run(tmpSeq);
 			}
 
-			// length = std::min(length + (int) windowSize, al.qEnd - qBeg + 1 + (int) 1 * (int) windowSize);
-			// length = std::min(length, al.qEnd - qBeg + 1);
 			tmpSeq = tmpSeq.substr(shift, length);
 			
 			if (tmpSeq.length() >= merSize) {
@@ -244,7 +197,7 @@ std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<st
 	std::vector<std::vector<std::string>> piles;
 
 	for (std::pair<int, int> p : pilesPos) {
-		piles.push_back(getAlignmentPileSeq(alignments, minSupport, windowSize, windowOverlap, sequences, p.first, p.second, merSize));
+		piles.push_back(getAlignmentPileSeq(alignments, minSupport, windowSize, windowOverlap, sequences, p.first, p.second, merSize, maxSupport));
 	}
 
 	return std::make_pair(pilesPos, piles);
