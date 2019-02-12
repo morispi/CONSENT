@@ -148,6 +148,7 @@ if [[ $minimapOptions == "" ]] ; then
 	echo "Error: --type must be specified";
 	exit 1;
 fi
+mkdir -p $tmpdir
 
 #Remove the output file if it already exists
 if [[ -f $out ]] ; then
