@@ -146,7 +146,7 @@ std::string weightConsensus(std::string& consensus, std::vector<std::string>& pi
 	return consensus;
 }
 
-std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(std::string& readId, std::vector<std::string> & piles, std::pair<unsigned, unsigned>& pilesPos, unsigned& minSupport, unsigned& merSize, unsigned& commonKMers, unsigned& minAnchors, unsigned& solidThresh, unsigned& windowSize, maxMSA) {
+std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(std::string& readId, std::vector<std::string> & piles, std::pair<unsigned, unsigned>& pilesPos, unsigned& minSupport, unsigned& merSize, unsigned& commonKMers, unsigned& minAnchors, unsigned& solidThresh, unsigned& windowSize, unsigned maxMSA) {
 	int bmeanSup;
 	bmeanSup = std::min((int) commonKMers, (int) piles.size() / 2);
 	std::pair<std::vector<std::vector<std::string>>, std::unordered_map<kmer, unsigned>> rOut = MSABMAAC(piles, merSize, bmeanSup, solidThresh, minAnchors, maxMSA);
@@ -641,7 +641,7 @@ void runCorrection(std::string alignmentFile, unsigned minSupport, unsigned maxS
         while (curReadAlignments.size() == 0 and !f.eof()) {
         	curReadAlignments = getNextReadPile(f);
         }
-        results[curJob] = myPool.push(processRead, curReadAlignments, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap);
+        results[curJob] = myPool.push(processRead, curReadAlignments, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, maxMSA);
         jobsLoaded++;
         
         // Increment the current job nb, and loop if needed
