@@ -40,7 +40,7 @@ merSize=9
 commonKMers=8
 minAnchors=2
 solid=4
-windowOverlap=5
+windowOverlap=50
 minimapOption=""
 
 #Print help if no argument specified
