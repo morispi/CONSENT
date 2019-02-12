@@ -55,14 +55,15 @@ To run CONSENT for contigs polishing, run the followning command:
 
 ### Options
 
-      --minSupport INT, -s INT:      Minimum support to consider a window for correction. (default: 4)
-      --maxSupport INT, -S INT:      Maximum support to consider a window for correction. (default: 1,000)
       --windowSize INT, -l INT:      Size of the windows to process. (default: 500)
+      --minSupport INT, -s INT:      Minimum support to consider a window for correction. (default: 4)
+      --maxSupport INT, -S INT:      Maximum number of sequences to include into a window. (default: 1,000)
+      --maxMSA INT, -M:              Maximum number of sequences to include into the MSA. (default: 150)
       --merSize INT, -k INT:         k-mer size for chaining and polishing. (default: 9)
       --solid INT, -f INT:           Minimum number of occurrences to consider a k-mer as solid during polishing. (default: 4)
       --anchorSupport INT, -c INT:   Minimum number of sequences supporting (Ai) - (Ai+1) to keep the two anchors in the chaining. (default: 8)
       --minAnchors INT, -a INT:      Minimum number of anchors in a window to allow consensus computation. (default: 2)
-      --windowOverlap INT, -m INT:   Overlap size between consecutive windows. (default: 50)
+      --windowOverlap INT, -o INT:   Overlap size between consecutive windows. (default: 50)
       --nproc INT, -j INT:           Number of processes to run in parallel (default: number of cores).
       --tmpdir STRING, -t STRING:    Path where to store the temporary overlaps file (default: working directory, as Alignments_dateTimeStamp.paf).
       --help, -h:                    Print this help message.
