@@ -9,10 +9,11 @@ int main(int argc, char* argv[]) {
 	std::string alignmentFile, readsFile, proofFile;
 	alignmentFile = "";
 	readsFile = "";
-	unsigned minSupport, maxSupport, windowSize, nbThreads, opt, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, nbReads;
+	unsigned minSupport, maxSupport, maxMSA, windowSize, nbThreads, opt, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, nbReads;
 
 	minSupport = 4;
 	maxSupport = 1000;
+	maxMSA = 150;
 	windowSize = 500;
 	merSize = 9;
 	commonKMers = 8;
@@ -23,7 +24,7 @@ int main(int argc, char* argv[]) {
 	nbReads = 0;
 
 
-	while ((opt = getopt(argc, argv, "a:A:d:k:s:S:l:f:e:p:c:m:j:w:m:r:R:n:")) != -1) {
+	while ((opt = getopt(argc, argv, "a:A:d:k:s:S:M:l:f:e:p:c:m:j:w:m:r:R:n:")) != -1) {
         switch (opt) {
 			case 'a':
 				alignmentFile = optarg;
@@ -33,6 +34,9 @@ int main(int argc, char* argv[]) {
 				break;
 			case 'S':
 				maxSupport = atoi(optarg);
+				break;
+			case 'M':
+				maxMSA = atoi(optarg);
 				break;
 			case 'l':
 				windowSize = atoi(optarg);
@@ -70,7 +74,7 @@ int main(int argc, char* argv[]) {
         }
     }
     
-	runCorrection(alignmentFile, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, nbThreads, readsFile, proofFile);
+	runCorrection(alignmentFile, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, nbThreads, readsFile, proofFile, maxMSA);
 
 	return EXIT_SUCCESS;
 }
