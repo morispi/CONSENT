@@ -146,10 +146,10 @@ std::string weightConsensus(std::string& consensus, std::vector<std::string>& pi
 	return consensus;
 }
 
-std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(std::string& readId, std::vector<std::string> & piles, std::pair<unsigned, unsigned>& pilesPos, unsigned& minSupport, unsigned& merSize, unsigned& commonKMers, unsigned& minAnchors, unsigned& solidThresh, unsigned& windowSize, unsigned maxMSA) {
+std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(std::string& readId, std::vector<std::string> & piles, std::pair<unsigned, unsigned>& pilesPos, unsigned& minSupport, unsigned& merSize, unsigned& commonKMers, unsigned& minAnchors, unsigned& solidThresh, unsigned& windowSize, unsigned maxMSA, std::string path) {
 	int bmeanSup;
 	bmeanSup = std::min((int) commonKMers, (int) piles.size() / 2);
-	std::pair<std::vector<std::vector<std::string>>, std::unordered_map<kmer, unsigned>> rOut = MSABMAAC(piles, merSize, bmeanSup, solidThresh, minAnchors, maxMSA);
+	std::pair<std::vector<std::vector<std::string>>, std::unordered_map<kmer, unsigned>> rOut = MSABMAAC(piles, merSize, bmeanSup, solidThresh, minAnchors, maxMSA, path);
 
 	if (rOut.first.size() == 0) {
 		return std::make_pair("", rOut.second);
@@ -512,7 +512,7 @@ std::unordered_map<std::string, std::string> getSequencesMap(std::vector<Alignme
 	return sequences;
 }
 
-std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& alignments, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned minAnchors,unsigned solidThresh, unsigned windowOverlap, unsigned maxMSA) {
+std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& alignments, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned minAnchors,unsigned solidThresh, unsigned windowOverlap, unsigned maxMSA, std::string path) {
 	std::string readId = alignments.begin()->qName;
 	std::unordered_map<std::string, std::string> sequences = getSequencesMap(alignments);
 	std::vector<std::pair<unsigned, unsigned>> pilesPos = getAlignmentPilesPositions(alignments.begin()->qLength, alignments, minSupport, maxSupport, windowSize, windowOverlap);
@@ -530,7 +530,7 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& 
 	for (i = 0; i < pilesPos.size(); i++) {
 		curPile = getAlignmentPileSeq(alignments, minSupport, windowSize, windowOverlap, sequences, pilesPos[i].first, pilesPos[i].second, merSize, maxSupport);
 		templates[i] = curPile[0];
-		resCons = computeConsensuses(readId, curPile, pilesPos[i], minSupport, merSize, commonKMers, minAnchors, solidThresh, windowSize, maxMSA);
+		resCons = computeConsensuses(readId, curPile, pilesPos[i], minSupport, merSize, commonKMers, minAnchors, solidThresh, windowSize, maxMSA, path);
 		if (resCons.first.length() < merSize) {
 			consensuses[i] = resCons.first;
 		} else {
@@ -595,7 +595,7 @@ std::vector<Alignment> getNextReadPile(std::ifstream& f) {
 	return curReadAlignments;
 }
 
-void runCorrection(std::string alignmentFile, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned minAnchors, unsigned solidThresh, unsigned windowOverlap, unsigned nbThreads, std::string readsFile, std::string proofFile, unsigned maxMSA) {
+void runCorrection(std::string alignmentFile, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned minAnchors, unsigned solidThresh, unsigned windowOverlap, unsigned nbThreads, std::string readsFile, std::string proofFile, unsigned maxMSA, std::string path) {
 	std::ifstream f(alignmentFile);
 	std::vector<Alignment> curReadAlignments;
 	std::string curRead, line;
@@ -621,7 +621,7 @@ void runCorrection(std::string alignmentFile, unsigned minSupport, unsigned maxS
         while (curReadAlignments.size() == 0 and !f.eof()) {
         	curReadAlignments = getNextReadPile(f);
         }
-        results[i] = myPool.push(processRead, curReadAlignments, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, maxMSA);
+        results[i] = myPool.push(processRead, curReadAlignments, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, maxMSA, path);
         jobsLoaded++;
 	}
 
@@ -641,7 +641,7 @@ void runCorrection(std::string alignmentFile, unsigned minSupport, unsigned maxS
         while (curReadAlignments.size() == 0 and !f.eof()) {
         	curReadAlignments = getNextReadPile(f);
         }
-        results[curJob] = myPool.push(processRead, curReadAlignments, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, maxMSA);
+        results[curJob] = myPool.push(processRead, curReadAlignments, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, maxMSA, path);
         jobsLoaded++;
         
         // Increment the current job nb, and loop if needed

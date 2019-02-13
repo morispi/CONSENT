@@ -6,7 +6,7 @@ int main(int argc, char* argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	std::string alignmentFile, readsFile, proofFile;
+	std::string alignmentFile, readsFile, proofFile, path;
 	alignmentFile = "";
 	readsFile = "";
 	unsigned minSupport, maxSupport, maxMSA, windowSize, nbThreads, opt, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, nbReads;
@@ -62,6 +62,10 @@ int main(int argc, char* argv[]) {
 			case 'R':
 				proofFile = optarg;
 				break;
+			case 'p':
+				path = optarg;
+				path +=  + "/BMEAN/BOA/blosum80.mat";
+				break;
 			case 'n':
 				nbReads = atoi(optarg);
 				break;
@@ -74,7 +78,7 @@ int main(int argc, char* argv[]) {
         }
     }
     
-	runCorrection(alignmentFile, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, nbThreads, readsFile, proofFile, maxMSA);
+	runCorrection(alignmentFile, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, nbThreads, readsFile, proofFile, maxMSA, path);
 
 	return EXIT_SUCCESS;
 }
