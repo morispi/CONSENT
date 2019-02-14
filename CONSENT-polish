@@ -33,7 +33,7 @@ nproc=$(nproc)
 tmpdir="."
 out=""
 minSupport=4
-maxSupport=1000
+maxSupport=100000
 maxMSA=150
 windowSize=500
 merSize=9
@@ -169,11 +169,10 @@ LRSCs=$(readlink -f "$0")
 LRSCf=$(dirname $LRSCs)
 
 echo "["$(date)"] Self-aligning the long reads (minimap2)"
-$LRSCf/minimap2/minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" "$contigs" "$reads"
-$hgf/bin/reformatPAF.py $tmpdir/"$alignments" > $tmpdir/"formatted_$alignments"
+$LRSCf/minimap2/minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" "$contigs" "$reads" > $tmpdir/"$alignments"
+$LRSCf/bin/reformatPAF.py $tmpdir/"$alignments" > $tmpdir/"formatted_$alignments"
 fpa $tmpdir/"formatted_$alignments" $tmpdir/"$alignments" index -f $tmpdir/"$PAFIndex" -t query
 rm $tmpdir/"formatted_$alignments"
-#sort -k1 -T $tmpdir --parallel"$nproc" $tmpdir/"formatted_$alignments" > $tmpdir/"$alignments" 
 
 
 echo "["$(date)"] Polishing the contigs"

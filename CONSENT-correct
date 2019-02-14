@@ -158,7 +158,6 @@ fi
 #Temporary files names
 alignments="Alignments_"$$".paf"
 PAFIndex="PAFIndex_"$$".idx"
-#PAFIndex="test.paf.idx"
 
 #Get the path to LRSC's folder
 LRSCs=$(readlink -f "$0")
