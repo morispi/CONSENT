@@ -697,6 +697,7 @@ void runCorrection(std::string PAFIndex, std::string alignmentFile, unsigned min
         if(curJob == poolSize) {
             curJob = 0;
         }
+        getline(templates, curTpl);
 	}
 
 	// Wait for the remaining jobs to terminate
