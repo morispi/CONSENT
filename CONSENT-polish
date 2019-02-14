@@ -162,19 +162,20 @@ fi
 
 #Temporary files names
 alignments="Alignments_"$$".paf"
+PAFIndex="PAFIndex_"$$".idx"
 
 #Get the path to LRSC's folder
 LRSCs=$(readlink -f "$0")
 LRSCf=$(dirname $LRSCs)
 
 echo "["$(date)"] Self-aligning the long reads (minimap2)"
-$LRSCf/minimap2/minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -I100G -t"$nproc" "$contigs" "$reads" > $tmpdir/"$alignments"
+$LRSCf/minimap2/minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" "$contigs" "$reads" | fpa -x $tmpdir/"$PAFIndex"  $tmpdir/"$alignments"
 $hgf/bin/reformatPAF.py $tmpdir/"$alignments" > $tmpdir/"formatted_$alignments"
 sort -k1 -T $tmpdir --parallel"$nproc" $tmpdir/"formatted_$alignments" > $tmpdir/"$alignments" 
 
 
 echo "["$(date)"] Polishing the contigs"
-$LRSCf/bin/CONSENT -a $tmpdir/"$alignments" -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$contigs" -R "$reads" -M "$maxMSA" -p "$LRSCf" >> "$out"
+$LRSCf/bin/CONSENT -i $tmpdir/"$PAFIndex" -a $tmpdir/"$alignments" -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$contigs" -R "$reads" -M "$maxMSA" -p "$LRSCf" >> "$out"
 echo "["$(date)"] Removing the temporary files"
 rm $tmpdir/"$alignments"
 echo "["$(date)"] Exiting"

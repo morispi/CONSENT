@@ -157,6 +157,8 @@ fi
 
 #Temporary files names
 alignments="Alignments_"$$".paf"
+PAFIndex="PAFIndex_"$$".idx"
+#PAFIndex="test.paf.idx"
 
 #Get the path to LRSC's folder
 LRSCs=$(readlink -f "$0")
@@ -164,13 +166,13 @@ LRSCf=$(dirname $LRSCs)
 
 echo "["$(date)"] Self-aligning the long reads (minimap2)"
 if [[ $minimapOptions == "PB" ]] ; then
-	$LRSCf/minimap2/minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -I100G -t"$nproc" "$reads" "$reads" > $tmpdir/"$alignments"
+	$LRSCf/minimap2/minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" "$reads" "$reads" | fpa -x $tmpdir/"$PAFIndex"  $tmpdir/"$alignments"
 else
-	$LRSCf/minimap2/minimap2 -k15 -w5 -m100 -g10000 -r2000 --max-chain-skip 25 --dual=yes -PD --no-long-join -I100G -t"$nproc" "$reads" "$reads" > $tmpdir/"$alignments"
+	$LRSCf/minimap2/minimap2 -k15 -w5 -m100 -g10000 -r2000 --max-chain-skip 25 --dual=yes -PD --no-long-join -t"$nproc" "$reads" "$reads" | fpa -x $tmpdir/"$PAFIndex"  $tmpdir/"$alignments"
 fi
 
 echo "["$(date)"] Correcting the long reads"
-$LRSCf/bin/CONSENT -a $tmpdir/"$alignments" -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$reads" -M "$maxMSA" -p "$LRSCf" >> "$out"
+$LRSCf/bin/CONSENT -i $tmpdir/"$PAFIndex" -a $tmpdir/"$alignments" -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$reads" -M "$maxMSA" -p "$LRSCf" >> "$out"
 echo "["$(date)"] Removing the temporary files"
 rm $tmpdir/"$alignments"
 echo "["$(date)"] Exiting"
