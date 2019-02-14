@@ -66,6 +66,7 @@ To run CONSENT for contigs polishing, run the followning command:
       --minAnchors INT, -a INT:      Minimum number of anchors in a window to allow consensus computation. (default: 2)
       --windowOverlap INT, -o INT:   Overlap size between consecutive windows. (default: 50)
       --nproc INT, -j INT:           Number of processes to run in parallel (default: number of cores).
+      --minimapIndex INT, -m INT:    Split minimap2 index every INT input bases (default: 500M).
       --tmpdir STRING, -t STRING:    Path where to store the temporary overlaps file (default: working directory, as Alignments_dateTimeStamp.paf).
       --help, -h:                    Print this help message.
 
