@@ -6,7 +6,8 @@ int main(int argc, char* argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	std::string alignmentFile, readsFile, proofFile, path;
+	std::string PAFIndex, alignmentFile, readsFile, proofFile, path;
+	PAFIndex = "";
 	alignmentFile = "";
 	readsFile = "";
 	unsigned minSupport, maxSupport, maxMSA, windowSize, nbThreads, opt, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, nbReads;
@@ -24,8 +25,11 @@ int main(int argc, char* argv[]) {
 	nbReads = 0;
 
 
-	while ((opt = getopt(argc, argv, "a:A:d:k:s:S:M:l:f:e:p:c:m:j:w:m:r:R:n:")) != -1) {
+	while ((opt = getopt(argc, argv, "a:A:d:k:s:S:M:l:f:e:p:c:m:j:w:m:r:R:n:i:")) != -1) {
         switch (opt) {
+        	case 'i':
+        		PAFIndex = optarg;
+        		break;
 			case 'a':
 				alignmentFile = optarg;
 				break;
@@ -78,7 +82,7 @@ int main(int argc, char* argv[]) {
         }
     }
     
-	runCorrection(alignmentFile, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, nbThreads, readsFile, proofFile, maxMSA, path);
+	runCorrection(PAFIndex, alignmentFile, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, nbThreads, readsFile, proofFile, maxMSA, path);
 
 	return EXIT_SUCCESS;
 }

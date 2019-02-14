@@ -14,6 +14,21 @@ std::mutex outMtx;
 std::map<std::string, std::vector<bool>> readIndex;
 bool doTrimRead = true;
 
+vector<string> splitString(string s, string delimiter) {
+    size_t pos_start = 0, pos_end, delim_len = delimiter.length();
+    string token;
+    vector<string> res;
+
+    while ((pos_end = s.find (delimiter, pos_start)) != string::npos) {
+        token = s.substr (pos_start, pos_end - pos_start);
+        pos_start = pos_end + delim_len;
+        res.push_back (token);
+    }
+
+    res.push_back (s.substr (pos_start));
+    return res;
+}
+
 std::vector<bool> fullstr2num(const string& str){
   std::vector<bool> res;
   for(uint i(0);i<str.size();i++){
@@ -569,6 +584,32 @@ void indexReads(std::map<std::string, std::vector<bool>>& index, std::string rea
 	}
 }
 
+std::vector<Alignment> getReadPile(std::ifstream& alignments, std::string curTpl) {
+	int beg, end;
+	std::vector<std::string> curOffset;
+	std::vector<Alignment> curReadAlignments;
+	std::string al;
+	std::stringstream iss(curTpl);
+	std::vector<std::string> offsets = splitString(splitString(curTpl, ",")[1], ";");
+
+	for (std::string o : offsets) {
+		std::cerr << o << std::endl;
+		curOffset = splitString(o, ":");
+		beg = stoi(curOffset[0]);
+		end = stoi(curOffset[1]);
+		alignments.seekg(beg, alignments.beg);
+
+		while (alignments.tellg() < end) {
+			getline(alignments, al);
+			curReadAlignments.push_back(al);
+		}
+	}
+
+	std::sort(curReadAlignments.begin(), curReadAlignments.end());
+
+	return curReadAlignments;
+}
+
 std::vector<Alignment> getNextReadPile(std::ifstream& f) {
 	std::vector<Alignment> curReadAlignments;
 	Alignment al;
@@ -595,8 +636,9 @@ std::vector<Alignment> getNextReadPile(std::ifstream& f) {
 	return curReadAlignments;
 }
 
-void runCorrection(std::string alignmentFile, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned minAnchors, unsigned solidThresh, unsigned windowOverlap, unsigned nbThreads, std::string readsFile, std::string proofFile, unsigned maxMSA, std::string path) {
-	std::ifstream f(alignmentFile);
+void runCorrection(std::string PAFIndex, std::string alignmentFile, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned minAnchors, unsigned solidThresh, unsigned windowOverlap, unsigned nbThreads, std::string readsFile, std::string proofFile, unsigned maxMSA, std::string path) {
+	std::ifstream templates(PAFIndex);
+	std::ifstream alignments(alignmentFile);
 	std::vector<Alignment> curReadAlignments;
 	std::string curRead, line;
 	curRead = "";
@@ -614,21 +656,26 @@ void runCorrection(std::string alignmentFile, unsigned minSupport, unsigned maxS
 	int jobsLoaded = 0;
 	int jobsCompleted = 0;
 
+	std::string curTpl;
+
 	// Load the first jobs
 	vector<std::future<std::pair<std::string, std::string>>> results(poolSize);
-    for(int i = 0; i < poolSize && !f.eof() && jobsLoaded < jobsToProcess; i++) {
-        curReadAlignments = getNextReadPile(f);
-        while (curReadAlignments.size() == 0 and !f.eof()) {
-        	curReadAlignments = getNextReadPile(f);
+	getline(templates, curTpl);
+    while (jobsLoaded < poolSize && !curTpl.empty() && jobsLoaded < jobsToProcess) {
+        curReadAlignments = getReadPile(alignments, curTpl);
+        while (curReadAlignments.size() == 0 and !curTpl.empty()) {
+        	getline(templates, curTpl);
+        	curReadAlignments = getReadPile(alignments, curTpl);
         }
-        results[i] = myPool.push(processRead, curReadAlignments, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, maxMSA, path);
+        results[jobsLoaded] = myPool.push(processRead, curReadAlignments, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, maxMSA, path);
         jobsLoaded++;
+        getline(templates, curTpl);
 	}
 
 	// Load the remaining jobs as other jobs terminate
 	int curJob = 0;
     std::pair<std::string, std::string> curRes;
-    while(!f.eof() && jobsLoaded < jobsToProcess) {
+    while(!curTpl.empty() && jobsLoaded < jobsToProcess) {
     	// Get the job results
         curRes = results[curJob].get();
         if (curRes.second.length() != 0) {
@@ -637,9 +684,10 @@ void runCorrection(std::string alignmentFile, unsigned minSupport, unsigned maxS
         jobsCompleted++;
         
         // Load the next job
-        curReadAlignments = getNextReadPile(f);
-        while (curReadAlignments.size() == 0 and !f.eof()) {
-        	curReadAlignments = getNextReadPile(f);
+        curReadAlignments = getReadPile(alignments, curTpl);
+        while (curReadAlignments.size() == 0 and !curTpl.empty()) {
+        	getline(templates, curTpl);
+        	curReadAlignments = getReadPile(alignments, curTpl);
         }
         results[curJob] = myPool.push(processRead, curReadAlignments, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, maxMSA, path);
         jobsLoaded++;
