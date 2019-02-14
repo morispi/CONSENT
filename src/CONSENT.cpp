@@ -593,7 +593,6 @@ std::vector<Alignment> getReadPile(std::ifstream& alignments, std::string curTpl
 	std::vector<std::string> offsets = splitString(splitString(curTpl, ",")[1], ";");
 
 	for (std::string o : offsets) {
-		std::cerr << o << std::endl;
 		curOffset = splitString(o, ":");
 		beg = stoi(curOffset[0]);
 		end = stoi(curOffset[1]);
