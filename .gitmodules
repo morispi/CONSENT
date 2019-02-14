@@ -7,6 +7,3 @@
 [submodule "CTPL"]
 	path = CTPL
 	url = https://github.com/vit-vit/CTPL.git
-[submodule "fpa"]
-	path = fpa
-	url = https://github.com/natir/fpa
