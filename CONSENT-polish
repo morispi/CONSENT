@@ -21,6 +21,7 @@ function print_help {
 	echo "	--minAnchors INT, -a INT:      Minimum number of anchors in a window to allow consensus computation. (default: 10)"
 	echo "	--windowOverlap INT, -o INT:   Overlap size between consecutive windows. (default: 50)"
 	echo "	--nproc INT, -j INT:           Number of processes to run in parallel (default: number of cores)."
+	echo "  --minimapIndex INT, -m INT:    Split minimap2 index every INT input bases (default: 500M)."
 	echo "	--tmpdir STRING, -t STRING:    Path where to store the temporary overlaps file (default: working directory, as Alignments_dateTimeStamp.paf)."
 	echo "	--help, -h:                    Print this help message."
 	exit 1
@@ -42,6 +43,7 @@ minAnchors=2
 solid=4
 windowOverlap=50
 minimapOptions=""
+minimapMemory="500M"
 
 #Print help if no argument specified
 if [[ "$1" == "" ]] ; then
@@ -134,6 +136,11 @@ while [[ "$1" != "" ]] ; do
 				"") echo "Error: $1 expects an argument" ; exit 1 ;;
 				*) tmpdir="$2" ; shift 2 ;;
 			esac ;;
+		"--minimapIndex"|"-m")
+			case "$2" in
+				"") echo "Error: $1 expects an argument" ; exit 1 ;;
+				*) minimapMemory="$2" ; shift 2 ;;
+			esac ;;
     	--)
 			shift ; break ;;
     		*) echo "Error: invalid option \"$1\"" ; exit 1 ;;
@@ -169,7 +176,7 @@ LRSCs=$(readlink -f "$0")
 LRSCf=$(dirname $LRSCs)
 
 echo "["$(date)"] Self-aligning the long reads (minimap2)"
-$LRSCf/minimap2/minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" "$contigs" "$reads" > $tmpdir/"$alignments"
+$LRSCf/minimap2/minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" -I"$minimapMemory" "$contigs" "$reads" > $tmpdir/"$alignments"
 $LRSCf/bin/reformatPAF.py $tmpdir/"$alignments" > $tmpdir/"formatted_$alignments"
 fpa $tmpdir/"formatted_$alignments" $tmpdir/"$alignments" index -f $tmpdir/"$PAFIndex" -t query
 rm $tmpdir/"formatted_$alignments"

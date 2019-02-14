@@ -21,6 +21,7 @@ function print_help {
 	echo "	--minAnchors INT, -a INT:      Minimum number of anchors in a window to allow consensus computation. (default: 10)"
 	echo "	--windowOverlap INT, -o INT:   Overlap size between consecutive windows. (default: 50)"
 	echo "	--nproc INT, -j INT:           Number of processes to run in parallel (default: number of cores)."
+	echo "  --minimapIndex INT, -m INT:    Split minimap2 index every INT input bases (default: 500M)."
 	echo "	--tmpdir STRING, -t STRING:    Path where to store the temporary overlaps file (default: working directory, as Alignments_dateTimeStamp.paf)."
 	echo "	--help, -h:                    Print this help message."
 	exit 1
@@ -42,6 +43,7 @@ minAnchors=2
 solid=4
 windowOverlap=50
 minimapOption=""
+minimapMemory="500M"
 
 #Print help if no argument specified
 if [[ "$1" == "" ]] ; then
@@ -124,6 +126,11 @@ while [[ "$1" != "" ]] ; do
 				"") echo "Error: $1 expects an argument" ; exit 1 ;;
 				*) nproc="$2" ; shift 2 ;;
 			esac ;;
+		"--minimapIndex"|"-m")
+			case "$2" in
+				"") echo "Error: $1 expects an argument" ; exit 1 ;;
+				*) minimapMemory="$2" ; shift 2 ;;
+			esac ;;
 		"--tmpdir"|"-t")
 			case "$2" in
 				"") echo "Error: $1 expects an argument" ; exit 1 ;;
@@ -165,9 +172,9 @@ LRSCf=$(dirname $LRSCs)
 
 echo "["$(date)"] Self-aligning the long reads (minimap2)"
 if [[ $minimapOptions == "PB" ]] ; then
-	$LRSCf/minimap2/minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" "$reads" "$reads" | fpa - $tmpdir/"$alignments" index -f $tmpdir/"$PAFIndex" -t query
+	$LRSCf/minimap2/minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" -I"$minimapMemory" "$reads" "$reads" | fpa - $tmpdir/"$alignments" index -f $tmpdir/"$PAFIndex" -t query
 else
-	$LRSCf/minimap2/minimap2 -k15 -w5 -m100 -g10000 -r2000 --max-chain-skip 25 --dual=yes -PD --no-long-join -t"$nproc" "$reads" "$reads" | fpa - $tmpdir/"$alignments" index -f $tmpdir/"$PAFIndex" -t query
+	$LRSCf/minimap2/minimap2 -k15 -w5 -m100 -g10000 -r2000 --max-chain-skip 25 --dual=yes -PD --no-long-join -t"$nproc" -I"$minimapMemory" "$reads" "$reads" | fpa - $tmpdir/"$alignments" index -f $tmpdir/"$PAFIndex" -t query
 fi
 
 echo "["$(date)"] Correcting the long reads"
