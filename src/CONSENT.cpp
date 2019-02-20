@@ -585,7 +585,7 @@ void indexReads(std::map<std::string, std::vector<bool>>& index, std::string rea
 }
 
 std::vector<Alignment> getReadPile(std::ifstream& alignments, std::string curTpl) {
-	int beg, end;
+	long long int beg, end;
 	std::vector<std::string> curOffset;
 	std::vector<Alignment> curReadAlignments;
 	std::string al;
@@ -594,8 +594,8 @@ std::vector<Alignment> getReadPile(std::ifstream& alignments, std::string curTpl
 
 	for (std::string o : offsets) {
 		curOffset = splitString(o, ":");
-		beg = stoi(curOffset[0]);
-		end = stoi(curOffset[1]);
+		beg = stoll(curOffset[0]);
+		end = stoll(curOffset[1]);
 		alignments.seekg(beg, alignments.beg);
 
 		while (alignments.tellg() < end) {
