@@ -577,6 +577,7 @@ void indexReads(std::map<std::string, std::vector<bool>>& index, std::string rea
 	getline(f, header);
 	while (header.length() > 0) {
 		header.erase(0, 1);
+		header = splitString(header, " ")[0];
 		getline(f, sequence);
 		std::transform(sequence.begin(), sequence.end(), sequence.begin(), ::toupper);
 		index[header] = fullstr2num(sequence);
