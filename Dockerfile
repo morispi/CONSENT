@@ -13,8 +13,8 @@ RUN apt-get update && \
     rm Miniconda3-latest-Linux-x86_64.sh
 ENV PATH=/miniconda/bin:${PATH}
 RUN conda update -y conda
-RUN conda install -c bioconda fpa
-RUN ./install.sh
+RUN conda install -c bioconda fpa minimap2
+RUN cd BMEAN && ./install.sh && cd .. && make
 ENV PATH=/app/:${PATH}
 
 LABEL Name=CONSENT
