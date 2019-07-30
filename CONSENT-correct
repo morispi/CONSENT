@@ -172,9 +172,9 @@ LRSCf=$(dirname $LRSCs)
 
 echo "["$(date)"] Self-aligning the long reads (minimap2)"
 if [[ $minimapOptions == "PB" ]] ; then
-	$LRSCf/minimap2/minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" -I"$minimapMemory" "$reads" "$reads" | fpa -i - -o $tmpdir/"$alignments" index -f $tmpdir/"$PAFIndex" -t query
+	minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" -I"$minimapMemory" "$reads" "$reads" | fpa -i - -o $tmpdir/"$alignments" index -f $tmpdir/"$PAFIndex" -t query
 else
-	$LRSCf/minimap2/minimap2 -k15 -w5 -m100 -g10000 -r2000 --max-chain-skip 25 --dual=yes -PD --no-long-join -t"$nproc" -I"$minimapMemory" "$reads" "$reads" | fpa -i - -o $tmpdir/"$alignments" index -f $tmpdir/"$PAFIndex" -t query
+	minimap2 -k15 -w5 -m100 -g10000 -r2000 --max-chain-skip 25 --dual=yes -PD --no-long-join -t"$nproc" -I"$minimapMemory" "$reads" "$reads" | fpa -i - -o $tmpdir/"$alignments" index -f $tmpdir/"$PAFIndex" -t query
 fi
 
 echo "["$(date)"] Correcting the long reads"
