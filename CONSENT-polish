@@ -176,10 +176,7 @@ LRSCs=$(readlink -f "$0")
 LRSCf=$(dirname $LRSCs)
 
 echo "["$(date)"] Self-aligning the long reads (minimap2)"
-minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" -I"$minimapMemory" "$contigs" "$reads" > $tmpdir/"$alignments"
-$LRSCf/bin/reformatPAF.py $tmpdir/"$alignments" > $tmpdir/"formatted_$alignments"
-fpa -i $tmpdir/"formatted_$alignments" -o $tmpdir/"$alignments" index -f $tmpdir/"$PAFIndex" -t query
-rm $tmpdir/"formatted_$alignments"
+minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" -I"$minimapMemory" "$contigs" "$reads" | fpa -i - -o $tmpdir/"$alignments" index -f $tmpdir/"$PAFIndex" -t target
 
 
 echo "["$(date)"] Polishing the contigs"
