@@ -56,24 +56,24 @@ struct Alignment {
 	Alignment(std::string al) {
 		std::string token;
 		std::stringstream iss(al);
-		getline(iss, tName, '\t');
-		getline(iss, token, '\t');
-		tLength = stoi(token);
-		getline(iss, token, '\t');
-		tStart = stoi(token);
-		getline(iss, token, '\t');
-		// Has to be -1, cause miniunordered_map flags as endPosition the nt following the last match
-		tEnd = stoi(token) - 1;
-		getline(iss, token, '\t');
-		strand = token == "+" ? false : true;
 		getline(iss, qName, '\t');
 		getline(iss, token, '\t');
 		qLength = stoi(token);
 		getline(iss, token, '\t');
 		qStart = stoi(token);
 		getline(iss, token, '\t');
-		// Has to be -1, cause miniunordered_map flags as endPosition the nt following the last match
+		// Has to be -1, cause minimap2 flags as endPosition the nt following the last match
 		qEnd = stoi(token) - 1;
+		getline(iss, token, '\t');
+		strand = token == "+" ? false : true;
+		getline(iss, tName, '\t');
+		getline(iss, token, '\t');
+		tLength = stoi(token);
+		getline(iss, token, '\t');
+		tStart = stoi(token);
+		getline(iss, token, '\t');
+		// Has to be -1, cause minimap2 flags as endPosition the nt following the last match
+		tEnd = stoi(token) - 1;
 		getline(iss, token, '\t');
 		resMatches = stoi(token);
 		getline(iss, token, '\t');
