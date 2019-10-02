@@ -97,6 +97,12 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 		}
 	}
 
+	int totalCov = 0;
+	for (int k = 0; k < tplLen; k++) {
+		totalCov += coverages[i];
+	}
+	std::cerr << alignments[0].qName << " : " << totalCov / tplLen << std::endl;
+
 	delete [] coverages;
 
 	return pilesPos;
@@ -128,11 +134,17 @@ std::unordered_map<std::string, std::string> getSequencesunordered_maps(std::vec
 }
 
 std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, std::unordered_map<std::string, std::string>& sequences, unsigned qBeg, unsigned end, unsigned merSize, unsigned maxSupport) {
+	int MAX = 100;
+	// std::vector<std::string> curPile(MAX);
+	// std::vector<unsigned> curScore(MAX);
 	std::vector<std::string> curPile;
+	std::vector<unsigned> curScore;
 	unsigned length, shift;
 	length = end - qBeg + 1;
 	unsigned curPos = 0;
 	unsigned tBeg, tEnd;
+	unsigned nbElems = 0;
+	unsigned minScore, posMin;
 
 	if (qBeg + length - 1 >= sequences[alignments.begin()->qName].length()) {
 		return curPile;
@@ -140,6 +152,14 @@ std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments,
 
 	// Insert template sequence
 	curPile.push_back(sequences[alignments.begin()->qName].substr(qBeg, length));
+	
+	// If list of best overlaps
+	// curPile[nbElems] = sequences[alignments.begin()->qName].substr(qBeg, length);
+	// curScore[nbElems] = alignments.begin()->qLength;
+	// nbElems++;
+	// minScore = curScore[nbElems];
+	
+	posMin = 0;
 
 	Alignment al;
 	std::string tmpSeq;
@@ -178,13 +198,64 @@ std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments,
 			}
 
 			tmpSeq = tmpSeq.substr(shift, length);
-			
+
+			// Default
 			if (tmpSeq.length() >= merSize) {
 				curPile.push_back(tmpSeq);
 			}
+
+			// Unsorted list of MAX best overlaps
+			// if (nbElems >= MAX) {
+			// 	if (al.resMatches > minScore) {
+			// 		curPile[posMin] = tmpSeq;
+			// 		curScore[posMin] = al.resMatches;
+			// 	}
+
+			// 	for (int i = 0; i < nbElems; i++) {
+			// 		if (curScore[i] < minScore) {
+			// 			minScore = curScore[i];
+			// 			posMin = i;
+			// 		}
+			// 	}
+			// } else {
+			// 	curPile[nbElems] = tmpSeq;
+			// 	curScore[nbElems] = al.resMatches;
+			// 	if (al.resMatches < minScore) {
+			// 		minScore = al.resMatches;
+			// 		posMin = nbElems;
+			// 	}
+			// 	nbElems++;
+			// }
+
+			// Sorted list of MAX best overlaps
+			// if (tmpSeq.length() >= merSize) {
+			// 	int i = nbElems;
+			// 	while (i > 1 and al.resMatches > curScore[i-1]) {
+			// 		i--;
+			// 	}
+			// 	for (int j = std::min(nbElems, (unsigned) MAX - 1); j > i; j--) {
+			// 		curPile[j] = curPile[j-1];
+			// 		curScore[j] = curScore[j-1];
+			// 	}
+			// 	if (i >= 1 and i < MAX) {
+			// 		curPile[i] = tmpSeq;
+			// 		curScore[i] = al.resMatches;
+			// 		if (nbElems < MAX) {
+			// 			nbElems++;
+			// 		}
+			// 	}
+			// }
+
+
 		}
 		curPos++;
 	}
+
+	// for (int i = 0; i < nbElems; i++) {
+	// 	std::cerr << curScore[i] << " ; ";
+	// }
+	// std::cerr << std::endl << std::endl;
+	// std::cerr << curPile.size() << std::endl;
 
 	return curPile;
 }

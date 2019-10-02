@@ -80,7 +80,7 @@ int nbCorBases(std::string correctedRead) {
 }
 
 bool dropRead(std::string correctedRead) {
-	return (float) nbCorBases(correctedRead) / correctedRead.length() < 0.1;
+	return (float) nbCorBases(correctedRead) / correctedRead.length() < 0.5;
 }
 
 
@@ -587,11 +587,19 @@ void indexReads(std::map<std::string, std::vector<bool>>& index, std::string rea
 
 std::vector<Alignment> getReadPile(std::ifstream& alignments, std::string curTpl) {
 	long long int beg, end;
+	int MAX = 150;
 	std::vector<std::string> curOffset;
 	std::vector<Alignment> curReadAlignments;
+	std::vector<int> curScore;
 	std::string al;
 	std::stringstream iss(curTpl);
 	std::vector<std::string> offsets = splitString(splitString(curTpl, ",")[1], ";");
+	unsigned nbElems = 0;
+	unsigned i;
+	Alignment curAl;
+	unsigned posMin = 0;
+	unsigned minScore = 0;
+
 
 	for (std::string o : offsets) {
 		curOffset = splitString(o, ":");
@@ -601,11 +609,71 @@ std::vector<Alignment> getReadPile(std::ifstream& alignments, std::string curTpl
 
 		while (alignments.tellg() < end) {
 			getline(alignments, al);
-			curReadAlignments.push_back(al);
+			curAl = Alignment(al);
+			
+			
+			// Keep all overlaps
+			// curReadAlignments.push_back(al);
+
+			// Only keep the MAX best overlaps (sorted list)
+			// i = nbElems;
+			// while (i > 0 and curAl.resMatches > curScore[i-1]) {
+			// 	i--;
+			// }
+			
+			// for (int j = std::min(nbElems, (unsigned) MAX - 1); j > i; j--) {
+			// 	curReadAlignments[j] = curReadAlignments[j-1];
+			// 	curScore[j] = curScore[j-1];
+			// }
+			
+			// if (i >= 0 and i < MAX) {
+			// 	curReadAlignments[i] = curAl;
+			// 	curScore[i] = curAl.resMatches;
+			// 	if (nbElems < MAX) {
+			// 		nbElems++;
+			// 	}
+			// }
+
+			// Unsorted list of MAX best overlaps
+			if (nbElems >= MAX) {
+				if (curAl.resMatches > minScore) {
+					curReadAlignments[posMin] = curAl;
+					curScore[posMin] = curAl.resMatches;
+				}
+
+				for (int i = 0; i < nbElems; i++) {
+					if (curScore[i] < minScore) {
+						minScore = curScore[i];
+						posMin = i;
+					}
+				}
+			} else {
+				curReadAlignments.push_back(curAl);
+				curScore.push_back(curAl.resMatches);
+				if (curAl.resMatches < minScore) {
+					minScore = curAl.resMatches;
+					posMin = nbElems;
+				}
+				nbElems++;
+			}
+
 		}
+
 	}
 
+	// curReadAlignments.resize(nbElems);
+
+	// std::cerr << "I have : " << nbElems << " / " << curReadAlignments.size() << " alignments" << std::endl;
+
 	std::sort(curReadAlignments.begin(), curReadAlignments.end());
+
+	// std::cerr << "sorted ! " << std::endl;
+
+	// std::cerr << "new size : " << curReadAlignments.size() << std::endl;
+
+	// for (auto al : curReadAlignments) {
+	// 	std::cerr << al.qName << std::endl;
+	// }
 
 	return curReadAlignments;
 }
@@ -652,7 +720,7 @@ void runCorrection(std::string PAFIndex, std::string alignmentFile, unsigned min
 
 	int poolSize = 1000;
 	ctpl::thread_pool myPool(nbThreads);
-	int jobsToProcess = 100000000;
+	int jobsToProcess = 500;
 	int jobsLoaded = 0;
 	int jobsCompleted = 0;
 
