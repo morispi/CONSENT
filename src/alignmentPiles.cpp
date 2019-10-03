@@ -101,7 +101,7 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 	for (int k = 0; k < tplLen; k++) {
 		totalCov += coverages[i];
 	}
-	std::cerr << alignments[0].qName << " : " << totalCov / tplLen << std::endl;
+	// std::cerr << alignments[0].qName << " : " << totalCov / tplLen << std::endl;
 
 	delete [] coverages;
 
@@ -133,7 +133,9 @@ std::unordered_map<std::string, std::string> getSequencesunordered_maps(std::vec
 	return sequences;
 }
 
-std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, std::unordered_map<std::string, std::string>& sequences, unsigned qBeg, unsigned end, unsigned merSize, unsigned maxSupport) {
+std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, std::unordered_map<std::string, std::string>& sequences, unsigned qBeg, unsigned end, unsigned merSize, unsigned maxSupport, unsigned commonKMers) {
+	int bmeanSup;
+	bmeanSup = std::min((int) commonKMers, (int) alignments.size() / 2);
 	int MAX = 100;
 	// std::vector<std::string> curPile(MAX);
 	// std::vector<unsigned> curScore(MAX);
@@ -164,7 +166,7 @@ std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments,
 	Alignment al;
 	std::string tmpSeq;
 	// Insert aligned sequences
-	while (curPos < alignments.size() and curPile.size() < maxSupport) {
+	while (curPos < alignments.size()) {// and curPile.size() < maxSupport) {
 		al = alignments[curPos];
 		tBeg = al.tStart;
 		tEnd = al.tEnd;
@@ -260,7 +262,7 @@ std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments,
 	return curPile;
 }
 
-std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<std::string>>> getAlignmentPiles(std::vector<Alignment>& alignments, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned windowOverlap, std::unordered_map<std::string, std::string> sequences, unsigned merSize) {
+std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<std::string>>> getAlignmentPiles(std::vector<Alignment>& alignments, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned windowOverlap, std::unordered_map<std::string, std::string> sequences, unsigned merSize, unsigned commonKMers) {
 	unsigned tplLen = alignments.begin()->qLength;
 
 	std::vector<std::pair<unsigned, unsigned>> pilesPos = getAlignmentPilesPositions(tplLen, alignments, minSupport, maxSupport, windowSize, windowOverlap);
@@ -268,7 +270,7 @@ std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<st
 	std::vector<std::vector<std::string>> piles;
 
 	for (std::pair<int, int> p : pilesPos) {
-		piles.push_back(getAlignmentPileSeq(alignments, minSupport, windowSize, windowOverlap, sequences, p.first, p.second, merSize, maxSupport));
+		piles.push_back(getAlignmentPileSeq(alignments, minSupport, windowSize, windowOverlap, sequences, p.first, p.second, merSize, maxSupport, commonKMers));
 	}
 
 	return std::make_pair(pilesPos, piles);

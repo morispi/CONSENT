@@ -543,7 +543,7 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& 
 	std::vector<std::string> curPile;
 	std::vector<std::string> templates(pilesPos.size());
 	for (i = 0; i < pilesPos.size(); i++) {
-		curPile = getAlignmentPileSeq(alignments, minSupport, windowSize, windowOverlap, sequences, pilesPos[i].first, pilesPos[i].second, merSize, maxSupport);
+		curPile = getAlignmentPileSeq(alignments, minSupport, windowSize, windowOverlap, sequences, pilesPos[i].first, pilesPos[i].second, merSize, maxSupport, commonKMers);
 		templates[i] = curPile[0];
 		resCons = computeConsensuses(readId, curPile, pilesPos[i], minSupport, merSize, commonKMers, minAnchors, solidThresh, windowSize, maxMSA, path);
 		if (resCons.first.length() < merSize) {
@@ -585,9 +585,8 @@ void indexReads(std::map<std::string, std::vector<bool>>& index, std::string rea
 	}
 }
 
-std::vector<Alignment> getReadPile(std::ifstream& alignments, std::string curTpl) {
+std::vector<Alignment> getReadPile(std::ifstream& alignments, std::string curTpl, unsigned maxSupport) {
 	long long int beg, end;
-	int MAX = 150;
 	std::vector<std::string> curOffset;
 	std::vector<Alignment> curReadAlignments;
 	std::vector<int> curScore;
@@ -635,7 +634,7 @@ std::vector<Alignment> getReadPile(std::ifstream& alignments, std::string curTpl
 			// }
 
 			// Unsorted list of MAX best overlaps
-			if (nbElems >= MAX) {
+			if (nbElems >= maxSupport) {
 				if (curAl.resMatches > minScore) {
 					curReadAlignments[posMin] = curAl;
 					curScore[posMin] = curAl.resMatches;
@@ -665,7 +664,7 @@ std::vector<Alignment> getReadPile(std::ifstream& alignments, std::string curTpl
 
 	// std::cerr << "I have : " << nbElems << " / " << curReadAlignments.size() << " alignments" << std::endl;
 
-	std::sort(curReadAlignments.begin(), curReadAlignments.end());
+	// std::sort(curReadAlignments.begin(), curReadAlignments.end());
 
 	// std::cerr << "sorted ! " << std::endl;
 
@@ -720,7 +719,7 @@ void runCorrection(std::string PAFIndex, std::string alignmentFile, unsigned min
 
 	int poolSize = 1000;
 	ctpl::thread_pool myPool(nbThreads);
-	int jobsToProcess = 500;
+	int jobsToProcess = 10000000;
 	int jobsLoaded = 0;
 	int jobsCompleted = 0;
 
@@ -730,10 +729,10 @@ void runCorrection(std::string PAFIndex, std::string alignmentFile, unsigned min
 	vector<std::future<std::pair<std::string, std::string>>> results(poolSize);
 	getline(templates, curTpl);
     while (jobsLoaded < poolSize && !curTpl.empty() && jobsLoaded < jobsToProcess) {
-        curReadAlignments = getReadPile(alignments, curTpl);
+        curReadAlignments = getReadPile(alignments, curTpl, maxSupport);
         while (curReadAlignments.size() == 0 and !curTpl.empty()) {
         	getline(templates, curTpl);
-        	curReadAlignments = getReadPile(alignments, curTpl);
+        	curReadAlignments = getReadPile(alignments, curTpl, maxSupport);
         }
         results[jobsLoaded] = myPool.push(processRead, curReadAlignments, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, maxMSA, path);
         jobsLoaded++;
@@ -752,10 +751,10 @@ void runCorrection(std::string PAFIndex, std::string alignmentFile, unsigned min
         jobsCompleted++;
         
         // Load the next job
-        curReadAlignments = getReadPile(alignments, curTpl);
+        curReadAlignments = getReadPile(alignments, curTpl, maxSupport);
         while (curReadAlignments.size() == 0 and !curTpl.empty()) {
         	getline(templates, curTpl);
-        	curReadAlignments = getReadPile(alignments, curTpl);
+        	curReadAlignments = getReadPile(alignments, curTpl, maxSupport);
         }
         results[curJob] = myPool.push(processRead, curReadAlignments, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, maxMSA, path);
         jobsLoaded++;
