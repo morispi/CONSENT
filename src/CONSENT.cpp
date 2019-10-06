@@ -317,9 +317,9 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 			// 	// std::cerr << std::endl << "!!! very small consensus !!! " << std::endl << std::endl;
 			// }
 			if (i < consensuses.size() - 1) {
-				if (beg + pilesPos[i+1].first - pilesPos[i].first - windowSize + windowOverlap + curCons.length() - curPos > windowSize) {
-					std::cerr << "difference : " << beg + pilesPos[i+1].first - pilesPos[i].first - windowSize + windowOverlap + curCons.length() - curPos << std::endl;
-				}
+				// if (beg + pilesPos[i+1].first - pilesPos[i].first - windowSize + windowOverlap + curCons.length() - curPos > windowSize) {
+				// 	std::cerr << "difference : " << beg + pilesPos[i+1].first - pilesPos[i].first - windowSize + windowOverlap + curCons.length() - curPos << std::endl;
+				// }
 				curPos = beg + pilesPos[i+1].first - pilesPos[i].first - windowSize + windowOverlap + curCons.length() ;
 				oldCons = curCons;
 				oldMers = merCounts[i];
