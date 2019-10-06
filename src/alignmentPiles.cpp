@@ -30,21 +30,35 @@ unsigned* getCoverages(std::vector<Alignment>& alignments) {
 }
 
 std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned tplLen, std::vector<Alignment>& alignments, unsigned minSupport, unsigned maxSupport, unsigned windowSize, int overlappingWindows) {
-	unsigned* coverages = new unsigned[tplLen];
+	unsigned* coverages = getCoverages(alignments);
 	unsigned i;
-	for (i = 0; i < tplLen; i++) {
-		coverages[i] = 1;
-	}
-	unsigned beg, end;
+	unsigned beg = 0;
+	unsigned end = tplLen - 1;
+	unsigned meanCov = 0;
 
-	for (Alignment al : alignments) {
-		beg = al.qStart;
-		end = al.qEnd;
+	// while (beg < tplLen and coverages[beg] < minSupport) {
+	// 	beg++;
+	// }
 
-		for (i = beg; i <= end; i++) {
-			coverages[i]++;
-		}
-	}
+	// while (end > 0 and coverages[end] < minSupport) {
+	// 	end--;
+	// }
+
+	// = new unsigned[tplLen];
+	// unsigned i;
+	// for (i = 0; i < tplLen; i++) {
+	// 	coverages[i] = 1;
+	// }
+	// unsigned beg, end;
+
+	// for (Alignment al : alignments) {
+	// 	beg = al.qStart;
+	// 	end = al.qEnd;
+
+	// 	for (i = beg; i <= end; i++) {
+	// 		coverages[i]++;
+	// 	}
+	// }
 
 	std::vector<std::pair<unsigned, unsigned>> pilesPos;
 
@@ -54,6 +68,7 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 	i = 0;
 	while (i < tplLen) {
 		if (curLen >= windowSize) {
+			// std::cerr << "pushed : " << beg << " ; " << beg + curLen - 1 << std::endl;
 			pilesPos.push_back(std::make_pair(beg, beg + curLen - 1));
 			if (overlappingWindows) {
 				i = i - overlappingWindows;
@@ -80,7 +95,7 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 	i = tplLen - 1;
 	while (i > 0 and !pushed) {
 		if (curLen >= windowSize) {
-			// std::cerr << "end : " << end << " ; tplLen : " << tplLen << std::endl;
+			// std::cerr << "pushed : " << end - curLen + 1 << " ; " << end << std::endl;
 			pilesPos.push_back(std::make_pair(end - curLen + 1, end));
 			pushed = 1;
 			end = i;
@@ -97,11 +112,28 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 		}
 	}
 
-	int totalCov = 0;
-	for (int k = 0; k < tplLen; k++) {
-		totalCov += coverages[i];
-	}
+	// int totalCov = 0;
+	// for (int k = 0; k < tplLen; k++) {
+	// 	totalCov += coverages[i];
+	// }
 	// std::cerr << alignments[0].qName << " : " << totalCov / tplLen << std::endl;
+
+	// if (pilesPos.size() > 0) {
+	// 	for (i = pilesPos[0].first; i <= pilesPos[pilesPos.size() - 1].second; i++) {
+	// 		if (coverages[i] >= minSupport) {
+	// 			meanCov++;
+	// 		}
+	// 	}
+
+	// 	// if ((float) meanCov / (end - beg + 1) < 0.5) {
+	// 		// std::cerr << "treat read : " << alignments[0].qName << " : " << std::endl;
+	// 		// std::cerr << "support was : " << (float) meanCov / (pilesPos[pilesPos.size() - 1].second - pilesPos[0].first + 1) << std::endl;
+	// 		// std::cerr << "meanCov was : " << meanCov << std::endl;
+	// 		// std::cerr << "length was : " << pilesPos[pilesPos.size() - 1].second - pilesPos[0].first + 1 << std::endl;
+	// 		// std::cerr << "beg : " << pilesPos[0].first << std::endl;
+	// 		// std::cerr << "end : " << pilesPos[pilesPos.size() - 1].second << std::endl;
+	// 	// }
+	// }
 
 	delete [] coverages;
 

@@ -80,7 +80,7 @@ int nbCorBases(std::string correctedRead) {
 }
 
 bool dropRead(std::string correctedRead) {
-	return (float) nbCorBases(correctedRead) / correctedRead.length() < 0.5;
+	return (float) nbCorBases(correctedRead) / correctedRead.length() < 0.1;
 }
 
 
@@ -162,12 +162,19 @@ std::string weightConsensus(std::string& consensus, std::vector<std::string>& pi
 }
 
 std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(std::string& readId, std::vector<std::string> & piles, std::pair<unsigned, unsigned>& pilesPos, unsigned& minSupport, unsigned& merSize, unsigned& commonKMers, unsigned& minAnchors, unsigned& solidThresh, unsigned& windowSize, unsigned maxMSA, std::string path) {
+	// if (piles.size() == 1) {
+	// 	auto merCounts = 
+	// 	return 
+	// }
+
 	int bmeanSup;
 	bmeanSup = std::min((int) commonKMers, (int) piles.size() / 2);
+	// std::cerr << "MSABMAAC in : " << piles.size() << std::endl;
 	std::pair<std::vector<std::vector<std::string>>, std::unordered_map<kmer, unsigned>> rOut = MSABMAAC(piles, merSize, bmeanSup, solidThresh, minAnchors, maxMSA, path);
+	// std::cerr << "MSABMAAC out : " << rOut.first.size() << std::endl;
 
 	if (rOut.first.size() == 0) {
-		return std::make_pair("", rOut.second);
+		return std::make_pair(piles[0], rOut.second);
 	}
 	auto result = rOut.first;
 	auto merCounts = rOut.second;
@@ -306,10 +313,19 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 				std::transform(consUp.begin(), consUp.end(), consUp.begin(), ::toupper);
 				outSequence.replace(beg, end - beg + 1, consUp);
 			}
-			curPos = beg + curCons.length() ;
-			oldCons = curCons;
-			oldMers = merCounts[i];
-			oldEnd = beg + curCons.length() - 1;
+			// } else {
+			// 	// std::cerr << std::endl << "!!! very small consensus !!! " << std::endl << std::endl;
+			// }
+			if (i < consensuses.size() - 1) {
+				curPos = beg + pilesPos[i+1].first - pilesPos[i].first - windowSize + windowOverlap + curCons.length() ;
+				oldCons = curCons;
+				oldMers = merCounts[i];
+				oldEnd = beg + curCons.length() - 1;
+			}
+			// curPos = beg + curCons.length() ;
+			// oldCons = curCons;
+			// oldMers = merCounts[i];
+			// oldEnd = beg + curCons.length() - 1;
 		}
 	}
 
@@ -559,10 +575,17 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& 
 
 	// Trim read if need (ie when performing correction), and drop it if it contains too many uncorrected bases
 	if (doTrimRead) {
+		// std::cerr << "before trim : " << correctedRead.length() << std::endl;
+		correctedRead = trimRead(correctedRead, 1);
 		if (!dropRead(correctedRead)) {
-			correctedRead = trimRead(correctedRead, 1);
+			// std::cerr << "kept read : " << readId << std::endl << "support was : " << (float) nbCorBases(correctedRead) / correctedRead.length() << std::endl;
+			// std::cerr << "length was : " << correctedRead.length() << std::endl;
+			// std::cerr << std::endl;
 			return std::make_pair(readId, correctedRead);
 		} else {
+			// std::cerr << "dropped read : " << readId << std::endl << "support was : " << (float) nbCorBases(correctedRead) / correctedRead.length() << std::endl;
+			// std::cerr << "length was : " << correctedRead.length() << std::endl;
+			// std::cerr << std::endl;
 			return std::make_pair(readId, "");
 		}
 	} else {
@@ -719,7 +742,7 @@ void runCorrection(std::string PAFIndex, std::string alignmentFile, unsigned min
 
 	int poolSize = 1000;
 	ctpl::thread_pool myPool(nbThreads);
-	int jobsToProcess = 10000000;
+	int jobsToProcess = 500;
 	int jobsLoaded = 0;
 	int jobsCompleted = 0;
 
