@@ -138,6 +138,42 @@ std::string trimRead(std::string correctedRead, unsigned merSize) {
 	}
 }
 
+std::vector<std::string> splitRead(std::string name, std::string correctedRead, std::vector<std::pair<unsigned, unsigned>>& pilesPos, unsigned windowSize, unsigned windowOverlap) {
+	int i = 0;
+	int prevPos = 0;
+	int nbUnco = 0;
+	std::vector<std::string> result;
+
+	// Skip uncorrected head
+	while (i < correctedRead.length() and !isUpperCase(correctedRead[i])) {
+		i++;
+	}
+	prevPos = i;
+
+
+	while (i < correctedRead.length()) {
+		if (!isUpperCase(correctedRead[i])) {
+			nbUnco++;
+		} else {
+			if (nbUnco >= windowSize) {
+				// std::cerr << "nbUnco : " << nbUnco << std::endl;
+				result.push_back(correctedRead.substr(prevPos, i - nbUnco - prevPos));
+				prevPos = i;
+			}
+			nbUnco = 0;
+		}
+		i++;
+	}
+
+	// Remove uncorrected tail
+	while (i > 0 and !isUpperCase(correctedRead[i])) {
+		i--;
+	}
+	result.push_back(correctedRead.substr(prevPos, i - prevPos));
+
+	return result;
+}
+
 std::string weightConsensus(std::string& consensus, std::vector<std::string>& pile, std::unordered_map<kmer, unsigned>& merCounts, unsigned merSize, unsigned windowSize, unsigned solidThresh) {
 	std::vector<std::string> splits;
 	std::string curSplit;
@@ -247,6 +283,7 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 	unsigned i = 0;
 	std::string tmpSequence, consUp;
 	int curPos = startPos;
+	int alPos;
 	int sizeAl;
 	std::string curCons, oldCons;
 	std::unordered_map<kmer, unsigned> oldMers;
@@ -266,16 +303,16 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 		}
 		curMers = merCounts[i];
 		
-		curPos = std::max(0, (int) curPos - (int) windowOverlap);
-		if (curPos + windowSize + 2 * windowOverlap >= outSequence.length()) {
-			sizeAl = outSequence.length() - curPos;
+		alPos = std::max(0, (int) curPos - (int) windowOverlap);
+		if (alPos + windowSize + 2 * windowOverlap >= outSequence.length()) {
+			sizeAl = outSequence.length() - alPos;
 		} else {
 			sizeAl = windowSize + 2 * windowOverlap;
 		}
 
-		aligner.Align(curCons.c_str(), outSequence.c_str() + curPos, sizeAl, filter, &alignment, maskLen);
-		beg = alignment.ref_begin + curPos;
-		end = alignment.ref_end + curPos;
+		aligner.Align(curCons.c_str(), outSequence.c_str() + alPos, sizeAl, filter, &alignment, maskLen);
+		beg = alignment.ref_begin + alPos;
+		end = alignment.ref_end + alPos;
 		curCons = curCons.substr(alignment.query_begin, alignment.query_end - alignment.query_begin + 1);
 
 		// Check if alignment positions overlap the previous window. If they do, chose the best subsequence
@@ -320,7 +357,7 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 				// if (beg + pilesPos[i+1].first - pilesPos[i].first - windowSize + windowOverlap + curCons.length() - curPos > windowSize) {
 				// 	std::cerr << "difference : " << beg + pilesPos[i+1].first - pilesPos[i].first - windowSize + windowOverlap + curCons.length() - curPos << std::endl;
 				// }
-				curPos = beg + pilesPos[i+1].first - pilesPos[i].first - windowSize + windowOverlap + curCons.length() ;
+				curPos = curPos + pilesPos[i+1].first - pilesPos[i].first - (end - beg + 1) + curCons.length() ;
 				oldCons = curCons;
 				oldMers = merCounts[i];
 				oldEnd = beg + curCons.length() - 1;
@@ -548,6 +585,7 @@ std::unordered_map<std::string, std::string> getSequencesMap(std::vector<Alignme
 
 std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& alignments, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned minAnchors,unsigned solidThresh, unsigned windowOverlap, unsigned maxMSA, std::string path) {
 	std::string readId = alignments.begin()->qName;
+	// std::cerr << "processing : " << readId << std::endl;
 	std::unordered_map<std::string, std::string> sequences = getSequencesMap(alignments);
 	std::vector<std::pair<unsigned, unsigned>> pilesPos = getAlignmentPilesPositions(alignments.begin()->qLength, alignments, minSupport, maxSupport, windowSize, windowOverlap);
 	if (pilesPos.size() == 0) {
@@ -580,17 +618,21 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& 
 	if (doTrimRead) {
 		// std::cerr << "before trim : " << correctedRead.length() << std::endl;
 		correctedRead = trimRead(correctedRead, 1);
-		if (!dropRead(correctedRead)) {
+		// std::vector<std::string> splits = splitRead(readId, correctedRead, pilesPos, windowSize, windowOverlap);
+		// for (std::string s : splits) {
+		// 	std::cerr << ">id" << std::endl << s << std::endl;
+		// }
+		// if (!dropRead(correctedRead)) {
 			// std::cerr << "kept read : " << readId << std::endl << "support was : " << (float) nbCorBases(correctedRead) / correctedRead.length() << std::endl;
 			// std::cerr << "length was : " << correctedRead.length() << std::endl;
 			// std::cerr << std::endl;
 			return std::make_pair(readId, correctedRead);
-		} else {
+		// } else {
 			// std::cerr << "dropped read : " << readId << std::endl << "support was : " << (float) nbCorBases(correctedRead) / correctedRead.length() << std::endl;
 			// std::cerr << "length was : " << correctedRead.length() << std::endl;
 			// std::cerr << std::endl;
-			return std::make_pair(readId, "");
-		}
+		// 	return std::make_pair(readId, "");
+		// }
 	} else {
 		return std::make_pair(readId, correctedRead);
 	}
@@ -664,6 +706,7 @@ std::vector<Alignment> getReadPile(std::ifstream& alignments, std::string curTpl
 				if (curAl.resMatches > minScore) {
 					curReadAlignments[posMin] = curAl;
 					curScore[posMin] = curAl.resMatches;
+					minScore = curAl.resMatches;
 				}
 
 				for (int i = 0; i < nbElems; i++) {
@@ -746,6 +789,7 @@ void runCorrection(std::string PAFIndex, std::string alignmentFile, unsigned min
 	int poolSize = 1000;
 	ctpl::thread_pool myPool(nbThreads);
 	int jobsToProcess = 1000000000;
+	// int jobsToProcess = 500;
 	int jobsLoaded = 0;
 	int jobsCompleted = 0;
 
