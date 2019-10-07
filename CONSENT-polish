@@ -13,7 +13,7 @@ function print_help {
 	echo "	Options:"
 	echo "	--windowSize INT, -l INT:      Size of the windows to process. (default: 500)"
 	echo "	--minSupport INT, -s INT:      Minimum support to consider a window for correction. (default: 4)"
-	echo "	--maxSupport INT, -S INT:      Maximum number of sequences to include into a window. (default: 1,000)"
+	echo "	--maxSupport INT, -S INT:      Maximum number of overlaps to include in a pile. (default: 1,000)"
 	echo "	--maxMSA INT, -M:              Maximum number of sequences to include into the MSA. (default: 150)"
 	echo "	--merSize INT, -k INT:         k-mer size for chaining and polishing. (default: 9)"
 	echo "	--solid INT, -f INT:           Minimum number of occurrences to consider a k-mer as solid during polishing. (default: 4)"

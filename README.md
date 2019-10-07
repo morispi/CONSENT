@@ -58,7 +58,7 @@ To run CONSENT for contigs polishing, run the followning command:
 
       --windowSize INT, -l INT:      Size of the windows to process. (default: 500)
       --minSupport INT, -s INT:      Minimum support to consider a window for correction. (default: 4)
-      --maxSupport INT, -S INT:      Maximum number of sequences to include into a window. (default: 1,000)
+      --maxSupport INT, -S INT:      Maximum number of overlaps to include in a pile. (default: 150)
       --maxMSA INT, -M:              Maximum number of sequences to include into the MSA. (default: 150)
       --merSize INT, -k INT:         k-mer size for chaining and polishing. (default: 9)
       --solid INT, -f INT:           Minimum number of occurrences to consider a k-mer as solid during polishing. (default: 4)
