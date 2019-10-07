@@ -34,7 +34,7 @@ nproc=$(nproc)
 tmpdir="."
 out=""
 minSupport=4
-maxSupport=1000
+maxSupport=150
 maxMSA=150
 windowSize=500
 merSize=9
@@ -43,7 +43,7 @@ minAnchors=2
 solid=4
 windowOverlap=50
 minimapOption=""
-minimapMemory="500M"
+minimapMemory="50M"
 
 #Print help if no argument specified
 if [[ "$1" == "" ]] ; then
@@ -180,6 +180,6 @@ fi
 echo "["$(date)"] Correcting the long reads"
 $LRSCf/bin/CONSENT -i $tmpdir/"$PAFIndex" -a $tmpdir/"$alignments" -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$reads" -M "$maxMSA" -p "$LRSCf" >> "$out"
 echo "["$(date)"] Removing the temporary files"
-rm $tmpdir/"$alignments"
-rm $tmpdir/"$PAFIndex"
+#rm $tmpdir/"$alignments"
+#rm $tmpdir/"$PAFIndex"
 echo "["$(date)"] Exiting"
