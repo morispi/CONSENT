@@ -43,7 +43,7 @@ minAnchors=2
 solid=4
 windowOverlap=50
 minimapOption=""
-minimapMemory="50M"
+minimapMemory="4G"
 
 #Print help if no argument specified
 if [[ "$1" == "" ]] ; then
