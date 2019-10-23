@@ -1,3 +1,4 @@
+// Working on parallelism
 #include <fstream>
 #include <iostream>
 #include <ctime>
@@ -197,7 +198,7 @@ std::string weightConsensus(std::string& consensus, std::vector<std::string>& pi
 	return consensus;
 }
 
-std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(std::string& readId, std::vector<std::string> & piles, std::pair<unsigned, unsigned>& pilesPos, unsigned& minSupport, unsigned& merSize, unsigned& commonKMers, unsigned& minAnchors, unsigned& solidThresh, unsigned& windowSize, unsigned maxMSA, std::string path) {
+std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(int id, std::string& readId, std::vector<std::string> & piles, std::pair<unsigned, unsigned>& pilesPos, unsigned& minSupport, unsigned& merSize, unsigned& commonKMers, unsigned& minAnchors, unsigned& solidThresh, unsigned& windowSize, unsigned maxMSA, std::string path, unsigned nbThreads) {
 	// if (piles.size() == 1) {
 	// 	auto merCounts = 
 	// 	return 
@@ -583,7 +584,7 @@ std::unordered_map<std::string, std::string> getSequencesMap(std::vector<Alignme
 	return sequences;
 }
 
-std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& alignments, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned minAnchors,unsigned solidThresh, unsigned windowOverlap, unsigned maxMSA, std::string path) {
+std::pair<std::string, std::string> processRead(std::vector<Alignment>& alignments, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned minAnchors,unsigned solidThresh, unsigned windowOverlap, unsigned maxMSA, std::string path, unsigned nbThreads) {
 	std::string readId = alignments.begin()->qName;
 	// std::cerr << "processing : " << readId << std::endl;
 	std::unordered_map<std::string, std::string> sequences = getSequencesMap(alignments);
@@ -599,16 +600,75 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& 
 	std::vector<std::unordered_map<kmer, unsigned>> merCounts(pilesPos.size()); 
 	std::vector<std::string> curPile;
 	std::vector<std::string> templates(pilesPos.size());
-	for (i = 0; i < pilesPos.size(); i++) {
-		curPile = getAlignmentPileSeq(alignments, minSupport, windowSize, windowOverlap, sequences, pilesPos[i].first, pilesPos[i].second, merSize, maxSupport, commonKMers);
-		templates[i] = curPile[0];
-		resCons = computeConsensuses(readId, curPile, pilesPos[i], minSupport, merSize, commonKMers, minAnchors, solidThresh, windowSize, maxMSA, path);
-		if (resCons.first.length() < merSize) {
-			consensuses[i] = resCons.first;
-		} else {
-			consensuses[i] = resCons.first;
-		}
-		merCounts[i] = resCons.second;
+
+	// TODO: change parallelism HERE
+	// for (i = 0; i < pilesPos.size(); i++) {
+	// 	curPile = getAlignmentPileSeq(alignments, minSupport, windowSize, windowOverlap, sequences, pilesPos[i].first, pilesPos[i].second, merSize, maxSupport, commonKMers);
+	// 	templates[i] = curPile[0];
+	// 	resCons = computeConsensuses(readId, curPile, pilesPos[i], minSupport, merSize, commonKMers, minAnchors, solidThresh, windowSize, maxMSA, path);
+	// 	if (resCons.first.length() < merSize) {
+	// 		consensuses[i] = resCons.first;
+	// 	} else {
+	// 		consensuses[i] = resCons.first;
+	// 	}
+	// 	merCounts[i] = resCons.second;
+	// }
+	// TODO
+
+	int poolSize = 1000;
+	ctpl::thread_pool myPool(nbThreads);
+	int jobsToProcess = pilesPos.size();
+	//int jobsToProcess = 500;
+	int jobsLoaded = 0;
+	int jobsCompleted = 0;
+
+	std::string curTpl;
+
+	// Load the first jobs
+	vector<std::future<std::pair<std::string, std::unordered_map<kmer, unsigned>>>> results(poolSize);
+    while (jobsLoaded < poolSize && jobsLoaded < jobsToProcess) {
+    	curPile = getAlignmentPileSeq(alignments, minSupport, windowSize, windowOverlap, sequences, pilesPos[jobsLoaded].first, pilesPos[jobsLoaded].second, merSize, maxSupport, commonKMers);
+		templates[jobsLoaded] = curPile[0];
+    	results[jobsLoaded] = myPool.push(computeConsensuses, readId, curPile, pilesPos[jobsLoaded], minSupport, merSize, commonKMers, minAnchors, solidThresh, windowSize, maxMSA, path, nbThreads);
+        jobsLoaded++;
+	}
+
+	// Load the remaining jobs as other jobs terminate
+	int curJob = 0;
+    std::pair<std::string, std::unordered_map<kmer, unsigned>> curRes;
+    while(jobsLoaded < jobsToProcess) {
+    	// Get the job results
+        curRes = results[curJob].get();
+        consensuses[jobsCompleted] = curRes.first;
+        merCounts[jobsCompleted] = curRes.second;
+        jobsCompleted++;
+        
+        // Load the next job
+        curPile = getAlignmentPileSeq(alignments, minSupport, windowSize, windowOverlap, sequences, pilesPos[jobsLoaded].first, pilesPos[jobsLoaded].second, merSize, maxSupport, commonKMers);
+		templates[jobsLoaded] = curPile[0];
+    	results[curJob] = myPool.push(computeConsensuses, readId, curPile, pilesPos[jobsLoaded], minSupport, merSize, commonKMers, minAnchors, solidThresh, windowSize, maxMSA, path, nbThreads);
+        jobsLoaded++;
+        
+        // Increment the current job nb, and loop if needed
+        curJob++;
+        if(curJob == poolSize) {
+            curJob = 0;
+        }
+	}
+
+	// Wait for the remaining jobs to terminate
+	while(jobsCompleted < jobsLoaded) {
+        // Get the job results
+        curRes = results[curJob].get();
+        consensuses[jobsCompleted] = curRes.first;
+        merCounts[jobsCompleted] = curRes.second;
+        jobsCompleted++;
+        
+        // Increment the current job nb, and loop if needed
+        curJob++;
+        if(curJob == poolSize) {
+            curJob = 0;
+        }
 	}
 
 	// Align computed consensuses to the read
@@ -785,72 +845,24 @@ void runCorrection(std::string PAFIndex, std::string alignmentFile, unsigned min
 		doTrimRead = false;
 	}
 
-
-	int poolSize = 1000;
-	ctpl::thread_pool myPool(nbThreads);
-	int jobsToProcess = 1000000000;
-	//int jobsToProcess = 500;
-	int jobsLoaded = 0;
-	int jobsCompleted = 0;
-
 	std::string curTpl;
+	std::pair<std::string, std::string> curRes;
 
-	// Load the first jobs
-	vector<std::future<std::pair<std::string, std::string>>> results(poolSize);
+
 	getline(templates, curTpl);
-    while (jobsLoaded < poolSize && !curTpl.empty() && jobsLoaded < jobsToProcess) {
-        curReadAlignments = getReadPile(alignments, curTpl, maxSupport);
-        while (curReadAlignments.size() == 0 and !curTpl.empty()) {
-        	getline(templates, curTpl);
-        	curReadAlignments = getReadPile(alignments, curTpl, maxSupport);
-        }
-        results[jobsLoaded] = myPool.push(processRead, curReadAlignments, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, maxMSA, path);
-        jobsLoaded++;
-        getline(templates, curTpl);
-	}
+	while (!curTpl.empty()) {
+		curReadAlignments = getReadPile(alignments, curTpl, maxSupport);
+	    while (curReadAlignments.size() == 0 and !curTpl.empty()) {
+	    	getline(templates, curTpl);
+	    	curReadAlignments = getReadPile(alignments, curTpl, maxSupport);
+	    }
 
-	// Load the remaining jobs as other jobs terminate
-	int curJob = 0;
-    std::pair<std::string, std::string> curRes;
-    while(!curTpl.empty() && jobsLoaded < jobsToProcess) {
-    	// Get the job results
-        curRes = results[curJob].get();
-        if (curRes.second.length() != 0) {
+	    curRes = processRead(curReadAlignments, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, maxMSA, path, nbThreads);
+	    if (curRes.second.length() != 0) {
 	        std::cout << ">" << curRes.first << std::endl << curRes.second << std::endl;
 	    }
-        jobsCompleted++;
-        
-        // Load the next job
-        curReadAlignments = getReadPile(alignments, curTpl, maxSupport);
-        while (curReadAlignments.size() == 0 and !curTpl.empty()) {
-        	getline(templates, curTpl);
-        	curReadAlignments = getReadPile(alignments, curTpl, maxSupport);
-        }
-        results[curJob] = myPool.push(processRead, curReadAlignments, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, maxMSA, path);
-        jobsLoaded++;
-        
-        // Increment the current job nb, and loop if needed
-        curJob++;
-        if(curJob == poolSize) {
-            curJob = 0;
-        }
-        getline(templates, curTpl);
-	}
 
-	// Wait for the remaining jobs to terminate
-	while(jobsCompleted < jobsLoaded) {
-        // Get the job results
-        curRes = results[curJob].get();
-        if (curRes.second.length() != 0) {
-	        std::cout << ">" << curRes.first << std::endl << curRes.second << std::endl;
-	    }
-        jobsCompleted++;
-        
-        // Increment the current job nb, and loop if needed
-        curJob++;
-        if(curJob == poolSize) {
-            curJob = 0;
-        }
+	    getline(templates, curTpl);
 	}
 
 }
