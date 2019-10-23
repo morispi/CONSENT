@@ -619,9 +619,9 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& 
 		// std::cerr << "before trim : " << correctedRead.length() << std::endl;
 		correctedRead = trimRead(correctedRead, 1);
 		std::vector<std::string> splits = splitRead(readId, correctedRead, pilesPos, windowSize, windowOverlap);
-		for (std::string s : splits) {
-			std::cerr << ">id" << std::endl << s << std::endl;
-		}
+		// for (std::string s : splits) {
+		// 	std::cerr << ">id" << std::endl << s << std::endl;
+		// }
 		// if (!dropRead(correctedRead)) {
 			// std::cerr << "kept read : " << readId << std::endl << "support was : " << (float) nbCorBases(correctedRead) / correctedRead.length() << std::endl;
 			// std::cerr << "length was : " << correctedRead.length() << std::endl;
