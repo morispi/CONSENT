@@ -1,4 +1,3 @@
-// Working on parallelism
 #include <fstream>
 #include <iostream>
 #include <ctime>
@@ -600,20 +599,6 @@ std::pair<std::string, std::string> processRead(std::vector<Alignment>& alignmen
 	std::vector<std::unordered_map<kmer, unsigned>> merCounts(pilesPos.size()); 
 	std::vector<std::string> curPile;
 	std::vector<std::string> templates(pilesPos.size());
-
-	// TODO: change parallelism HERE
-	// for (i = 0; i < pilesPos.size(); i++) {
-	// 	curPile = getAlignmentPileSeq(alignments, minSupport, windowSize, windowOverlap, sequences, pilesPos[i].first, pilesPos[i].second, merSize, maxSupport, commonKMers);
-	// 	templates[i] = curPile[0];
-	// 	resCons = computeConsensuses(readId, curPile, pilesPos[i], minSupport, merSize, commonKMers, minAnchors, solidThresh, windowSize, maxMSA, path);
-	// 	if (resCons.first.length() < merSize) {
-	// 		consensuses[i] = resCons.first;
-	// 	} else {
-	// 		consensuses[i] = resCons.first;
-	// 	}
-	// 	merCounts[i] = resCons.second;
-	// }
-	// TODO
 
 	int poolSize = 1000;
 	ctpl::thread_pool myPool(nbThreads);
