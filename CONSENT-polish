@@ -3,6 +3,7 @@ set -e
 
 #Prints a help message
 function print_help {
+	echo "CONSENT v1.2"
 	echo "Usage: $0 [options] --contigs contigs.fasta --reads longReads.fasta --out result.fasta"
 	echo ""
 	echo "	Input:"
