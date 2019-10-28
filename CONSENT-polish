@@ -188,8 +188,6 @@ minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" -I"$minima
 
 echo "["$(date)"] Sorting the overlaps"
 $LRSCf/bin/explode $tmpdir/"tmp_$alignments" $tmpdir/$exploded
-echo "$tmpdir/$exploded"_
-ls "$tmpdir/$exploded"_*
 sort -T $tmpdir -m "$tmpdir/$exploded"_* > $tmpdir/"tmp_$alignments"
 $LRSCf/bin/reformatPAF.py $tmpdir/"tmp_$alignments" > $tmpdir/"$alignments"
 

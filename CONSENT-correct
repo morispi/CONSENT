@@ -174,8 +174,6 @@ fi
 alignments="Alignments_"$$".paf"
 exploded="exploded_"$$
 
-echo $tmpdir/$exploded
-
 #Get the path to LRSC's folder
 LRSCs=$(readlink -f "$0")
 LRSCf=$(dirname $LRSCs)
@@ -189,12 +187,11 @@ fi
 
 echo "["$(date)"] Sorting the overlaps"
 $LRSCf/bin/explode $tmpdir/"$alignments" $tmpdir/$exploded
-echo "$tmpdir/$exploded"_
-ls "$tmpdir/$exploded"_*
 sort -T $tmpdir -m "$tmpdir/$exploded"_* > $tmpdir/"$alignments"
 
 echo "["$(date)"] Correcting the long reads"
 $LRSCf/bin/CONSENT -a $tmpdir/"$alignments" -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$reads" -M "$maxMSA" -p "$LRSCf" >> "$out"
+
 echo "["$(date)"] Removing the temporary files"
 rm $tmpdir/"$alignments"
 rm "$tmpdir/$exploded"_*
