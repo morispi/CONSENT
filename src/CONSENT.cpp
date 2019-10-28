@@ -790,7 +790,7 @@ std::vector<Alignment> getNextReadPile(std::ifstream& f, unsigned maxSupport) {
 
 			getline(f, line);
 		} else {
-			std::sort(curReadAlignments.begin(), curReadAlignments.end());
+			// std::sort(curReadAlignments.begin(), curReadAlignments.end());
 			if (!f.eof()) {
 				f.seekg(-line.length()-1, f.cur);
 			}
