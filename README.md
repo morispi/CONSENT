@@ -13,7 +13,6 @@ Requirments
   - A Linux based operating system.
   - Python3.
   - A g++ version supporting C++11
-  - fpa (at least v0.5) accessible through your PATH environment variable (https://github.com/natir/fpa)
   
 Installation
 --------------

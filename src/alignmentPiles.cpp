@@ -118,23 +118,23 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 	// }
 	// std::cerr << alignments[0].qName << " : " << totalCov / tplLen << std::endl;
 
-	if (pilesPos.size() > 0) {
-		for (i = pilesPos[0].first; i <= pilesPos[pilesPos.size() - 1].second; i++) {
-			if (coverages[i] >= minSupport) {
-				meanCov++;
-			}
-		}
+	// if (pilesPos.size() > 0) {
+		// for (i = pilesPos[0].first; i <= pilesPos[pilesPos.size() - 1].second; i++) {
+		// 	if (coverages[i] >= minSupport) {
+		// 		meanCov++;
+		// 	}
+		// }
 
-		if ((float) meanCov / (pilesPos[pilesPos.size() - 1].second - pilesPos[0].first + 1) < 0.5) {
+		// if ((float) meanCov / (pilesPos[pilesPos.size() - 1].second - pilesPos[0].first + 1) < 0.5) {
 			// std::cerr << "drop read : " << alignments[0].qName << " : " << std::endl;
 			// std::cerr << "support was : " << (float) meanCov / (pilesPos[pilesPos.size() - 1].second - pilesPos[0].first + 1) << std::endl;
 			// std::cerr << "meanCov was : " << meanCov << std::endl;
 			// std::cerr << "length was : " << pilesPos[pilesPos.size() - 1].second - pilesPos[0].first + 1 << std::endl;
 			// std::cerr << "beg : " << pilesPos[0].first << std::endl;
 			// std::cerr << "end : " << pilesPos[pilesPos.size() - 1].second << std::endl;
-			pilesPos.clear();
-		}
-	}
+		// 	pilesPos.clear();
+		// }
+	// }
 
 	delete [] coverages;
 

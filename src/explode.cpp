@@ -12,12 +12,12 @@ std::string getId(std::string s, std::string delimiter) {
     return s.substr (pos_start, pos_end - pos_start);
 }
 
-void explodeFile(std::ifstream& f, std::string tmpDir) {
+void explodeFile(std::ifstream& f, std::string exploded) {
 	std::string line, curRead, oldRead;
 	std::set<std::string> readsList;
 	int nbFiles = 1;
 	std::ofstream curFile;
-  	curFile.open((tmpDir + "/exploded_" + std::to_string(nbFiles)).c_str());
+  	curFile.open((exploded + "_" + std::to_string(nbFiles)).c_str());
   	std::string curStr;
 
 
@@ -35,7 +35,7 @@ void explodeFile(std::ifstream& f, std::string tmpDir) {
 				readsList.clear();
 				curFile.close();
 				nbFiles++;
-				curFile.open((tmpDir + "/exploded_" + std::to_string(nbFiles)).c_str());
+				curFile.open((exploded + "_" + std::to_string(nbFiles)).c_str());
 			}
 			curFile << curStr;
 			curStr = line;

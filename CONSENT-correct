@@ -3,7 +3,6 @@ set -e
 
 #Prints a help message
 function print_help {
-	echo "CONSENT v1.2"
 	echo "Usage: $0 [options] --in longReads.fasta --out result.fasta --type readsTechnology"
 	echo ""
 	echo "	Input:"
@@ -15,7 +14,6 @@ function print_help {
 	echo "	--windowSize INT, -l INT:      Size of the windows to process. (default: 500)"
 	echo "	--minSupport INT, -s INT:      Minimum support to consider a window for correction. (default: 4)"
 	echo "	--maxSupport INT, -S INT:      Maximum number of overlaps to include in a pile. (default: 150)"
-	echo "	--maxMSA INT, -M:              Maximum number of sequences to include into the MSA. (default: 150)"
 	echo "	--merSize INT, -k INT:         k-mer size for chaining and polishing. (default: 9)"
 	echo "	--solid INT, -f INT:           Minimum number of occurrences to consider a k-mer as solid during polishing. (default: 4)"
 	echo "	--anchorSupport INT, -c INT:   Minimum number of sequences supporting (Ai) - (Ai+1) to keep the two anchors in the chaining. (default: 8)"
@@ -23,8 +21,15 @@ function print_help {
 	echo "	--windowOverlap INT, -o INT:   Overlap size between consecutive windows. (default: 50)"
 	echo "	--nproc INT, -j INT:           Number of processes to run in parallel (default: number of cores)."
 	echo "  --minimapIndex INT, -m INT:    Split minimap2 index every INT input bases (default: 500M)."
-	echo "	--tmpdir STRING, -t STRING:    Path where to store the temporary overlaps file (default: working directory, as Alignments_dateTimeStamp.paf)."
+	echo "	--tmpdir STRING, -t STRING:    Path where to store the temporary files (default: working directory)."
 	echo "	--help, -h:                    Print this help message."
+	echo "  --version, -v: 	               Print version information."
+	exit 1
+}
+
+#Prints version information
+function print_version {
+	echo "CONSENT v1.2.1"
 	exit 1
 }
 
@@ -44,7 +49,7 @@ minAnchors=2
 solid=4
 windowOverlap=50
 minimapOption=""
-minimapMemory="4G"
+minimapMemory="500M"
 
 #Print help if no argument specified
 if [[ "$1" == "" ]] ; then
@@ -56,6 +61,8 @@ while [[ "$1" != "" ]] ; do
 	case "$1" in
 		"--help"|"-h")
 			print_help ;;
+		"--version"|"-v")
+			print_version ;;
 		"--in")
 			case "$2" in
 				"") echo "Error: $1 expects an argument" ; exit 1 ;;
@@ -165,6 +172,9 @@ fi
 
 #Temporary files names
 alignments="Alignments_"$$".paf"
+exploded="exploded_"$$
+
+echo $tmpdir/$exploded
 
 #Get the path to LRSC's folder
 LRSCs=$(readlink -f "$0")
@@ -178,12 +188,14 @@ else
 fi
 
 echo "["$(date)"] Sorting the overlaps"
-$LRSCf/bin/explode $tmpdir/"$alignments" $tmpdir
-sort -T $tmpdir -m $tmpdir/exploded_* > $tmpdir/"$alignments"
+$LRSCf/bin/explode $tmpdir/"$alignments" $tmpdir/$exploded
+echo "$tmpdir/$exploded"_
+ls "$tmpdir/$exploded"_*
+sort -T $tmpdir -m "$tmpdir/$exploded"_* > $tmpdir/"$alignments"
 
 echo "["$(date)"] Correcting the long reads"
 $LRSCf/bin/CONSENT -a $tmpdir/"$alignments" -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$reads" -M "$maxMSA" -p "$LRSCf" >> "$out"
 echo "["$(date)"] Removing the temporary files"
 rm $tmpdir/"$alignments"
-rm $tmpdir/exploded_*
+rm "$tmpdir/$exploded"_*
 echo "["$(date)"] Exiting"
