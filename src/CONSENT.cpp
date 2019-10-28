@@ -776,7 +776,6 @@ void runCorrection(std::string PAFIndex, std::string alignmentFile, unsigned min
         }
 
         if (curReadAlignments.size() != 0) {
-        	std::cerr << "size : " << curReadAlignments.size() << std::endl;
         	curRes = processRead(curReadAlignments, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, maxMSA, path, nbThreads);
 		    if (curRes.second.length() != 0) {
 		        std::cout << ">" << curRes.first << std::endl << curRes.second << std::endl;

@@ -182,7 +182,7 @@ $LRSCf/bin/explode $tmpdir/"$alignments" $tmpdir
 sort -T $tmpdir -m $tmpdir/exploded_* > $tmpdir/"$alignments"
 
 echo "["$(date)"] Correcting the long reads"
-$LRSCf/bin/CONSENT -i $tmpdir/"$PAFIndex" -a $tmpdir/"$alignments" -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$reads" -M "$maxMSA" -p "$LRSCf" >> "$out"
+$LRSCf/bin/CONSENT -a $tmpdir/"$alignments" -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$reads" -M "$maxMSA" -p "$LRSCf" >> "$out"
 echo "["$(date)"] Removing the temporary files"
 rm $tmpdir/"$alignments"
 rm $tmpdir/exploded_*
