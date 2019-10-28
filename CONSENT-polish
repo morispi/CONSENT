@@ -170,7 +170,6 @@ fi
 
 #Temporary files names
 alignments="Alignments_"$$".paf"
-PAFIndex="PAFIndex_"$$".idx"
 
 #Get the path to LRSC's folder
 LRSCs=$(readlink -f "$0")
@@ -178,14 +177,15 @@ LRSCf=$(dirname $LRSCs)
 
 echo "["$(date)"] Aligning the long reads to the contigs (minimap2)"
 #minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" -I"$minimapMemory" "$contigs" "$reads" | fpa -i - -o $tmpdir/"$alignments" index -f $tmpdir/"$PAFIndex" -t target
-minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" -I"$minimapMemory" "$contigs" "$reads" > $tmpdir/"$alignments"
-$LRSCf/bin/reformatPAF.py $tmpdir/"$alignments" > $tmpdir/"formatted_$alignments"
-fpa -i $tmpdir/"formatted_$alignments" -o $tmpdir/"$alignments" index -f $tmpdir/"$PAFIndex" -t query
-rm $tmpdir/"formatted_$alignments"
+minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" -I"$minimapMemory" "$contigs" "$reads" > $tmpdir/"tmp_$alignments"
+$LRSCf/bin/explode $tmpdir/"tmp_$alignments" $tmpdir
+sort -T $tmpdir -m $tmpdir/exploded_* > $tmpdir/"tmp_$alignments"
+$LRSCf/bin/reformatPAF.py $tmpdir/"tmp_$alignments" > $tmpdir/"$alignments"
+rm $tmpdir/"tmp_$alignments"
 
 echo "["$(date)"] Polishing the contigs"
-$LRSCf/bin/CONSENT -i $tmpdir/"$PAFIndex" -a $tmpdir/"$alignments" -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$contigs" -R "$reads" -M "$maxMSA" -p "$LRSCf" >> "$out"
+$LRSCf/bin/CONSENT -a $tmpdir/"$alignments" -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$contigs" -R "$reads" -M "$maxMSA" -p "$LRSCf" >> "$out"
 echo "["$(date)"] Removing the temporary files"
 rm $tmpdir/"$alignments"
-rm $tmpdir/"$PAFIndex"
+rm $tmpdir/exploded_*
 echo "["$(date)"] Exiting"

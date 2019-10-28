@@ -2,7 +2,13 @@ CC = g++ -std=c++11
 CFLAGS  = -Wall -O3 -std=c++11
 LDFLAGS = -lpthread
 
-all: CONSENT
+all: CONSENT explode
+
+explode: explode.o
+	$(CC) -o bin/explode src/explode.o
+
+explode.o: src/explode.cpp
+	$(CC) -o src/explode.o -c src/explode.cpp $(CFLAGS)
 
 CONSENT: alignmentPiles.o reverseComplement.o kMersProcessing.o CONSENT.o DBG.o main.o
 	$(CC) -o bin/CONSENT src/main.o src/kMersProcessing.o src/reverseComplement.o src/alignmentPiles.o src/CONSENT.o src/DBG.o BMEAN/bmean.o BMEAN/utils.o BMEAN/BOA/align_lpo2.o  BMEAN/BOA/align_lpo_po2.o  BMEAN/BOA/align_score.o  BMEAN/BOA/black_flag.o  BMEAN/BOA/buildup_lpo.o  BMEAN/BOA/create_seq.o  BMEAN/BOA/fasta_format.o  BMEAN/BOA/heaviest_bundle.o  BMEAN/BOA/lpo_format.o  BMEAN/BOA/lpo.o   BMEAN/BOA/msa_format.o  BMEAN/BOA/numeric_data.o  BMEAN/BOA/remove_bundle.o  BMEAN/BOA/seq_util.o  BMEAN/BOA/stringptr.o BMEAN/Complete-Striped-Smith-Waterman-Library/src/*.o $(LDFLAGS)
@@ -30,7 +36,7 @@ utils.o: BMEAN/utils.cpp
 	$(CC) -o BMEAN/utils.o -c BMEAN/utils.cpp $(CFLAGS)
 
 main.o: src/main.cpp src/CONSENT.h
-	$(CC) -o src/main.o -c src/main.cpp
+	$(CC) -o src/main.o -c src/main.cpp $(CFLAGS)
 
 clean:
-	rm src/*.o bin/CONSENT
+	rm src/*.o bin/CONSENT bin/explode

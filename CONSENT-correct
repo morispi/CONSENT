@@ -165,7 +165,6 @@ fi
 
 #Temporary files names
 alignments="Alignments_"$$".paf"
-PAFIndex="PAFIndex_"$$".idx"
 
 #Get the path to LRSC's folder
 LRSCs=$(readlink -f "$0")
@@ -173,14 +172,18 @@ LRSCf=$(dirname $LRSCs)
 
 echo "["$(date)"] Overlapping the long reads (minimap2)"
 if [[ $minimapOptions == "PB" ]] ; then
-	minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" -I"$minimapMemory" "$reads" "$reads" | fpa -i - -o $tmpdir/"$alignments" index -f $tmpdir/"$PAFIndex" -t query
+	minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" -I"$minimapMemory" "$reads" "$reads" > $tmpdir/"$alignments"
 else
-	minimap2 -k15 -w5 -m100 -g10000 -r2000 --max-chain-skip 25 --dual=yes -PD --no-long-join -t"$nproc" -I"$minimapMemory" "$reads" "$reads" | fpa -i - -o $tmpdir/"$alignments" index -f $tmpdir/"$PAFIndex" -t query
+	minimap2 -k15 -w5 -m100 -g10000 -r2000 --max-chain-skip 25 --dual=yes -PD --no-long-join -t"$nproc" -I"$minimapMemory" "$reads" "$reads" > $tmpdir/"$alignments"
 fi
+
+echo "["$(date)"] Sorting the overlaps"
+$LRSCf/bin/explode $tmpdir/"$alignments" $tmpdir
+sort -T $tmpdir -m $tmpdir/exploded_* > $tmpdir/"$alignments"
 
 echo "["$(date)"] Correcting the long reads"
 $LRSCf/bin/CONSENT -i $tmpdir/"$PAFIndex" -a $tmpdir/"$alignments" -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$reads" -M "$maxMSA" -p "$LRSCf" >> "$out"
 echo "["$(date)"] Removing the temporary files"
 rm $tmpdir/"$alignments"
-rm $tmpdir/"$PAFIndex"
+rm $tmpdir/exploded_*
 echo "["$(date)"] Exiting"

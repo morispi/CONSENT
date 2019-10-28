@@ -1,4 +1,3 @@
-// Working on removing FPA
 #include <fstream>
 #include <iostream>
 #include <ctime>
@@ -699,55 +698,25 @@ void indexReads(std::map<std::string, std::vector<bool>>& index, std::string rea
 	}
 }
 
-std::vector<Alignment> getReadPile(std::ifstream& alignments, std::string curTpl, unsigned maxSupport) {
-	long long int beg, end;
-	std::vector<std::string> curOffset;
+std::vector<Alignment> getNextReadPile(std::ifstream& f, unsigned maxSupport) {
 	std::vector<Alignment> curReadAlignments;
 	std::vector<int> curScore;
-	std::string al;
-	std::stringstream iss(curTpl);
-	std::vector<std::string> offsets = splitString(splitString(curTpl, ",")[1], ";");
+	std::string line, curRead;
 	unsigned nbElems = 0;
 	unsigned i;
 	Alignment curAl;
 	unsigned posMin = 0;
 	unsigned minScore = 1000000;
 
-
-	for (std::string o : offsets) {
-		curOffset = splitString(o, ":");
-		beg = stoll(curOffset[0]);
-		end = stoll(curOffset[1]);
-		alignments.seekg(beg, alignments.beg);
-
-		while (alignments.tellg() < end) {
-			getline(alignments, al);
-			curAl = Alignment(al);
+	getline(f, line);
+	while(line.length() > 0 or !curReadAlignments.empty()) {
+		if (line.length() > 0) {
+			curAl = Alignment(line);
+		}
+		if (line.length() > 0 and (curRead == "" or curAl.qName == curRead)) {
+			curRead = curAl.qName;
 			
-			
-			// Keep all overlaps
-			// curReadAlignments.push_back(al);
-
-			// Only keep the MAX best overlaps (sorted list)
-			// i = nbElems;
-			// while (i > 0 and curAl.resMatches > curScore[i-1]) {
-			// 	i--;
-			// }
-			
-			// for (int j = std::min(nbElems, (unsigned) MAX - 1); j > i; j--) {
-			// 	curReadAlignments[j] = curReadAlignments[j-1];
-			// 	curScore[j] = curScore[j-1];
-			// }
-			
-			// if (i >= 0 and i < MAX) {
-			// 	curReadAlignments[i] = curAl;
-			// 	curScore[i] = curAl.resMatches;
-			// 	if (nbElems < MAX) {
-			// 		nbElems++;
-			// 	}
-			// }
-
-			// Unsorted list of MAX best overlaps
+			// Keep MAX best overlaps (unsorted list)
 			if (nbElems >= maxSupport) {
 				if (curAl.resMatches > minScore) {
 					curReadAlignments[posMin] = curAl;
@@ -755,7 +724,7 @@ std::vector<Alignment> getReadPile(std::ifstream& alignments, std::string curTpl
 					minScore = curAl.resMatches;
 				}
 
-				for (int i = 0; i < nbElems; i++) {
+				for (i = 0; i < nbElems; i++) {
 					if (curScore[i] < minScore) {
 						minScore = curScore[i];
 						posMin = i;
@@ -771,40 +740,6 @@ std::vector<Alignment> getReadPile(std::ifstream& alignments, std::string curTpl
 				nbElems++;
 			}
 
-		}
-
-	}
-
-	// curReadAlignments.resize(nbElems);
-
-	// std::cerr << "I have : " << nbElems << " / " << curReadAlignments.size() << " alignments" << std::endl;
-
-	// std::sort(curReadAlignments.begin(), curReadAlignments.end());
-
-	// std::cerr << "sorted ! " << std::endl;
-
-	// std::cerr << "new size : " << curReadAlignments.size() << std::endl;
-
-	// for (auto al : curReadAlignments) {
-	// 	std::cerr << al.qName << std::endl;
-	// }
-
-	return curReadAlignments;
-}
-
-std::vector<Alignment> getNextReadPile(std::ifstream& f) {
-	std::vector<Alignment> curReadAlignments;
-	Alignment al;
-	std::string line, curRead;
-
-	getline(f, line);
-	while(line.length() > 0 or !curReadAlignments.empty()) {
-		if (line.length() > 0) {
-			al = Alignment(line);
-		}
-		if (line.length() > 0 and (curRead == "" or al.qName == curRead)) {
-			curRead = al.qName;
-			curReadAlignments.push_back(al);
 			getline(f, line);
 		} else {
 			std::sort(curReadAlignments.begin(), curReadAlignments.end());
@@ -834,21 +769,18 @@ void runCorrection(std::string PAFIndex, std::string alignmentFile, unsigned min
 	std::string curTpl;
 	std::pair<std::string, std::string> curRes;
 
+	while (!alignments.eof()) {
+		curReadAlignments = getNextReadPile(alignments, maxSupport);
+        while (curReadAlignments.size() == 0 and !alignments.eof()) {
+        	curReadAlignments = getNextReadPile(alignments, maxSupport);
+        }
 
-	getline(templates, curTpl);
-	while (!curTpl.empty()) {
-		curReadAlignments = getReadPile(alignments, curTpl, maxSupport);
-	    while (curReadAlignments.size() == 0 and !curTpl.empty()) {
-	    	getline(templates, curTpl);
-	    	curReadAlignments = getReadPile(alignments, curTpl, maxSupport);
-	    }
-
-	    curRes = processRead(curReadAlignments, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, maxMSA, path, nbThreads);
-	    if (curRes.second.length() != 0) {
-	        std::cout << ">" << curRes.first << std::endl << curRes.second << std::endl;
-	    }
-
-	    getline(templates, curTpl);
+        if (curReadAlignments.size() != 0) {
+        	curRes = processRead(curReadAlignments, minSupport, maxSupport, windowSize, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, maxMSA, path, nbThreads);
+		    if (curRes.second.length() != 0) {
+		        std::cout << ">" << curRes.first << std::endl << curRes.second << std::endl;
+		    }
+        }
 	}
 
 }
