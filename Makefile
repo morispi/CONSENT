@@ -30,7 +30,7 @@ utils.o: BMEAN/utils.cpp
 	$(CC) -o BMEAN/utils.o -c BMEAN/utils.cpp $(CFLAGS)
 
 main.o: src/main.cpp src/CONSENT.h
-	$(CC) -o src/main.o -c src/main.cpp
+	$(CC) -o src/main.o -c src/main.cpp $(CFLAGS)
 
 clean:
 	rm src/*.o bin/CONSENT
