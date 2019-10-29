@@ -188,7 +188,12 @@ minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" -I"$minima
 
 echo "["$(date)"] Sorting the overlaps"
 $LRSCf/bin/explode $tmpdir/"tmp_$alignments" $tmpdir/$exploded
-sort -T $tmpdir -m "$tmpdir/$exploded"_* > $tmpdir/"tmp_$alignments"
+for f in "$tmpdir/$exploded"_*; 
+do 
+	sort -k1 -T . --parallel="$nproc" $f > $tmpdir/sorted_$(basename $f)
+	rm $f
+done
+sort -T $tmpdir -m "$tmpdir/sorted_"* > $tmpdir/"tmp_$alignments"
 $LRSCf/bin/reformatPAF.py $tmpdir/"tmp_$alignments" > $tmpdir/"$alignments"
 
 
@@ -196,6 +201,6 @@ echo "["$(date)"] Polishing the contigs"
 $LRSCf/bin/CONSENT -a $tmpdir/"$alignments" -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$contigs" -R "$reads" -M "$maxMSA" -p "$LRSCf" >> "$out"
 echo "["$(date)"] Removing the temporary files"
 rm $tmpdir/"$alignments"
-rm "$tmpdir/$exploded"_*
+rm "$tmpdir/sorted_"*
 rm $tmpdir/"tmp_$alignments"
 echo "["$(date)"] Exiting"
