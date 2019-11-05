@@ -189,8 +189,8 @@ minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" -I"$minima
 echo "["$(date)"] Sorting the overlaps"
 $LRSCf/bin/explode $tmpdir/"tmp_$alignments" $tmpdir/$exploded
 for f in "$tmpdir/$exploded"_*; 
-do 
-	-k1,1 -k 10,10 -T . --parallel="$nproc" $f > $tmpdir/sorted_$(basename $f)
+do
+	sort -k1,1 -k 10,10 -T . --parallel="$nproc" $f > $tmpdir/sorted_$(basename $f)
 	rm $f
 done
 sort -T $tmpdir -m "$tmpdir/sorted_"* > $tmpdir/"tmp_$alignments"
