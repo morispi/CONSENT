@@ -767,20 +767,22 @@ std::vector<Alignment> getNextReadPile(std::ifstream& f, unsigned maxSupport) {
 			curRead = curAl.qName;
 			
 			// Keep MAX best overlaps (unsorted list)
-			if (nbElems >= maxSupport) {
-				if (curAl.resMatches > minScore) {
-					curReadAlignments[posMin] = curAl;
-					curScore[posMin] = curAl.resMatches;
-					minScore = curAl.resMatches;
-				}
+			// if (nbElems >= maxSupport) {
+			// 	if (curAl.resMatches > minScore) {
+			// 		curReadAlignments[posMin] = curAl;
+			// 		curScore[posMin] = curAl.resMatches;
+			// 		minScore = curAl.resMatches;
+			// 	}
 
-				for (i = 0; i < nbElems; i++) {
-					if (curScore[i] < minScore) {
-						minScore = curScore[i];
-						posMin = i;
-					}
-				}
-			} else {
+			// 	for (i = 0; i < nbElems; i++) {
+			// 		if (curScore[i] < minScore) {
+			// 			minScore = curScore[i];
+			// 			posMin = i;
+			// 		}
+			// 	}
+			// } else {
+			// Only keep MAX best overlaps (sorted)
+			if (nbElems < maxSupport) {
 				curReadAlignments.push_back(curAl);
 				curScore.push_back(curAl.resMatches);
 				if (curAl.resMatches < minScore) {
