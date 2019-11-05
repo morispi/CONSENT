@@ -716,7 +716,7 @@ std::vector<Alignment> getReadPile(std::ifstream& alignments, std::string curTpl
 			// 		}
 			// 	}
 			// } else {
-			// Only sort MAX best overlaps (sorted list)
+			// Only keep MAX best overlaps (sorted)
 			if (nbElems < maxSupport) {
 				curReadAlignments.push_back(curAl);
 				curScore.push_back(curAl.resMatches);
