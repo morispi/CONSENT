@@ -702,20 +702,22 @@ std::vector<Alignment> getReadPile(std::ifstream& alignments, std::string curTpl
 			// }
 
 			// Unsorted list of MAX best overlaps
-			if (nbElems >= maxSupport) {
-				if (curAl.resMatches > minScore) {
-					curReadAlignments[posMin] = curAl;
-					curScore[posMin] = curAl.resMatches;
-					minScore = curAl.resMatches;
-				}
+			// if (nbElems >= maxSupport) {
+			// 	if (curAl.resMatches > minScore) {
+			// 		curReadAlignments[posMin] = curAl;
+			// 		curScore[posMin] = curAl.resMatches;
+			// 		minScore = curAl.resMatches;
+			// 	}
 
-				for (int i = 0; i < nbElems; i++) {
-					if (curScore[i] < minScore) {
-						minScore = curScore[i];
-						posMin = i;
-					}
-				}
-			} else {
+			// 	for (int i = 0; i < nbElems; i++) {
+			// 		if (curScore[i] < minScore) {
+			// 			minScore = curScore[i];
+			// 			posMin = i;
+			// 		}
+			// 	}
+			// } else {
+			// Only sort MAX best overlaps (sorted list)
+			if (nbElems < maxSupport) {
 				curReadAlignments.push_back(curAl);
 				curScore.push_back(curAl.resMatches);
 				if (curAl.resMatches < minScore) {
