@@ -2,7 +2,7 @@ CC = g++ -std=c++11
 CFLAGS  = -Wall -O3 -std=c++11
 LDFLAGS = -lpthread
 
-all: CONSENT explode
+all: CONSENT-correction CONSENT-polishing explode
 
 explode: explode.o
 	$(CC) -o bin/explode src/explode.o
@@ -10,11 +10,17 @@ explode: explode.o
 explode.o: src/explode.cpp
 	$(CC) -o src/explode.o -c src/explode.cpp $(CFLAGS)
 
-CONSENT: alignmentPiles.o reverseComplement.o kMersProcessing.o CONSENT.o DBG.o main.o
-	$(CC) -o bin/CONSENT src/main.o src/kMersProcessing.o src/reverseComplement.o src/alignmentPiles.o src/CONSENT.o src/DBG.o BMEAN/bmean.o BMEAN/utils.o BMEAN/BOA/align_lpo2.o  BMEAN/BOA/align_lpo_po2.o  BMEAN/BOA/align_score.o  BMEAN/BOA/black_flag.o  BMEAN/BOA/buildup_lpo.o  BMEAN/BOA/create_seq.o  BMEAN/BOA/fasta_format.o  BMEAN/BOA/heaviest_bundle.o  BMEAN/BOA/lpo_format.o  BMEAN/BOA/lpo.o   BMEAN/BOA/msa_format.o  BMEAN/BOA/numeric_data.o  BMEAN/BOA/remove_bundle.o  BMEAN/BOA/seq_util.o  BMEAN/BOA/stringptr.o BMEAN/Complete-Striped-Smith-Waterman-Library/src/*.o $(LDFLAGS)
+CONSENT-correction: alignmentPiles.o reverseComplement.o kMersProcessing.o CONSENT-correction.o DBG.o main.o
+	$(CC) -o bin/CONSENT-correction src/main.o src/kMersProcessing.o src/reverseComplement.o src/alignmentPiles.o src/CONSENT-correction.o src/DBG.o BMEAN/bmean.o BMEAN/utils.o BMEAN/BOA/align_lpo2.o  BMEAN/BOA/align_lpo_po2.o  BMEAN/BOA/align_score.o  BMEAN/BOA/black_flag.o  BMEAN/BOA/buildup_lpo.o  BMEAN/BOA/create_seq.o  BMEAN/BOA/fasta_format.o  BMEAN/BOA/heaviest_bundle.o  BMEAN/BOA/lpo_format.o  BMEAN/BOA/lpo.o   BMEAN/BOA/msa_format.o  BMEAN/BOA/numeric_data.o  BMEAN/BOA/remove_bundle.o  BMEAN/BOA/seq_util.o  BMEAN/BOA/stringptr.o BMEAN/Complete-Striped-Smith-Waterman-Library/src/*.o $(LDFLAGS)
 
-CONSENT.o: src/CONSENT.cpp src/CONSENT.h src/alignmentPiles.h src/kMersProcessing.h src/DBG.h
-	$(CC) -o src/CONSENT.o -c src/CONSENT.cpp $(CFLAGS) -IBMEAN/BOA/
+CONSENT-correction.o: src/CONSENT-correction.cpp src/CONSENT.h src/CONSENT-correction.h src/alignmentPiles.h src/kMersProcessing.h src/DBG.h
+	$(CC) -o src/CONSENT-correction.o -c src/CONSENT-correction.cpp $(CFLAGS) -IBMEAN/BOA/
+
+CONSENT-polishing: alignmentPiles.o reverseComplement.o kMersProcessing.o CONSENT-polishing.o DBG.o main.o
+	$(CC) -o bin/CONSENT-polishing src/main.o src/kMersProcessing.o src/reverseComplement.o src/alignmentPiles.o src/CONSENT-polishing.o src/DBG.o BMEAN/bmean.o BMEAN/utils.o BMEAN/BOA/align_lpo2.o  BMEAN/BOA/align_lpo_po2.o  BMEAN/BOA/align_score.o  BMEAN/BOA/black_flag.o  BMEAN/BOA/buildup_lpo.o  BMEAN/BOA/create_seq.o  BMEAN/BOA/fasta_format.o  BMEAN/BOA/heaviest_bundle.o  BMEAN/BOA/lpo_format.o  BMEAN/BOA/lpo.o   BMEAN/BOA/msa_format.o  BMEAN/BOA/numeric_data.o  BMEAN/BOA/remove_bundle.o  BMEAN/BOA/seq_util.o  BMEAN/BOA/stringptr.o BMEAN/Complete-Striped-Smith-Waterman-Library/src/*.o $(LDFLAGS)
+
+CONSENT-polishing.o: src/CONSENT-polishing.cpp src/CONSENT.h src/CONSENT-polishing.h src/alignmentPiles.h src/kMersProcessing.h src/DBG.h
+	$(CC) -o src/CONSENT-polishing.o -c src/CONSENT-polishing.cpp $(CFLAGS) -IBMEAN/BOA/	
 
 reverseComplement.o: src/reverseComplement.cpp
 	$(CC) -o src/reverseComplement.o -c src/reverseComplement.cpp $(CFLAGS)
@@ -39,4 +45,4 @@ main.o: src/main.cpp src/CONSENT.h
 	$(CC) -o src/main.o -c src/main.cpp $(CFLAGS)
 
 clean:
-	rm src/*.o bin/CONSENT bin/explode
+	rm src/*.o bin/CONSENT-correction bin/CONSENT-polishing bin/explode

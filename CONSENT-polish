@@ -29,7 +29,7 @@ function print_help {
 
 #Prints version information
 function print_version {
-	echo "CONSENT v1.2.1"
+	echo "CONSENT v1.2.2"
 	exit 1
 }
 
@@ -49,7 +49,7 @@ minAnchors=2
 solid=4
 windowOverlap=50
 minimapOptions=""
-minimapMemory="500M"
+minimapMemory="1G"
 
 #Print help if no argument specified
 if [[ "$1" == "" ]] ; then
@@ -198,7 +198,7 @@ $LRSCf/bin/reformatPAF.py $tmpdir/"tmp_$alignments" > $tmpdir/"$alignments"
 
 
 echo "["$(date)"] Polishing the contigs"
-$LRSCf/bin/CONSENT -a $tmpdir/"$alignments" -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$contigs" -R "$reads" -M "$maxMSA" -p "$LRSCf" >> "$out"
+$LRSCf/bin/CONSENT-polishing -a $tmpdir/"$alignments" -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$contigs" -R "$reads" -M "$maxMSA" -p "$LRSCf" >> "$out"
 echo "["$(date)"] Removing the temporary files"
 rm $tmpdir/"$alignments"
 rm "$tmpdir/sorted_"*
