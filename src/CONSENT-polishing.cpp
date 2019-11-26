@@ -602,7 +602,7 @@ std::pair<std::string, std::string> processRead(std::vector<Alignment>& alignmen
 	std::vector<std::string> curPile;
 	std::vector<std::string> templates(pilesPos.size());
 
-	int poolSize = 1000;
+	int poolSize = 100000;
 	ctpl::thread_pool myPool(nbThreads);
 	int jobsToProcess = pilesPos.size();
 	//int jobsToProcess = 500;

@@ -820,7 +820,7 @@ void runCorrection(std::string PAFIndex, std::string alignmentFile, unsigned min
 	}
 
 
-	int poolSize = 1000;
+	int poolSize = 100000;
 	ctpl::thread_pool myPool(nbThreads);
 	int jobsToProcess = 1000000000;
 	//int jobsToProcess = 500;
