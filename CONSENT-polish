@@ -190,10 +190,10 @@ echo "["$(date)"] Sorting the overlaps"
 $LRSCf/bin/explode $tmpdir/"tmp_$alignments" $tmpdir/$exploded
 for f in "$tmpdir/$exploded"_*;
 do
-	sort -k1,1 -k 10,10nr -T . --parallel="$nproc" $f > $tmpdir/sorted_$(basename $f)
+	sort -k6,6 -k 10,10nr -T . --parallel="$nproc" $f > $tmpdir/sorted_$(basename $f)
 	rm $f
 done
-sort -T $tmpdir -m -k1,1 -k 10,10nr "$tmpdir/sorted_"* > $tmpdir/"tmp_$alignments"
+sort -T $tmpdir -m -k6,6 -k 10,10nr "$tmpdir/sorted_"* > $tmpdir/"tmp_$alignments"
 $LRSCf/bin/reformatPAF.py $tmpdir/"tmp_$alignments" > $tmpdir/"$alignments"
 
 
