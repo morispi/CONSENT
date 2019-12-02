@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -54,4 +53,6 @@ int main (int argc, char* argv[]) {
 	std::string curTpl;
 
 	explodeFile(alignments, argv[2]);
+
+	alignments.close();
 }

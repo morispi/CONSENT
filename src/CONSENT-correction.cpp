@@ -654,110 +654,11 @@ void indexReads(std::map<std::string, std::vector<bool>>& index, std::string rea
 	}
 }
 
-std::vector<Alignment> getReadPile(std::ifstream& alignments, std::string curTpl, unsigned maxSupport) {
-	long long int beg, end;
-	std::vector<std::string> curOffset;
-	std::vector<Alignment> curReadAlignments;
-	std::vector<int> curScore;
-	std::string al;
-	std::stringstream iss(curTpl);
-	std::vector<std::string> offsets = splitString(splitString(curTpl, ",")[1], ";");
-	unsigned nbElems = 0;
-	unsigned i;
-	Alignment curAl;
-	unsigned posMin = 0;
-	unsigned minScore = 1000000;
-
-
-	for (std::string o : offsets) {
-		curOffset = splitString(o, ":");
-		beg = stoll(curOffset[0]);
-		end = stoll(curOffset[1]);
-		alignments.seekg(beg, alignments.beg);
-
-		while (alignments.tellg() < end) {
-			getline(alignments, al);
-			curAl = Alignment(al);
-			
-			
-			// Keep all overlaps
-			// curReadAlignments.push_back(al);
-
-			// Only keep the MAX best overlaps (sorted list)
-			// i = nbElems;
-			// while (i > 0 and curAl.resMatches > curScore[i-1]) {
-			// 	i--;
-			// }
-			
-			// for (int j = std::min(nbElems, (unsigned) MAX - 1); j > i; j--) {
-			// 	curReadAlignments[j] = curReadAlignments[j-1];
-			// 	curScore[j] = curScore[j-1];
-			// }
-			
-			// if (i >= 0 and i < MAX) {
-			// 	curReadAlignments[i] = curAl;
-			// 	curScore[i] = curAl.resMatches;
-			// 	if (nbElems < MAX) {
-			// 		nbElems++;
-			// 	}
-			// }
-
-			// Unsorted list of MAX best overlaps
-			// if (nbElems >= maxSupport) {
-			// 	if (curAl.resMatches > minScore) {
-			// 		curReadAlignments[posMin] = curAl;
-			// 		curScore[posMin] = curAl.resMatches;
-			// 		minScore = curAl.resMatches;
-			// 	}
-
-			// 	for (int i = 0; i < nbElems; i++) {
-			// 		if (curScore[i] < minScore) {
-			// 			minScore = curScore[i];
-			// 			posMin = i;
-			// 		}
-			// 	}
-			// } else {
-			// Only keep MAX best overlaps (sorted)
-			if (nbElems < maxSupport) {
-				curReadAlignments.push_back(curAl);
-				curScore.push_back(curAl.resMatches);
-				if (curAl.resMatches < minScore) {
-					minScore = curAl.resMatches;
-					posMin = nbElems;
-				}
-				nbElems++;
-			}
-
-		}
-
-	}
-
-	// curReadAlignments.resize(nbElems);
-
-	// std::cerr << "I have : " << nbElems << " / " << curReadAlignments.size() << " alignments" << std::endl;
-
-	// std::sort(curReadAlignments.begin(), curReadAlignments.end());
-
-	// std::cerr << "sorted ! " << std::endl;
-
-	// std::cerr << "new size : " << curReadAlignments.size() << std::endl;
-
-	// for (auto al : curReadAlignments) {
-	// 	std::cerr << al.qName << std::endl;
-	// }
-
-	return curReadAlignments;
-}
-
 std::vector<Alignment> getNextReadPile(std::ifstream& f, unsigned maxSupport) {
 	std::vector<Alignment> curReadAlignments;
-	std::vector<int> curScore;
 	std::string line, curRead;
-	unsigned nbElems = 0;
 	unsigned i;
 	Alignment curAl;
-	unsigned posMin = 0;
-	unsigned minScore = 1000000;
 
 	getline(f, line);
 	while(line.length() > 0 or !curReadAlignments.empty()) {
@@ -766,31 +667,10 @@ std::vector<Alignment> getNextReadPile(std::ifstream& f, unsigned maxSupport) {
 		}
 		if (line.length() > 0 and (curRead == "" or curAl.qName == curRead)) {
 			curRead = curAl.qName;
-			
-			// Keep MAX best overlaps (unsorted list)
-			// if (nbElems >= maxSupport) {
-			// 	if (curAl.resMatches > minScore) {
-			// 		curReadAlignments[posMin] = curAl;
-			// 		curScore[posMin] = curAl.resMatches;
-			// 		minScore = curAl.resMatches;
-			// 	}
 
-			// 	for (i = 0; i < nbElems; i++) {
-			// 		if (curScore[i] < minScore) {
-			// 			minScore = curScore[i];
-			// 			posMin = i;
-			// 		}
-			// 	}
-			// } else {
-			// Only keep MAX best overlaps (sorted)
-			if (nbElems < maxSupport) {
+			// Only keep MAX best overlaps
+			if (curReadAlignments.size() < maxSupport) {
 				curReadAlignments.push_back(curAl);
-				curScore.push_back(curAl.resMatches);
-				if (curAl.resMatches < minScore) {
-					minScore = curAl.resMatches;
-					posMin = nbElems;
-				}
-				nbElems++;
 			}
 
 			getline(f, line);

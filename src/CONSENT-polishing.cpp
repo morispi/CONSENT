@@ -702,13 +702,9 @@ void indexReads(std::map<std::string, std::vector<bool>>& index, std::string rea
 
 std::vector<Alignment> getNextReadPile(std::ifstream& f, unsigned maxSupport) {
 	std::vector<Alignment> curReadAlignments;
-	std::vector<int> curScore;
 	std::string line, curRead;
-	unsigned nbElems = 0;
 	unsigned i;
 	Alignment curAl;
-	unsigned posMin = 0;
-	unsigned minScore = 1000000;
 
 	getline(f, line);
 	while(line.length() > 0 or !curReadAlignments.empty()) {
@@ -717,34 +713,14 @@ std::vector<Alignment> getNextReadPile(std::ifstream& f, unsigned maxSupport) {
 		}
 		if (line.length() > 0 and (curRead == "" or curAl.qName == curRead)) {
 			curRead = curAl.qName;
-			
-			// Keep MAX best overlaps (unsorted list)
-			if (nbElems >= maxSupport) {
-				if (curAl.resMatches > minScore) {
-					curReadAlignments[posMin] = curAl;
-					curScore[posMin] = curAl.resMatches;
-					minScore = curAl.resMatches;
-				}
 
-				for (i = 0; i < nbElems; i++) {
-					if (curScore[i] < minScore) {
-						minScore = curScore[i];
-						posMin = i;
-					}
-				}
-			} else {
+			// Only keep MAX best overlaps
+			if (curReadAlignments.size() < maxSupport) {
 				curReadAlignments.push_back(curAl);
-				curScore.push_back(curAl.resMatches);
-				if (curAl.resMatches < minScore) {
-					minScore = curAl.resMatches;
-					posMin = nbElems;
-				}
-				nbElems++;
 			}
 
 			getline(f, line);
 		} else {
-			std::sort(curReadAlignments.begin(), curReadAlignments.end());
 			if (!f.eof()) {
 				f.seekg(-line.length()-1, f.cur);
 			}
