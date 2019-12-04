@@ -184,16 +184,16 @@ LRSCs=$(readlink -f "$0")
 LRSCf=$(dirname $LRSCs)
 
 echo "["$(date)"] Aligning the long reads to the contigs (minimap2)"
-minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" -I"$minimapMemory" "$contigs" "$reads" > $tmpdir/"tmp_$alignments"
+minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" -I"$minimapMemory" "$contigs" "$reads" > $tmpdir/"$alignments"
 
 echo "["$(date)"] Sorting the overlaps"
-$LRSCf/bin/explode $tmpdir/"tmp_$alignments" $tmpdir/$exploded
+$LRSCf/bin/explode $tmpdir/"$alignments" $tmpdir/$exploded
 for f in "$tmpdir/$exploded"_*;
 do
 	sort -k6,6 -k 10,10nr -T . --parallel="$nproc" $f > $tmpdir/sorted_$(basename $f)
 	rm $f
 done
-$LRSCf/bin/merge $tmpdir/"$alignments" polishing "$tmpdir/sorted_"*
+$LRSCf/bin/merge $tmpdir/"tmp_$alignments" polishing "$tmpdir/sorted_"*
 rm "$tmpdir/sorted_"*
 $LRSCf/bin/reformatPAF.py $tmpdir/"tmp_$alignments" > $tmpdir/"$alignments"
 rm "$tmpdir/tmp_$alignments"
