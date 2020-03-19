@@ -123,7 +123,7 @@ int main (int argc, char* argv[]) {
 	std::vector<std::string> filesNames = getFilesNames(argv);
 	std::vector<std::ifstream*> files(filesNames.size());
 	std::vector<std::pair<std::string, unsigned long>> fields(filesNames.size());
-	
+
 	std::ifstream* f;
 	for (int i = 0; i < filesNames.size(); i++) {
 		f = new std::ifstream;

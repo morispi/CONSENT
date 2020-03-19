@@ -141,8 +141,8 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentPilesPositions(unsigned t
 	return pilesPos;
 }
 
-std::unordered_map<std::string, std::string> getSequencesunordered_maps(std::vector<Alignment>& alignments, std::string readsDir) {
-	std::unordered_map<std::string, std::string> sequences;
+robin_hood::unordered_map<std::string, std::string> getSequencesunordered_maps(std::vector<Alignment>& alignments, std::string readsDir) {
+	robin_hood::unordered_map<std::string, std::string> sequences;
 	std::string header, seq;
 
 	// Insert template sequence
@@ -166,7 +166,7 @@ std::unordered_map<std::string, std::string> getSequencesunordered_maps(std::vec
 	return sequences;
 }
 
-std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, std::unordered_map<std::string, std::string>& sequences, unsigned qBeg, unsigned end, unsigned merSize, unsigned maxSupport, unsigned commonKMers) {
+std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, robin_hood::unordered_map<std::string, std::string>& sequences, unsigned qBeg, unsigned end, unsigned merSize, unsigned maxSupport, unsigned commonKMers) {
 	int bmeanSup;
 	bmeanSup = std::min((int) commonKMers, (int) alignments.size() / 2);
 	int MAX = 100;
@@ -295,7 +295,7 @@ std::vector<std::string> getAlignmentPileSeq(std::vector<Alignment>& alignments,
 	return curPile;
 }
 
-std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<std::string>>> getAlignmentPiles(std::vector<Alignment>& alignments, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned windowOverlap, std::unordered_map<std::string, std::string> sequences, unsigned merSize, unsigned commonKMers) {
+std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<std::string>>> getAlignmentPiles(std::vector<Alignment>& alignments, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned windowOverlap, robin_hood::unordered_map<std::string, std::string> sequences, unsigned merSize, unsigned commonKMers) {
 	unsigned tplLen = alignments.begin()->qLength;
 
 	std::vector<std::pair<unsigned, unsigned>> pilesPos = getAlignmentPilesPositions(tplLen, alignments, minSupport, maxSupport, windowSize, windowOverlap);

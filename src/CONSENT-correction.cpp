@@ -175,7 +175,7 @@ std::vector<std::string> splitRead(std::string name, std::string correctedRead, 
 	return result;
 }
 
-std::string weightConsensus(std::string& consensus, std::vector<std::string>& pile, std::unordered_map<kmer, unsigned>& merCounts, unsigned merSize, unsigned windowSize, unsigned solidThresh) {
+std::string weightConsensus(std::string& consensus, std::vector<std::string>& pile, robin_hood::unordered_map<kmer, unsigned>& merCounts, unsigned merSize, unsigned windowSize, unsigned solidThresh) {
 	std::vector<std::string> splits;
 	std::string curSplit;
 
@@ -198,7 +198,7 @@ std::string weightConsensus(std::string& consensus, std::vector<std::string>& pi
 	return consensus;
 }
 
-std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(std::string& readId, std::vector<std::string> & piles, std::pair<unsigned, unsigned>& pilesPos, unsigned& minSupport, unsigned& merSize, unsigned& commonKMers, unsigned& minAnchors, unsigned& solidThresh, unsigned& windowSize, unsigned maxMSA, std::string path) {
+std::pair<std::string, robin_hood::unordered_map<kmer, unsigned>> computeConsensuses(std::string& readId, std::vector<std::string> & piles, std::pair<unsigned, unsigned>& pilesPos, unsigned& minSupport, unsigned& merSize, unsigned& commonKMers, unsigned& minAnchors, unsigned& solidThresh, unsigned& windowSize, unsigned maxMSA, std::string path) {
 	// if (piles.size() == 1) {
 	// 	auto merCounts = 
 	// 	return 
@@ -207,7 +207,7 @@ std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(st
 	int bmeanSup;
 	bmeanSup = std::min((int) commonKMers, (int) piles.size() / 2);
 	// std::cerr << "MSABMAAC in : " << piles.size() << std::endl;
-	std::pair<std::vector<std::vector<std::string>>, std::unordered_map<kmer, unsigned>> rOut = MSABMAAC(piles, merSize, bmeanSup, solidThresh, minAnchors, maxMSA, path);
+	std::pair<std::vector<std::vector<std::string>>, robin_hood::unordered_map<kmer, unsigned>> rOut = MSABMAAC(piles, merSize, bmeanSup, solidThresh, minAnchors, maxMSA, path);
 	// std::cerr << "MSABMAAC out : " << rOut.first.size() << std::endl;
 
 	if (rOut.first.size() == 0) {
@@ -227,7 +227,7 @@ std::pair<std::string, std::unordered_map<kmer, unsigned>> computeConsensuses(st
 	return std::make_pair(corTpl, merCounts);
 }
 
-int nbSolidMers(std::string seq, std::unordered_map<kmer, unsigned> merCounts, unsigned merSize, unsigned solidThresh) {
+int nbSolidMers(std::string seq, robin_hood::unordered_map<kmer, unsigned> merCounts, unsigned merSize, unsigned solidThresh) {
 	int nb = 0;
 	for (unsigned i = 0; i < seq.length() - merSize + 1; i++) {
 		if (merCounts[str2num(seq.substr(i, merSize))] >= solidThresh) {
@@ -268,7 +268,7 @@ std::pair<int, int> getIndels(std::string cigar){
 	return std::make_pair(ins, del);
 }
 
-std::string alignConsensuses(std::string rawRead, std::string sequence, std::vector<std::string>& consensuses, std::vector<std::unordered_map<kmer, unsigned>>& merCounts, std::vector<std::pair<unsigned, unsigned>>& pilesPos, std::vector<std::string>& templates, int startPos, unsigned windowSize, unsigned windowOverlap, unsigned solidThresh, unsigned merSize) {
+std::string alignConsensuses(std::string rawRead, std::string sequence, std::vector<std::string>& consensuses, std::vector<robin_hood::unordered_map<kmer, unsigned>>& merCounts, std::vector<std::pair<unsigned, unsigned>>& pilesPos, std::vector<std::string>& templates, int startPos, unsigned windowSize, unsigned windowOverlap, unsigned solidThresh, unsigned merSize) {
 	StripedSmithWaterman::Aligner aligner;
 	StripedSmithWaterman::Filter filter;
 	StripedSmithWaterman::Alignment alignment;
@@ -287,8 +287,8 @@ std::string alignConsensuses(std::string rawRead, std::string sequence, std::vec
 	int alPos;
 	int sizeAl;
 	std::string curCons, oldCons;
-	std::unordered_map<kmer, unsigned> oldMers;
-	std::unordered_map<kmer, unsigned> curMers;
+	robin_hood::unordered_map<kmer, unsigned> oldMers;
+	robin_hood::unordered_map<kmer, unsigned> curMers;
 	unsigned overlap;
 	std::string seq1, seq2;
 	int solidMersSeq1, solidMersSeq2;
@@ -407,12 +407,12 @@ int getNextDst(std::string correctedRead, unsigned beg, unsigned merSize) {
 
 
 // Anchors without repeated k-mers
-std::vector<std::pair<std::string, std::string>> getAnchors(std::unordered_map<kmer, unsigned>& merCounts, std::string srcZone, std::string dstZone, unsigned merSize, unsigned nb) {
+std::vector<std::pair<std::string, std::string>> getAnchors(robin_hood::unordered_map<kmer, unsigned>& merCounts, std::string srcZone, std::string dstZone, unsigned merSize, unsigned nb) {
 	std::vector<std::pair<std::string, std::string>> res;
 	unsigned i;
 
-	std::unordered_map<std::string, std::vector<unsigned>> mersPosSrc = getKMersPos(srcZone, merSize);
-	std::unordered_map<std::string, std::vector<unsigned>> mersPosDst = getKMersPos(dstZone, merSize);
+	robin_hood::unordered_map<std::string, std::vector<unsigned>> mersPosSrc = getKMersPos(srcZone, merSize);
+	robin_hood::unordered_map<std::string, std::vector<unsigned>> mersPosDst = getKMersPos(dstZone, merSize);
 
 	// Consider all k-mers of the src zone as potential anchors
 	std::vector<std::string> candidatesSrc(srcZone.size() - merSize + 1);
@@ -453,7 +453,7 @@ std::vector<std::pair<std::string, std::string>> getAnchors(std::unordered_map<k
 	return finalRes;
 }
 
-std::string polishCorrection(std::string correctedRead, std::unordered_map<kmer, unsigned>& merCounts, unsigned merSize, int solidThresh) {
+std::string polishCorrection(std::string correctedRead, robin_hood::unordered_map<kmer, unsigned>& merCounts, unsigned merSize, int solidThresh) {
 	std::set<std::string> visited;
 	unsigned curBranches;
 	unsigned dist;
@@ -470,7 +470,7 @@ std::string polishCorrection(std::string correctedRead, std::unordered_map<kmer,
 	std::vector<std::pair<std::string, std::string>> anchors;
 	unsigned anchorNb;
 	std::string srcZone, dstZone;
-	std::unordered_map<std::string, std::vector<unsigned>> srcPos, dstPos;
+	robin_hood::unordered_map<std::string, std::vector<unsigned>> srcPos, dstPos;
 	std::string oldCorrectedRead;
 	int b, l;
 	std::string r, c;
@@ -567,8 +567,8 @@ std::string polishCorrection(std::string correctedRead, std::unordered_map<kmer,
 	return correctedRead;
 }
 
-std::unordered_map<std::string, std::string> getSequencesMap(std::vector<Alignment>& alignments) {
-	std::unordered_map<std::string, std::string> sequences;
+robin_hood::unordered_map<std::string, std::string> getSequencesMap(std::vector<Alignment>& alignments) {
+	robin_hood::unordered_map<std::string, std::string> sequences;
 	std::string header, seq;
 
 	// Insert template sequence
@@ -587,7 +587,7 @@ std::unordered_map<std::string, std::string> getSequencesMap(std::vector<Alignme
 std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& alignments, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned minAnchors,unsigned solidThresh, unsigned windowOverlap, unsigned maxMSA, std::string path) {
 	std::string readId = alignments.begin()->qName;
 	// std::cerr << "processing : " << readId << std::endl;
-	std::unordered_map<std::string, std::string> sequences = getSequencesMap(alignments);
+	robin_hood::unordered_map<std::string, std::string> sequences = getSequencesMap(alignments);
 	std::vector<std::pair<unsigned, unsigned>> pilesPos = getAlignmentPilesPositions(alignments.begin()->qLength, alignments, minSupport, maxSupport, windowSize, windowOverlap);
 	if (pilesPos.size() == 0) {
 		return std::make_pair(readId, "");
@@ -595,9 +595,9 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Alignment>& 
 	unsigned i = 0;
 
 	// Compute consensuses for all the piles
-	std::pair<std::string, std::unordered_map<kmer, unsigned>> resCons;
+	std::pair<std::string, robin_hood::unordered_map<kmer, unsigned>> resCons;
 	std::vector<std::string> consensuses(pilesPos.size());
-	std::vector<std::unordered_map<kmer, unsigned>> merCounts(pilesPos.size()); 
+	std::vector<robin_hood::unordered_map<kmer, unsigned>> merCounts(pilesPos.size()); 
 	std::vector<std::string> curPile;
 	std::vector<std::string> templates(pilesPos.size());
 	for (i = 0; i < pilesPos.size(); i++) {
