@@ -1,7 +1,10 @@
+#ifndef OVERLAP_H
+#define OVERLAP_H
+
 #include <sstream>
 #include <iostream>
 
-struct Alignment {
+struct Overlap {
 	std::string qName;
 	unsigned qLength;
 	unsigned qStart;
@@ -15,13 +18,13 @@ struct Alignment {
 	unsigned alBlockLen;
 	unsigned mapQual;
 
-	Alignment() {
+	Overlap() {
 		qName = "";
 	}
 
-	Alignment(std::string al) {
+	Overlap(std::string al) {
 		if (al.empty()) {
-			Alignment();
+			Overlap();
 		} else {
 			std::string token;
 			std::stringstream iss(al);
@@ -53,7 +56,7 @@ struct Alignment {
 		}
 	}
 
-	bool operator<(const Alignment& a2) const {
+	bool operator<(const Overlap& a2) const {
 		if (qName < a2.qName) {
 			return true;
  		// } else if (qName == a2.qName && qLength < a2.qLength) {
@@ -84,3 +87,5 @@ struct Alignment {
 	}
 
 };
+
+#endif
