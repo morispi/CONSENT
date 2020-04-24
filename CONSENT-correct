@@ -29,7 +29,7 @@ function print_help {
 
 #Prints version information
 function print_version {
-	echo "CONSENT v1.3"
+	echo "CONSENT v2.0"
 	exit 1
 }
 
