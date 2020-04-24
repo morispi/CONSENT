@@ -1,4 +1,5 @@
-#include "CONSENT.h"
+#include "CONSENT-correction.h"
+#include "CONSENT-polishing.h"
 
 int main(int argc, char* argv[]) {
 	if (argc < 2) {
@@ -10,7 +11,8 @@ int main(int argc, char* argv[]) {
 	PAFIndex = "";
 	alignmentFile = "";
 	readsFile = "";
-	unsigned minSupport, maxSupport, maxMSA, windowSize, nbThreads, opt, merSize, commonKMers, minAnchors, solidThresh, windowOverlap, nbReads;
+	unsigned minSupport, maxSupport, maxMSA, windowSize, nbThreads, merSize, commonKMers, minAnchors, solidThresh, windowOverlap;
+	int opt;
 
 	minSupport = 4;
 	maxSupport = 1000;
@@ -22,7 +24,6 @@ int main(int argc, char* argv[]) {
 	solidThresh = 4;
 	windowOverlap = 50;
 	nbThreads = 1;
-	nbReads = 0;
 
 
 	while ((opt = getopt(argc, argv, "a:A:d:k:s:S:M:l:f:e:p:c:m:j:w:m:r:R:n:i:")) != -1) {
@@ -69,9 +70,6 @@ int main(int argc, char* argv[]) {
 			case 'p':
 				path = optarg;
 				path +=  + "/BMEAN/BOA/blosum80.mat";
-				break;
-			case 'n':
-				nbReads = atoi(optarg);
 				break;
 			case 'j':
 				nbThreads = atoi(optarg);
