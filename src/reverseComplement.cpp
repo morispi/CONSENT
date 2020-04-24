@@ -11,12 +11,12 @@ std::string rev_comp::run(std::string seq) {
 	while(true) {
 		if(first == last || first == --last) {
     	    if(seq.length() % 2) {
-    		    *first = rev_comp::complement[*first];
+    		    *first = rev_comp::complement[(unsigned char) *first];
             }
     	    return seq;
         } else {
-        	*first = rev_comp::complement[*first];
-    	    *last = rev_comp::complement[*last];
+        	*first = rev_comp::complement[(unsigned char) *first];
+    	    *last = rev_comp::complement[(unsigned char) *last];
     	    std::iter_swap(first, last);
     	    ++first;
         }
