@@ -21,30 +21,28 @@ std::vector<std::string> getNeighbours(std::string kMer, unsigned merSize, int l
 	kmer k;
 	std::transform(kMer.begin(), kMer.end(), kMer.begin(), ::toupper);
 
-	// if (left == 0) {
+	if (left == 1) {
+		kMer = rev_comp::run(kMer);
+	}
+	f = kMer.substr(1);
+	int i = 0;
+	for (i = 0; i < 4; i++) {
+		k = str2num(f);
+		k <<= 2;
+		k += i;
 		if (left == 1) {
-			kMer = rev_comp::run(kMer);
+			t = kmer2str(k, merSize);
+			t = rev_comp::run(t);
+			k = str2num(t);
 		}
-		f = kMer.substr(1);
-		int i = 0;
-		for (i = 0; i < 4; i++) {
-			k = str2num(f);
-			k <<= 2;
-			k += i;
+		if (merCounts[k] >= solidThresh) {
 			if (left == 1) {
-				t = kmer2str(k, merSize);
-				t = rev_comp::run(t);
-				k = str2num(t);
-			}
-			if (merCounts[k] >= solidThresh) {
-				if (left == 1) {
-					neighbours.push_back(t);
-				} else {
-					neighbours.push_back(concatNucR(f, i));
-				}
+				neighbours.push_back(t);
+			} else {
+				neighbours.push_back(concatNucR(f, i));
 			}
 		}
-	// }
+	}
 
 	// Sort in ascending order of number of occurrences
 	std::sort(neighbours.begin(), neighbours.end(), 
@@ -124,9 +122,7 @@ int link(std::unordered_map<kmer, unsigned> merCounts, std::string srcSeed, std:
 		tgtAnchor = tgtSeed.substr(0, curRead.length());
 		found = curRead == tgtAnchor;
 		if (!found && (itf == visited.end())) {
-		// if (!found) {
 			visited.insert(curRead);
-			// resPart1 = resPart1 + curRead.substr(curK - 1);
 			resPart1 = resPart1 + curRead[curK - 1];
 			dist = dist + curRead.length() - (curK - 1);
 
@@ -135,7 +131,6 @@ int link(std::unordered_map<kmer, unsigned> merCounts, std::string srcSeed, std:
 			neighbours = getNeighbours(srcAnchor.substr(srcAnchor.length() - curK), curK, 0, merCounts, solidThresh);
 			it = neighbours.begin();
 		} else if (found) {
-			// resPart1 = resPart1 + curRead.substr(curK - 1);
 			resPart1 = resPart1 + curRead[curK - 1];
 		} else {
 			it++;
@@ -149,10 +144,8 @@ int link(std::unordered_map<kmer, unsigned> merCounts, std::string srcSeed, std:
 		tgtAnchor = tgtSeed.substr(0, curRead.length());
 		found = curRead == tgtAnchor;
 		if (!found && (itf == visited.end())) {
-		// if (!found) {
 			visited.insert(curRead);
 			(*curBranches)++;
-			// found = link(merCounts, srcSeed, tgtSeed, merSize, visited, curBranches, dist + curRead.length() - (curK - 1), resPart1 + curRead.substr(curK - 1), missingPart, merSize, LRLen, maxBranches, solidThresh, minOrder);
 			found = link(merCounts, srcSeed, tgtSeed, merSize, visited, curBranches, dist + curRead.length() - (curK - 1), resPart1 + curRead[curK - 1], missingPart, merSize, LRLen, maxBranches, solidThresh, minOrder);
 			if (!found) {
 				++it;
