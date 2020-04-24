@@ -59,7 +59,7 @@ std::vector<std::string> getFilesNames(char** args) {
 
 void getNextLines(std::vector<std::ifstream*>& files, std::vector<std::string>& lines, unsigned long size) {
 	std::string line;
-	for (int i = 0; i < size; i++) {
+	for (unsigned long i = 0; i < size; i++) {
 		std::ifstream* f = files[i];
 		getline(*f, line);
 		lines[i] = std::string(line);
@@ -80,13 +80,13 @@ std::pair<std::string, unsigned long> getFields(bool correction, std::string lin
 }
 
 void getNextFields(bool correction, std::vector<std::pair<std::string, unsigned long>>& fields, std::vector<std::string>& lines, unsigned long size) {
-	for (int i = 0; i < size; i++) {
+	for (unsigned long i = 0; i < size; i++) {
 		fields[i] = getFields(correction, lines[i]);
 	}
 }
 
 bool areAllEmpty(std::vector<std::string>& lines, unsigned long size) {
-	for (int i = 0; i < size; i++) {
+	for (unsigned long i = 0; i < size; i++) {
 		if (!lines[i].empty()) {
 			return false;
 		}
@@ -104,7 +104,7 @@ unsigned long getSmallestLine(std::vector<std::pair<std::string, unsigned long>>
 	}
 	smallest = fields[index];
 
-	for (int i = index; i < size; i++) {
+	for (unsigned long i = index; i < size; i++) {
 		if (!fields[i].first.empty() and comp(fields[i], smallest) <= 0) {
 			smallest = fields[i];
 			index = i;
@@ -125,7 +125,7 @@ int main (int argc, char* argv[]) {
 	std::vector<std::pair<std::string, unsigned long>> fields(filesNames.size());
 
 	std::ifstream* f;
-	for (int i = 0; i < filesNames.size(); i++) {
+	for (unsigned long i = 0; i < filesNames.size(); i++) {
 		f = new std::ifstream;
 		files[i] = f;
 		files[i]->open(filesNames[i]);
