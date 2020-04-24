@@ -5,7 +5,7 @@
 #include <string>
 
 std::string getId(std::string s, std::string delimiter) {
-    size_t pos_start = 0, pos_end, delim_len = delimiter.length();
+    size_t pos_start = 0, pos_end;
 
     pos_end = s.find (delimiter, pos_start);
     return s.substr (pos_start, pos_end - pos_start);
