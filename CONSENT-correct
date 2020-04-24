@@ -20,16 +20,16 @@ function print_help {
 	echo "	--minAnchors INT, -a INT:      Minimum number of anchors in a window to allow consensus computation. (default: 10)"
 	echo "	--windowOverlap INT, -o INT:   Overlap size between consecutive windows. (default: 50)"
 	echo "	--nproc INT, -j INT:           Number of processes to run in parallel (default: number of cores)."
-	echo "  --minimapIndex INT, -m INT:    Split minimap2 index every INT input bases (default: 500M)."
+	echo "	--minimapIndex INT, -m INT:    Split minimap2 index every INT input bases (default: 500M)."
 	echo "	--tmpdir STRING, -t STRING:    Path where to store the temporary files (default: working directory)."
 	echo "	--help, -h:                    Print this help message."
-	echo "  --version, -v: 	               Print version information."
+	echo "	--version, -v: 	               Print version information."
 	exit 1
 }
 
 #Prints version information
 function print_version {
-	echo "CONSENT v1.2.3"
+	echo "CONSENT v1.3"
 	exit 1
 }
 
