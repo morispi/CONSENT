@@ -1,6 +1,6 @@
 CC = g++ -std=c++11
 CFLAGS  = -Wall -O3 -std=c++11
-LDFLAGS = -lpthread
+LDFLAGS = -lpthread -LBMEAN/spoa/build/lib -lspoa
 
 all: CONSENT-correction CONSENT-polishing explode merge
 
@@ -14,7 +14,7 @@ merge: merge.o
 	$(CC) -o bin/merge src/merge.o
 
 merge.o: src/merge.cpp
-	$(CC) -o src/merge.o -c src/merge.cpp $(CFLAGS)	
+	$(CC) -o src/merge.o -c src/merge.cpp $(CFLAGS)
 
 CONSENT-correction: alignmentPiles.o alignmentWindows.o reverseComplement.o utils.o correctionAlignment.o correctionDBG.o correctionMSA.o CONSENT-correction.o DBG.o main.o
 	$(CC) -o bin/CONSENT-correction src/main.o src/utils.o src/correctionDBG.o src/correctionAlignment.o src/correctionMSA.o src/reverseComplement.o src/alignmentPiles.o src/alignmentWindows.o src/CONSENT-correction.o src/DBG.o BMEAN/bmean.o BMEAN/utils.o BMEAN/BOA/align_lpo2.o  BMEAN/BOA/align_lpo_po2.o  BMEAN/BOA/align_score.o  BMEAN/BOA/black_flag.o  BMEAN/BOA/buildup_lpo.o  BMEAN/BOA/create_seq.o  BMEAN/BOA/fasta_format.o  BMEAN/BOA/heaviest_bundle.o  BMEAN/BOA/lpo_format.o  BMEAN/BOA/lpo.o   BMEAN/BOA/msa_format.o  BMEAN/BOA/numeric_data.o  BMEAN/BOA/remove_bundle.o  BMEAN/BOA/seq_util.o  BMEAN/BOA/stringptr.o BMEAN/Complete-Striped-Smith-Waterman-Library/src/*.o $(LDFLAGS)
@@ -26,7 +26,7 @@ CONSENT-polishing: alignmentPiles.o alignmentWindows.o reverseComplement.o utils
 	$(CC) -o bin/CONSENT-polishing src/main.o src/utils.o src/correctionDBG.o src/correctionAlignment.o src/correctionMSA.o src/reverseComplement.o src/alignmentPiles.o src/alignmentWindows.o src/CONSENT-polishing.o src/DBG.o BMEAN/bmean.o BMEAN/utils.o BMEAN/BOA/align_lpo2.o  BMEAN/BOA/align_lpo_po2.o  BMEAN/BOA/align_score.o  BMEAN/BOA/black_flag.o  BMEAN/BOA/buildup_lpo.o  BMEAN/BOA/create_seq.o  BMEAN/BOA/fasta_format.o  BMEAN/BOA/heaviest_bundle.o  BMEAN/BOA/lpo_format.o  BMEAN/BOA/lpo.o   BMEAN/BOA/msa_format.o  BMEAN/BOA/numeric_data.o  BMEAN/BOA/remove_bundle.o  BMEAN/BOA/seq_util.o  BMEAN/BOA/stringptr.o BMEAN/Complete-Striped-Smith-Waterman-Library/src/*.o $(LDFLAGS)
 
 CONSENT-polishing.o: src/CONSENT-polishing.cpp src/CONSENT-polishing.h src/alignmentPiles.o src/alignmentWindows.h src/correctionAlignment.h src/correctionDBG.h src/correctionMSA.h src/DBG.h
-	$(CC) -o src/CONSENT-polishing.o -c src/CONSENT-polishing.cpp $(CFLAGS) -IBMEAN/BOA/	
+	$(CC) -o src/CONSENT-polishing.o -c src/CONSENT-polishing.cpp $(CFLAGS) -IBMEAN/BOA/
 
 reverseComplement.o: src/reverseComplement.cpp
 	$(CC) -o src/reverseComplement.o -c src/reverseComplement.cpp $(CFLAGS)
@@ -48,9 +48,6 @@ correctionMSA.o: src/correctionMSA.cpp src/utils.h src/correctionDBG.h
 
 DBG.o: src/DBG.cpp src/reverseComplement.h
 	$(CC) -o src/DBG.o -c src/DBG.cpp $(CFLAGS)
-
-#BMEAN.o: BMEAN/bmean.cpp
-#	$(CC) -o BMEAN/bmean.o -c BMEAN/bmean.cpp $(CFLAGS) -IBMEAN/BOA/
 
 utils.o: src/utils.cpp
 	$(CC) -o src/utils.o -c src/utils.cpp $(CFLAGS)
