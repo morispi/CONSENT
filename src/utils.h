@@ -3,6 +3,7 @@
 #include <set>
 #include <locale>
 #include <unordered_map>
+#include "robin_hood.h"
 
 using namespace std;
 
@@ -26,4 +27,4 @@ std::string trimRead(std::string correctedRead, unsigned merSize);
 
 std::vector<std::string> splitRead(std::string name, std::string correctedRead, std::vector<std::pair<unsigned, unsigned>>& pilesPos, unsigned windowSize, unsigned windowOverlap);
 
-void indexReads(std::unordered_map<std::string, std::vector<bool>>& index, std::string readsFile);
+void indexReads(robin_hood::unordered_map<std::string, std::vector<bool>>& index, std::string readsFile);

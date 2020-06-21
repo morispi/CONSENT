@@ -1,7 +1,7 @@
 #include "correctionDBG.h"
 
-std::unordered_map<std::string, std::vector<unsigned>> getKMersPos(std::string sequence, unsigned merSize) {
-	std::unordered_map<std::string, std::vector<unsigned>> mers;
+robin_hood::unordered_map<std::string, std::vector<unsigned>> getKMersPos(std::string sequence, unsigned merSize) {
+	robin_hood::unordered_map<std::string, std::vector<unsigned>> mers;
 
 	for (unsigned i = 0; i < sequence.length() - merSize + 1; i++) {
 			mers[sequence.substr(i, merSize)].push_back(i);
@@ -44,12 +44,12 @@ int getNextDst(std::string correctedRead, unsigned beg, unsigned merSize) {
 
 
 // Anchors without repeated k-mers
-std::vector<std::pair<std::string, std::string>> getAnchors(std::unordered_map<kmer, unsigned>& merCounts, std::string srcZone, std::string dstZone, unsigned merSize, unsigned nb) {
+std::vector<std::pair<std::string, std::string>> getAnchors(robin_hood::unordered_map<kmer, unsigned>& merCounts, std::string srcZone, std::string dstZone, unsigned merSize, unsigned nb) {
 	std::vector<std::pair<std::string, std::string>> res;
 	unsigned i;
 
-	std::unordered_map<std::string, std::vector<unsigned>> mersPosSrc = getKMersPos(srcZone, merSize);
-	std::unordered_map<std::string, std::vector<unsigned>> mersPosDst = getKMersPos(dstZone, merSize);
+	robin_hood::unordered_map<std::string, std::vector<unsigned>> mersPosSrc = getKMersPos(srcZone, merSize);
+	robin_hood::unordered_map<std::string, std::vector<unsigned>> mersPosDst = getKMersPos(dstZone, merSize);
 
 	// Consider all k-mers of the src zone as potential anchors
 	std::vector<std::string> candidatesSrc(srcZone.size() - merSize + 1);
@@ -90,7 +90,7 @@ std::vector<std::pair<std::string, std::string>> getAnchors(std::unordered_map<k
 	return finalRes;
 }
 
-std::string polishCorrection(std::string correctedRead, std::unordered_map<kmer, unsigned>& merCounts, unsigned merSize, int solidThresh) {
+std::string polishCorrection(std::string correctedRead, robin_hood::unordered_map<kmer, unsigned>& merCounts, unsigned merSize, int solidThresh) {
 	std::set<std::string> visited;
 	unsigned curBranches;
 	unsigned dist;
@@ -107,7 +107,7 @@ std::string polishCorrection(std::string correctedRead, std::unordered_map<kmer,
 	std::vector<std::pair<std::string, std::string>> anchors;
 	unsigned anchorNb;
 	std::string srcZone, dstZone;
-	std::unordered_map<std::string, std::vector<unsigned>> srcPos, dstPos;
+	robin_hood::unordered_map<std::string, std::vector<unsigned>> srcPos, dstPos;
 	std::string oldCorrectedRead;
 	int b, l;
 	std::string r, c;

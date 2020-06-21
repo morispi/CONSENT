@@ -13,12 +13,12 @@
 #include "../CTPL/ctpl_stl.h"
 
 std::mutex outMtx;
-std::unordered_map<std::string, std::vector<bool>> readIndex;
+robin_hood::unordered_map<std::string, std::vector<bool>> readIndex;
 bool doTrimRead = true;
 
 std::pair<std::string, std::string> processRead(int id, std::vector<Overlap>& alignments, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned minAnchors,unsigned solidThresh, unsigned windowOverlap, unsigned maxMSA, std::string path) {
 	std::string readId = alignments.begin()->qName;
-	std::unordered_map<std::string, std::string> sequences = getSequencesMap(alignments, readIndex);
+	robin_hood::unordered_map<std::string, std::string> sequences = getSequencesMap(alignments, readIndex);
 	std::vector<std::pair<unsigned, unsigned>> pilesPos = getAlignmentWindowsPositions(alignments.begin()->qLength, alignments, minSupport, maxSupport, windowSize, windowOverlap);
 	if (pilesPos.size() == 0) {
 		return std::make_pair(readId, "");
@@ -26,9 +26,9 @@ std::pair<std::string, std::string> processRead(int id, std::vector<Overlap>& al
 	unsigned i = 0;
 
 	// Compute consensuses for all the piles
-	std::pair<std::string, std::unordered_map<kmer, unsigned>> resCons;
+	std::pair<std::string, robin_hood::unordered_map<kmer, unsigned>> resCons;
 	std::vector<std::string> consensuses(pilesPos.size());
-	std::vector<std::unordered_map<kmer, unsigned>> merCounts(pilesPos.size()); 
+	std::vector<robin_hood::unordered_map<kmer, unsigned>> merCounts(pilesPos.size()); 
 	std::vector<std::string> curPile;
 	std::vector<std::string> templates(pilesPos.size());
 	for (i = 0; i < pilesPos.size(); i++) {

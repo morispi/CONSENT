@@ -15,21 +15,21 @@
 #include "../CTPL/ctpl_stl.h"
 
 std::mutex outMtx;
-std::unordered_map<std::string, std::vector<bool>> readIndex;
+robin_hood::unordered_map<std::string, std::vector<bool>> readIndex;
 bool doTrimRead = false;
 
 std::pair<std::string, std::string> processContig(std::vector<Overlap>& alignments, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned merSize, unsigned commonKMers, unsigned minAnchors,unsigned solidThresh, unsigned windowOverlap, unsigned maxMSA, std::string path, unsigned nbThreads) {
 	std::string readId = alignments.begin()->qName;
-	std::unordered_map<std::string, std::string> sequences = getSequencesMap(alignments, readIndex);
+	robin_hood::unordered_map<std::string, std::string> sequences = getSequencesMap(alignments, readIndex);
 	std::vector<std::pair<unsigned, unsigned>> pilesPos = getAlignmentWindowsPositions(alignments.begin()->qLength, alignments, minSupport, maxSupport, windowSize, windowOverlap);
 	if (pilesPos.size() == 0) {
 		return std::make_pair(readId, "");
 	}
 
 	// Compute consensuses for all the piles
-	std::pair<std::string, std::unordered_map<kmer, unsigned>> resCons;
+	std::pair<std::string, robin_hood::unordered_map<kmer, unsigned>> resCons;
 	std::vector<std::string> consensuses(pilesPos.size());
-	std::vector<std::unordered_map<kmer, unsigned>> merCounts(pilesPos.size()); 
+	std::vector<robin_hood::unordered_map<kmer, unsigned>> merCounts(pilesPos.size()); 
 	std::vector<std::string> curPile;
 	std::vector<std::string> templates(pilesPos.size());
 
@@ -42,7 +42,7 @@ std::pair<std::string, std::string> processContig(std::vector<Overlap>& alignmen
 	std::string curTpl;
 
 	// Load the first jobs
-	vector<std::future<std::pair<std::string, std::unordered_map<kmer, unsigned>>>> results(poolSize);
+	vector<std::future<std::pair<std::string, robin_hood::unordered_map<kmer, unsigned>>>> results(poolSize);
     while (jobsLoaded < poolSize && jobsLoaded < jobsToProcess) {
     	curPile = getAlignmentWindowsSequences(alignments, minSupport, windowSize, windowOverlap, sequences, pilesPos[jobsLoaded].first, pilesPos[jobsLoaded].second, merSize, maxSupport, commonKMers);
 		templates[jobsLoaded] = curPile[0];
@@ -52,7 +52,7 @@ std::pair<std::string, std::string> processContig(std::vector<Overlap>& alignmen
 
 	// Load the remaining jobs as other jobs terminate
 	int curJob = 0;
-    std::pair<std::string, std::unordered_map<kmer, unsigned>> curRes;
+    std::pair<std::string, robin_hood::unordered_map<kmer, unsigned>> curRes;
     while(jobsLoaded < jobsToProcess) {
     	// Get the job results
         curRes = results[curJob].get();

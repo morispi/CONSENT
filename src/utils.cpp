@@ -163,7 +163,7 @@ std::vector<std::string> splitRead(std::string name, std::string correctedRead, 
 	return result;
 }
 
-void indexReads(std::unordered_map<std::string, std::vector<bool>>& index, std::string readsFile) {
+void indexReads(robin_hood::unordered_map<std::string, std::vector<bool>>& index, std::string readsFile) {
 	std::ifstream f(readsFile);
 	std::string header, sequence;
 

@@ -3,7 +3,7 @@
 #include "utils.h"
 #include "../BMEAN/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h"
 
-int nbSolidMers(std::string seq, std::unordered_map<kmer, unsigned> merCounts, unsigned merSize, unsigned solidThresh) {
+int nbSolidMers(std::string seq, robin_hood::unordered_map<kmer, unsigned> merCounts, unsigned merSize, unsigned solidThresh) {
 	int nb = 0;
 	for (unsigned i = 0; i < seq.length() - merSize + 1; i++) {
 		if (merCounts[str2num(seq.substr(i, merSize))] >= solidThresh) {
@@ -44,7 +44,7 @@ std::pair<int, int> getIndels(std::string cigar){
 	return std::make_pair(ins, del);
 }
 
-std::string alignConsensus(std::string rawRead, std::string sequence, std::vector<std::string>& consensuses, std::vector<std::unordered_map<kmer, unsigned>>& merCounts, std::vector<std::pair<unsigned, unsigned>>& pilesPos, std::vector<std::string>& templates, int startPos, unsigned windowSize, unsigned windowOverlap, unsigned solidThresh, unsigned merSize) {
+std::string alignConsensus(std::string rawRead, std::string sequence, std::vector<std::string>& consensuses, std::vector<robin_hood::unordered_map<kmer, unsigned>>& merCounts, std::vector<std::pair<unsigned, unsigned>>& pilesPos, std::vector<std::string>& templates, int startPos, unsigned windowSize, unsigned windowOverlap, unsigned solidThresh, unsigned merSize) {
 	StripedSmithWaterman::Aligner aligner;
 	StripedSmithWaterman::Filter filter;
 	StripedSmithWaterman::Alignment alignment;
@@ -63,8 +63,8 @@ std::string alignConsensus(std::string rawRead, std::string sequence, std::vecto
 	int alPos;
 	int sizeAl;
 	std::string curCons, oldCons;
-	std::unordered_map<kmer, unsigned> oldMers;
-	std::unordered_map<kmer, unsigned> curMers;
+	robin_hood::unordered_map<kmer, unsigned> oldMers;
+	robin_hood::unordered_map<kmer, unsigned> curMers;
 	unsigned overlap;
 	std::string seq1, seq2;
 	int solidMersSeq1, solidMersSeq2;

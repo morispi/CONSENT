@@ -82,7 +82,7 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentWindowsPositions(unsigned
 	return pilesPos;
 }
 
-std::vector<std::string> getAlignmentWindowsSequences(std::vector<Overlap>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, std::unordered_map<std::string, std::string>& sequences, unsigned qBeg, unsigned end, unsigned merSize, unsigned maxSupport, unsigned commonKMers) {
+std::vector<std::string> getAlignmentWindowsSequences(std::vector<Overlap>& alignments, unsigned minSupport, unsigned windowSize, unsigned windowOverlap, robin_hood::unordered_map<std::string, std::string>& sequences, unsigned qBeg, unsigned end, unsigned merSize, unsigned maxSupport, unsigned commonKMers) {
 	std::vector<std::string> curPile;
 	std::vector<unsigned> curScore;
 	unsigned length, shift;
@@ -146,7 +146,7 @@ std::vector<std::string> getAlignmentWindowsSequences(std::vector<Overlap>& alig
 	return curPile;
 }
 
-std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<std::string>>> getAlignmentWindows(std::vector<Overlap>& alignments, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned windowOverlap, std::unordered_map<std::string, std::string> sequences, unsigned merSize, unsigned commonKMers) {
+std::pair<std::vector<std::pair<unsigned, unsigned>>, std::vector<std::vector<std::string>>> getAlignmentWindows(std::vector<Overlap>& alignments, unsigned minSupport, unsigned maxSupport, unsigned windowSize, unsigned windowOverlap, robin_hood::unordered_map<std::string, std::string> sequences, unsigned merSize, unsigned commonKMers) {
 	unsigned tplLen = alignments.begin()->qLength;
 
 	std::vector<std::pair<unsigned, unsigned>> windowsPos = getAlignmentWindowsPositions(tplLen, alignments, minSupport, maxSupport, windowSize, windowOverlap);

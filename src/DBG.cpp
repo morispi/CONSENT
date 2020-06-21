@@ -15,7 +15,7 @@ std::string concatNucR(std::string f, int i) {
 	}
 }
 
-std::vector<std::string> getNeighbours(std::string kMer, unsigned merSize, int left, std::unordered_map<kmer, unsigned> merCounts, unsigned solidThresh) {
+std::vector<std::string> getNeighbours(std::string kMer, unsigned merSize, int left, robin_hood::unordered_map<kmer, unsigned> merCounts, unsigned solidThresh) {
 	std::vector<std::string> neighbours;
 	std::string f, n, t = "";
 	kmer k;
@@ -53,7 +53,7 @@ std::vector<std::string> getNeighbours(std::string kMer, unsigned merSize, int l
 	return neighbours;
 }
 
-unsigned extendLeft(std::unordered_map<kmer, unsigned> merCounts, unsigned curK, unsigned extLen, string &LR, unsigned solidThresh) {
+unsigned extendLeft(robin_hood::unordered_map<kmer, unsigned> merCounts, unsigned curK, unsigned extLen, string &LR, unsigned solidThresh) {
 		vector<string> neighbours;
 		vector<string>::iterator it;
 		unsigned dist = 0;
@@ -74,7 +74,7 @@ unsigned extendLeft(std::unordered_map<kmer, unsigned> merCounts, unsigned curK,
 		return dist;
 	}
 
-	unsigned extendRight(std::unordered_map<kmer, unsigned> merCounts, unsigned curK, unsigned extLen, string &LR, unsigned solidThresh) {
+	unsigned extendRight(robin_hood::unordered_map<kmer, unsigned> merCounts, unsigned curK, unsigned extLen, string &LR, unsigned solidThresh) {
 		vector<string> neighbours;
 		vector<string>::iterator it;
 		unsigned dist = 0;
@@ -96,7 +96,7 @@ unsigned extendLeft(std::unordered_map<kmer, unsigned> merCounts, unsigned curK,
 	}
 
 
-int link(std::unordered_map<kmer, unsigned> merCounts, std::string srcSeed, std::string tgtSeed, unsigned curK, std::set<std::string> &visited, unsigned* curBranches, unsigned dist, std::string curExt, std::string &missingPart, unsigned merSize, unsigned LRLen, unsigned maxBranches, unsigned solidThresh, unsigned minOrder) {
+int link(robin_hood::unordered_map<kmer, unsigned> merCounts, std::string srcSeed, std::string tgtSeed, unsigned curK, std::set<std::string> &visited, unsigned* curBranches, unsigned dist, std::string curExt, std::string &missingPart, unsigned merSize, unsigned LRLen, unsigned maxBranches, unsigned solidThresh, unsigned minOrder) {
 	if (curK < minOrder || *curBranches > maxBranches || dist > LRLen) {
 			missingPart = std::string();
 			return 0;

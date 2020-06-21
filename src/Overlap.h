@@ -3,6 +3,7 @@
 
 #include <sstream>
 #include <iostream>
+#include "robin_hood.h"
 
 struct Overlap {
 	std::string qName;

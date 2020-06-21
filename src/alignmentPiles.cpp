@@ -2,8 +2,8 @@
 #include <iostream>
 #include "alignmentPiles.h"
 
-std::unordered_map<std::string, std::string> getSequencesMap(std::vector<Overlap>& alignments, std::unordered_map<std::string, std::vector<bool>>& readIndex) {
-	std::unordered_map<std::string, std::string> sequences;
+robin_hood::unordered_map<std::string, std::string> getSequencesMap(std::vector<Overlap>& alignments, robin_hood::unordered_map<std::string, std::vector<bool>>& readIndex) {
+	robin_hood::unordered_map<std::string, std::string> sequences;
 	std::string header, seq;
 
 	// Insert template sequence
