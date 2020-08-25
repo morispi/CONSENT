@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
 	unsigned minSupport, maxSupport, maxMSA, windowSize, nbThreads, merSize, commonKMers, minAnchors, solidThresh, windowOverlap;
 	int opt;
 
-	minSupport = 4;
+	minSupport = 3;
 	maxSupport = 1000;
 	maxMSA = 150;
 	windowSize = 500;

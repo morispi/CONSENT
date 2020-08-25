@@ -4,11 +4,12 @@
 
 unsigned* getCoverages(std::vector<Overlap>& alignments) {
 	unsigned tplLen = alignments.begin()->qLength;
-	unsigned* coverages = new unsigned[tplLen];
+	// unsigned* coverages = new unsigned[tplLen];
+	unsigned* coverages = (unsigned*) calloc(tplLen, sizeof(int));
 	unsigned i;
-	for (i = 0; i < tplLen; i++) {
-		coverages[i] = 1;
-	}
+	// for (i = 0; i < tplLen; i++) {
+	// 	coverages[i] = 1;
+	// }
 	unsigned beg, end;
 
 	for (Overlap al : alignments) {
@@ -77,7 +78,8 @@ std::vector<std::pair<unsigned, unsigned>> getAlignmentWindowsPositions(unsigned
 		}
 	}
 
-	delete [] coverages;
+	// delete [] coverages;
+	free(coverages);
 
 	return pilesPos;
 }
