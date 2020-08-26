@@ -12,7 +12,7 @@ function print_help {
 	echo ""
 	echo "	Options:"
 	echo "	--windowSize INT, -l INT:      Size of the windows to process. (default: 500)"
-	echo "	--minSupport INT, -s INT:      Minimum support to consider a window for correction. (default: 4)"
+	echo "	--minSupport INT, -s INT:      Minimum support to consider a window for correction. (default: 3)"
 	echo "	--maxSupport INT, -S INT:      Maximum number of overlaps to include in a pile. (default: 150)"
 	echo "	--merSize INT, -k INT:         k-mer size for chaining and polishing. (default: 9)"
 	echo "	--solid INT, -f INT:           Minimum number of occurrences to consider a k-mer as solid during polishing. (default: 4)"
@@ -39,7 +39,7 @@ proof=""
 nproc=$(nproc)
 tmpdir="."
 out=""
-minSupport=4
+minSupport=3
 maxSupport=150
 maxMSA=150
 windowSize=500
