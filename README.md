@@ -5,14 +5,15 @@ It works by, first, computing overlaps between the long reads, in order to defin
 correction) for each read. Each read's alignment pile is then further divided into smaller windows, that are corrected idependently.
 First, a multiple alignment strategy is used in order to compute consensus. Then, this consensus is further polished with a local de Bruijn
 graph, in order to get rid of the remaining errors.
-Additionally to error correction, CONSENT can also perform contigs polishing.
+Additionally to error correction, CONSENT can also perform assembly polishing.
 
 Requirments
 --------------
 
   - A Linux based operating system.
   - Python3.
-  - A g++ version supporting C++11
+  - g++, minimum version 5.5.0.
+  - CMake, minimum version 2.8.2.
   
 Installation
 --------------
@@ -28,6 +29,31 @@ Then run the install.sh script:
   ```bash
   ./install.sh
   ```
+
+Getting started
+--------------
+
+An example dataset (10x of simulated PacBio reads, raw assembly, and reference genome) is provided in the `example` folder.
+
+Please run the following commands to try out CONSENT on this example.
+
+### Self-correction
+
+To perform self-correction on the example dataset, run the following command:
+
+`./CONSENT-correct --in example/reads.fasta --out example/correctedReads.fasta --type PB`
+
+This should take about 2 min and use up to 750 MB of RAM, using 4 cores.
+
+### Polishing
+
+To perform assembly polishing on the example dataset, run the following command:
+
+`./CONSENT-polish --contigs example/rawAssembly.fasta --reads example/reads.fasta --out example/polishedAssembly.fasta`
+
+This should take about 15 sec and use at most 150 MB of RAM, using 4 cores.
+
+
   
 Running CONSENT
 --------------
@@ -45,7 +71,7 @@ To run CONSENT for long reads self-correction, run the following command:
 
 ### Polishing
 
-To run CONSENT for contigs polishing, run the followning command:
+To run CONSENT for assembly polishing, run the followning command:
 
 `./CONSENT-polish --contigs contigs.fasta --reads longReads.fasta --out result.fasta`
 
