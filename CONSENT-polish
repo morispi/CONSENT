@@ -3,11 +3,11 @@ set -e
 
 #Prints a help message
 function print_help {
-	echo "Usage: $0 [options] --contigs contigs.fasta --reads longReads.fasta --out result.fasta"
+	echo "Usage: $0 [options] --contigs contigs.fast[a|q] --reads longReads.fast[a|q] --out result.fasta"
 	echo ""
 	echo "	Input:"
-	echo "	contigs.fasta:                 fasta file of contigs to polish, with one sequence per line."
-	echo "	longReads.fasta:               fasta file of long reads to use for polishing, with one sequence per line."
+	echo "	contigs.fast[a|q]:             fasta or fastq file of contigs to polish."
+	echo "	longReads.fast[a|q]:           fasta or fastq file of long reads to use for polishing."
 	echo "	result.fasta:                  fasta file where to output the polished contigs."
 	echo ""
 	echo "	Options:"

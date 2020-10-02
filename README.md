@@ -71,9 +71,9 @@ Running CONSENT
 
 To run CONSENT for long reads self-correction, run the following command:
 
-`./CONSENT-correct --in longReads.fasta --out result.fasta --type readsTechnology`
+`./CONSENT-correct --in longReads.fast[a|q] --out result.fasta --type readsTechnology`
 
-  - longReads.fasta:	fasta file of long reads to correct, with one sequence per line.
+  - longReads.fast[a|q]:	fasta or fastq file of long reads to .
   - result.fasta:		fasta file where to output the corrected long reads.
   - readsTechnology:	Indicate whether the long reads are from PacBio (--type PB) or Oxford Nanopore (--type ONT)
 
@@ -82,10 +82,10 @@ To run CONSENT for long reads self-correction, run the following command:
 
 To run CONSENT for assembly polishing, run the followning command:
 
-`./CONSENT-polish --contigs contigs.fasta --reads longReads.fasta --out result.fasta`
+`./CONSENT-polish --contigs contigs.fast[a|q] --reads longReads.fast[a|q] --out result.fasta`
 
-  - contigs.fasta:		fasta file of contigs to polish, with one sequence per line.
-  - longReads.fasta:	fasta file of long reads to use for polishing, with one sequence per line.
+  - contigs.fast[a|q]:		fasta or fastq file of contigs to polish.
+  - longReads.fast[a|q]:	fasta or fastq file of long reads to use for polishing.
   - result.fasta:		fasta file where to output the polished contigs.
 
 ### Options

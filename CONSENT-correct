@@ -3,10 +3,10 @@ set -e
 
 #Prints a help message
 function print_help {
-	echo "Usage: $0 [options] --in longReads.fasta --out result.fasta --type readsTechnology"
+	echo "Usage: $0 [options] --in longReads.fast[a|q] --out result.fasta --type readsTechnology"
 	echo ""
 	echo "	Input:"
-	echo "	longReads.fasta:               fasta file of long reads to correct, with one sequence per line."
+	echo "	longReads.fast[a|q]:           fasta or fastq file of long reads to correct."
 	echo "	result.fasta:                  fasta file where to output the corrected long reads."
 	echo "	readsTechnology:               Indicate whether the long reads are from PacBio (--type PB) or Oxford Nanopore (--type ONT)"
 	echo ""

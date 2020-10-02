@@ -165,15 +165,36 @@ std::vector<std::string> splitRead(std::string name, std::string correctedRead, 
 
 void indexReads(robin_hood::unordered_map<std::string, std::vector<bool>>& index, std::string readsFile) {
 	std::ifstream f(readsFile);
-	std::string header, sequence;
+	std::string header, sequence, seq;
 
 	getline(f, header);
 	while (header.length() > 0) {
+		// Get header
 		header.erase(0, 1);
 		header = splitString(header, " ")[0];
-		getline(f, sequence);
+		
+		// Get sequence, watching out for multiline FASTA/FASTQ
+		getline(f, seq);
+		sequence += seq;
+		getline(f, seq);
+		while (seq.length() > 0 and seq[0] != '>' and seq[0] != '+') {
+			sequence += seq;
+			getline(f, seq);
+		}
+
+		// Index header/sequence pair
 		std::transform(sequence.begin(), sequence.end(), sequence.begin(), ::toupper);
 		index[header] = fullstr2num(sequence);
-		getline(f, header);
+
+		// Skip remaining lines if FASTQ
+		if (seq[0] == '+') {
+			getline(f, seq);
+			while (seq.length() > 0 and seq[0] != '@') {
+				getline(f, seq);
+			}
+		}
+
+		// Next header has been read, update and loop
+		header = seq;
 	}
 }
