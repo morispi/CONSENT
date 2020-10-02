@@ -7,13 +7,14 @@ First, a multiple alignment strategy is used in order to compute consensus. Then
 graph, in order to get rid of the remaining errors.
 Additionally to error correction, CONSENT can also perform assembly polishing.
 
-Requirments
+Requirements
 --------------
 
   - A Linux based operating system.
   - Python3.
   - g++, minimum version 5.5.0.
   - CMake, minimum version 2.8.2.
+  - Minimap2 available through you path.
   
 Installation
 --------------
@@ -29,6 +30,14 @@ Then run the install.sh script:
   ```bash
   ./install.sh
   ```
+
+If you do not already have minimap2 available through your path, you can then run:
+
+```bash
+export PATH=$PWD/minimap2:$PATH
+```
+
+CONSENT should then be able to run.
 
 Getting started
 --------------
