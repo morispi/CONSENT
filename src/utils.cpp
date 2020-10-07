@@ -172,7 +172,6 @@ void indexReads(robin_hood::unordered_map<std::string, std::vector<bool>>& index
 		// Get header
 		header.erase(0, 1);
 		header = splitString(header, " ")[0];
-		cerr << header << endl;
 		
 		// Get sequence, watching out for multiline FASTA/FASTQ
 		getline(f, seq);
