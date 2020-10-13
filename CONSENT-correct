@@ -192,8 +192,8 @@ do
 	sort -k1,1 -k 10,10nr -T . --parallel="$nproc" $f > $tmpdir/sorted_$(basename $f)
 	rm $f
 done
-$LRSCf/bin/merge $tmpdir/"$alignments" correction "$tmpdir/sorted_"*
-rm "$tmpdir/sorted_"*
+$LRSCf/bin/merge $tmpdir/"$alignments" correction "$tmpdir/sorted_"$exploded*
+rm "$tmpdir/sorted_"$exploded*
 
 echo "["$(date)"] Correcting the long reads"
 $LRSCf/bin/CONSENT-correction -a $tmpdir/"$alignments" -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$reads" -M "$maxMSA" -p "$LRSCf" >> "$out"

@@ -193,8 +193,8 @@ do
 	sort -k6,6 -k 10,10nr -T . --parallel="$nproc" $f > $tmpdir/sorted_$(basename $f)
 	rm $f
 done
-$LRSCf/bin/merge $tmpdir/"tmp_$alignments" polishing "$tmpdir/sorted_"*
-rm "$tmpdir/sorted_"*
+$LRSCf/bin/merge $tmpdir/"tmp_$alignments" polishing "$tmpdir/sorted_"$exploded*
+rm "$tmpdir/sorted_"$exploded*
 $LRSCf/bin/reformatPAF.py $tmpdir/"tmp_$alignments" > $tmpdir/"$alignments"
 rm "$tmpdir/tmp_$alignments"
 
