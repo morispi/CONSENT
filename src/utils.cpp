@@ -172,7 +172,7 @@ void indexReads(robin_hood::unordered_map<std::string, std::vector<bool>>& index
 	while (header.length() > 0) {
 		// Get header
 		header.erase(0, 1);
-		// header = splitString(header, " ")[0];
+		header = splitString(header, " ")[0];
 		
 		// Get sequence, watching out for multiline FASTA/FASTQ
 		getline(f, seq);
@@ -188,7 +188,6 @@ void indexReads(robin_hood::unordered_map<std::string, std::vector<bool>>& index
 		// Index header/sequence pair
 		std::transform(sequence.begin(), sequence.end(), sequence.begin(), ::toupper);
 		index[header] = fullstr2num(sequence);
-		// cerr << "Indexed " << header << endl;
 
 		// Skip remaining lines if FASTQ
 		if (seq[0] == '+') {
