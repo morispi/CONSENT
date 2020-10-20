@@ -188,7 +188,7 @@ void indexReads(robin_hood::unordered_map<std::string, std::vector<bool>>& index
 		// Index header/sequence pair
 		std::transform(sequence.begin(), sequence.end(), sequence.begin(), ::toupper);
 		index[header] = fullstr2num(sequence);
-		cerr << "Indexed " << header << endl;
+		// cerr << "Indexed " << header << endl;
 
 		// Skip remaining lines if FASTQ
 		if (seq[0] == '+') {
