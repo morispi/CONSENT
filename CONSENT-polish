@@ -190,7 +190,7 @@ echo "["$(date)"] Sorting the overlaps"
 $LRSCf/bin/explode $tmpdir/"$alignments" $tmpdir/$exploded
 for f in "$tmpdir/$exploded"_*;
 do
-	sort -k6,6 -k 10,10nr -T . --parallel="$nproc" $f > $tmpdir/sorted_$(basename $f)
+	LC_COLLATE=C sort -k6,6 -k 10,10nr -T . --parallel="$nproc" $f > $tmpdir/sorted_$(basename $f)
 	rm $f
 done
 $LRSCf/bin/merge $tmpdir/"tmp_$alignments" polishing "$tmpdir/sorted_"$exploded*
