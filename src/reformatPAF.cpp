@@ -25,7 +25,7 @@ std::string processLine(std::string line) {
 
 	std::string res;
 	res = v[5] + "\t" + v[6] + "\t" + v[7] + "\t" + v[8] + "\t" + v[4] + "\t" + v[0] + "\t" + v[1] + "\t" + v[2] + "\t" + v[3];
-	for (int i = 9 ; i < v.size(); i++) {
+	for (unsigned i = 9 ; i < v.size(); i++) {
 		res += "\t" + v[i];
 	}
 
