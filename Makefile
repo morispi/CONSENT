@@ -2,7 +2,13 @@ CC = g++ -std=c++11
 CFLAGS  = -Wall -O3 -std=c++11
 LDFLAGS = -lpthread -LBMEAN/spoa/build/lib -lspoa
 
-all: CONSENT-correction CONSENT-polishing explode merge
+all: CONSENT-correction CONSENT-polishing explode merge reformatPAF
+
+reformatPAF: reformatPAF.o
+	$(CC) -o bin/reformatPAF src/reformatPAF.o
+
+reformatPAF.o: src/reformatPAF.cpp
+	$(CC) -o src/reformatPAF.o -c src/reformatPAF.cpp $(CFLAGS)
 
 explode: explode.o
 	$(CC) -o bin/explode src/explode.o
