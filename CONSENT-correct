@@ -173,6 +173,8 @@ fi
 #Temporary files names
 alignments="Alignments_"$$".paf"
 exploded="exploded_"$$
+minimapErrlog="minimap_"$$
+headers="headers_"$$
 
 #Get the path to LRSC's folder
 LRSCs=$(readlink -f "$0")
@@ -180,20 +182,21 @@ LRSCf=$(dirname $LRSCs)
 
 echo "["$(date)"] Overlapping the long reads (minimap2)"
 if [[ $minimapOptions == "PB" ]] ; then
-	minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" -I"$minimapMemory" "$reads" "$reads" > $tmpdir/"$alignments"
+	minimap2 --dual=yes -PD --no-long-join -w5 -g1000 -m30 -n1 -t"$nproc" -I"$minimapMemory" "$reads" "$reads" > $tmpdir/"$alignments" 2> $tmpdir/"$minimapErrlog"
 else
-	minimap2 -k15 -w5 -m100 -g10000 -r2000 --max-chain-skip 25 --dual=yes -PD --no-long-join -t"$nproc" -I"$minimapMemory" "$reads" "$reads" > $tmpdir/"$alignments"
+	minimap2 -k15 -w5 -m100 -g10000 -r2000 --max-chain-skip 25 --dual=yes -PD --no-long-join -t"$nproc" -I"$minimapMemory" "$reads" "$reads" > $tmpdir/"$alignments" 2> $tmpdir/"$minimapErrlog"
 fi
 
-echo "["$(date)"] Sorting the overlaps"
-$LRSCf/bin/explode $tmpdir/"$alignments" $tmpdir/$exploded
-for f in "$tmpdir/$exploded"_*;
-do
-	LC_COLLATE=C sort -k1,1 -k 10,10nr -T . --parallel="$nproc" $f > $tmpdir/sorted_$(basename $f)
-	rm $f
-done
-$LRSCf/bin/merge $tmpdir/"$alignments" correction "$tmpdir/sorted_"$exploded*
-rm "$tmpdir/sorted_"$exploded*
+#If Minimap index had to be split, separate into different chunks, and merge so that all overlaps for a given read are in the same chunk
+if [[ $(grep "loaded/built the index" $tmpdir/"$minimapErrlog" -c) != "1" ]] ; then
+	echo "["$(date)"] Processing the overlaps"
+	$LRSCf/bin/explode $tmpdir/"$alignments" $tmpdir/$exploded
+	grep "^>\|^@" "$reads" > $tmpdir/"$headers"
+	$LRSCf/bin/merge $tmpdir/"$alignments" $tmpdir/"$headers" "$tmpdir/"$exploded*
+	rm "$tmpdir/"$exploded*
+	rm "$tmpdir"/$headers
+fi
+rm $tmpdir/"$minimapErrlog"
 
 echo "["$(date)"] Correcting the long reads"
 $LRSCf/bin/CONSENT-correction -a $tmpdir/"$alignments" -s "$minSupport" -S "$maxSupport" -l "$windowSize" -k "$merSize" -c "$commonKMers" -A "$minAnchors" -f "$solid" -m "$windowOverlap" -j "$nproc" -r "$reads" -M "$maxMSA" -p "$LRSCf" >> "$out"
