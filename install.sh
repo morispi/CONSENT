@@ -1,5 +1,6 @@
 #!/bin/bash
 
+mkdir -p bin
 cd BMEAN;
 ./install.sh;
 cd ..;
