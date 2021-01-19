@@ -118,9 +118,9 @@ Pierre Morisse, Camille Marchet, Antoine Limasset, Arnaud Lefebvre and Thierry L
 Reference
 --------------
 
-Pierre Morisse, Camille Marchet, Antoine Limasset, Thierry Lecroq, Arnaud Lefebvre; CONSENT: Scalable self-correction of long reads with multiple sequence alignment, bioRxiv 546630; doi: https://doi.org/10.1101/546630 
+Morisse, P., Marchet, C., Limasset, A. et al. Scalable long read self-correction and assembly polishing with multiple sequence alignment. Sci Rep 11, 761 (2021). https://doi.org/10.1038/s41598-020-80757-5
 
 Contact
 --------------
 
-You can report problems and bugs to pierre[dot]morisse2[at]univ-rouen[dot]fr
+You can report problems and bugs to pierre[dot]morisse[at]inria[dot]fr
