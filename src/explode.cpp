@@ -30,16 +30,18 @@ void explodeFile(std::ifstream& f, std::string exploded) {
 			getline(f, line);
 		} else {
 			readsList.insert(oldRead);
+			
+			curFile << curStr;
+			curStr = line;
+			curStr += "\n";
+			getline(f, line);
+			
 			if (readsList.find(curRead) != readsList.end()) {
 				readsList.clear();
 				curFile.close();
 				nbFiles++;
 				curFile.open((exploded + "_" + std::to_string(nbFiles)).c_str());
 			}
-			curFile << curStr;
-			curStr = line;
-			curStr += "\n";
-			getline(f, line);
 		}
 	}
 	if (!curStr.empty()) {

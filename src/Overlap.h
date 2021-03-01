@@ -57,31 +57,39 @@ struct Overlap {
 		}
 	}
 
+	// bool operator<(const Overlap& a2) const {
+	// 	if (qName < a2.qName) {
+	// 		return true;
+ // 		// } else if (qName == a2.qName && qLength < a2.qLength) {
+ // 			// return true;
+ // 		} else if (qName == a2.qName && qStart < a2.qStart) {
+ // 			return true;
+ // 		} else if (qName == a2.qName && qStart == a2.qStart && qEnd < a2.qEnd) {
+ // 			return true;
+ // 		// } else if (qName == a2.qName && qLength == a2.qLength && qStart == a2.qStart && qEnd == a2.qEnd && strand < a2.strand) {
+ // 			// return true;
+ // 		// } else if (qName == a2.qName && qLength == a2.qLength && qStart == a2.qStart && qEnd == a2.qEnd && strand == a2.strand && tName < a2.tName) {
+ // 			// return true;
+ // 		// } else if (qName == a2.qName && qLength == a2.qLength && qStart == a2.qStart && qEnd == a2.qEnd && strand == a2.strand && tName == a2.tName && tLength < a2.tLength) {
+ // 			// return true;
+ // 		} else if (qName == a2.qName && qStart == a2.qStart && qEnd == a2.qEnd && tStart < a2.tStart) {
+ // 			return true;
+ // 		} else if (qName == a2.qName && qStart == a2.qStart && qEnd == a2.qEnd && tStart == a2.tStart && tEnd < a2.tEnd) {
+ // 			return true;
+ // 		// } else if (qName == a2.qName && qLength == a2.qLength && qStart == a2.qStart && qEnd == a2.qEnd && strand == a2.strand && tName == a2.tName && tLength == a2.tLength && tStart == a2.tStart && tEnd == a2.tEnd && resMatches < a2.resMatches) {
+ // 		// 	return true;
+ // 		// } else if (qName == a2.qName && qLength == a2.qLength && qStart == a2.qStart && qEnd == a2.qEnd && strand == a2.strand && tName == a2.tName && tLength == a2.tLength && tStart == a2.tStart && tEnd == a2.tEnd && resMatches == a2.resMatches && alBlockLen < a2.alBlockLen) {
+ // 		// 	return true;
+ // 		// } else if (qName == a2.qName && qLength == a2.qLength && qStart == a2.qStart && qEnd == a2.qEnd && strand == a2.strand && tName == a2.tName && tLength == a2.tLength && tStart == a2.tStart && tEnd == a2.tEnd && resMatches == a2.resMatches && alBlockLen == a2.alBlockLen && unordered_mapQual < a2.unordered_mapQual) {
+ // 		// 	return true;
+ // 		} else {
+ // 			return false;
+ // 		}
+	// }
+
 	bool operator<(const Overlap& a2) const {
-		if (qName < a2.qName) {
+		if (resMatches < a2.resMatches) {
 			return true;
- 		// } else if (qName == a2.qName && qLength < a2.qLength) {
- 			// return true;
- 		} else if (qName == a2.qName && qStart < a2.qStart) {
- 			return true;
- 		} else if (qName == a2.qName && qStart == a2.qStart && qEnd < a2.qEnd) {
- 			return true;
- 		// } else if (qName == a2.qName && qLength == a2.qLength && qStart == a2.qStart && qEnd == a2.qEnd && strand < a2.strand) {
- 			// return true;
- 		// } else if (qName == a2.qName && qLength == a2.qLength && qStart == a2.qStart && qEnd == a2.qEnd && strand == a2.strand && tName < a2.tName) {
- 			// return true;
- 		// } else if (qName == a2.qName && qLength == a2.qLength && qStart == a2.qStart && qEnd == a2.qEnd && strand == a2.strand && tName == a2.tName && tLength < a2.tLength) {
- 			// return true;
- 		} else if (qName == a2.qName && qStart == a2.qStart && qEnd == a2.qEnd && tStart < a2.tStart) {
- 			return true;
- 		} else if (qName == a2.qName && qStart == a2.qStart && qEnd == a2.qEnd && tStart == a2.tStart && tEnd < a2.tEnd) {
- 			return true;
- 		// } else if (qName == a2.qName && qLength == a2.qLength && qStart == a2.qStart && qEnd == a2.qEnd && strand == a2.strand && tName == a2.tName && tLength == a2.tLength && tStart == a2.tStart && tEnd == a2.tEnd && resMatches < a2.resMatches) {
- 		// 	return true;
- 		// } else if (qName == a2.qName && qLength == a2.qLength && qStart == a2.qStart && qEnd == a2.qEnd && strand == a2.strand && tName == a2.tName && tLength == a2.tLength && tStart == a2.tStart && tEnd == a2.tEnd && resMatches == a2.resMatches && alBlockLen < a2.alBlockLen) {
- 		// 	return true;
- 		// } else if (qName == a2.qName && qLength == a2.qLength && qStart == a2.qStart && qEnd == a2.qEnd && strand == a2.strand && tName == a2.tName && tLength == a2.tLength && tStart == a2.tStart && tEnd == a2.tEnd && resMatches == a2.resMatches && alBlockLen == a2.alBlockLen && unordered_mapQual < a2.unordered_mapQual) {
- 		// 	return true;
  		} else {
  			return false;
  		}

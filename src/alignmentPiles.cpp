@@ -31,20 +31,28 @@ std::vector<Overlap> getNextReadPile(std::ifstream& f, unsigned maxSupport) {
 		}
 		if (line.length() > 0 and (curRead == "" or curAl.qName == curRead)) {
 			curRead = curAl.qName;
-
-			// Only keep MAX best overlaps
-			if (curReadAlignments.size() < maxSupport) {
-				curReadAlignments.push_back(curAl);
-			}
-
+			curReadAlignments.push_back(curAl);
 			getline(f, line);
 		} else {
 			if (!f.eof()) {
 				f.seekg(-line.length()-1, f.cur);
 			}
+			// Sort according to number of matches, and keep the maxSupport best overlaps
+			std::sort(curReadAlignments.rbegin(), curReadAlignments.rend());
+			if (curReadAlignments.size() > maxSupport) {
+				curReadAlignments.resize(maxSupport);
+			}
+
 			return curReadAlignments;
 		}
 	}
+
+	// Sort according to number of matches, and keep the maxSupport best overlaps
+	std::sort(curReadAlignments.rbegin(), curReadAlignments.rend());
+	if (curReadAlignments.size() > maxSupport) {
+		curReadAlignments.resize(maxSupport);
+	}
+
 
 	return curReadAlignments;
 }
